@@ -26,10 +26,9 @@ export const SecondFormSchema = z.object({
   phoneNumber: z.string().length(11, {
     message: 'شماره همراه معتبر نیست',
   }),
-  nationalCode: z
-    .string('کد ملی مدیر گروه الزامی است.')
-    .min(1, { error: 'کد ملی مدیر گروه الزامی است.' })
-    .length(10, { error: 'کد ملی باید ۱۰ رقم باشد.' }),
+  email: z
+    .string('ایمیل مدیر گروه الزامی است.')
+    .min(1, { error: 'ایمیل مدیر گروه الزامی است.' }),
   password: passwordSchema,
   confirmPassword: passwordSchema,
 })

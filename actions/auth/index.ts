@@ -10,7 +10,7 @@ import { OperationResult } from '@/types/operation-result'
 
 export const signupCompanyAction = async (formState: OperationResult<string> | null, data: SignupValues) => {
   return serverActionWrapper(
-    async () => await createData<SignupValues, string>('tenant/initialize-company', data),
+    async () => await createData<SignupValues, string>('tenant/initialize-tenant', data),
   )
 }
 
@@ -51,8 +51,11 @@ export const signOutAction = async () => {
 
 export const sendActivationCodeAction = async (
   prevState: OperationResult<void> | undefined,
-  data: { phoneNumber: string },
+  data: { phoneNumber: string; domain: string },
 ) => {
+  const { phoneNumber, domain } = data
+  const headers = domain ? { 'X-Tenant': domain } : undefined
+
   return serverActionWrapper(
     async () =>
       await createData<
@@ -60,7 +63,7 @@ export const sendActivationCodeAction = async (
           phoneNumber: string
         },
         void
-      >('user/send-activation-code', data),
+      >('user/send-activation-code', { phoneNumber }, headers),
   )
 }
 

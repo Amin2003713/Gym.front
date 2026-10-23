@@ -12,7 +12,6 @@ import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
 
 import { sendActivationCodeAction, verifyPhoneNumber } from '@/actions/auth'
-import { StepperFormActions } from '@/app/(auth)/signup/_components/signup-form'
 import { ThirdFormSchema } from '@/app/(auth)/signup/_types/signup-schema'
 import { VerificationValues } from '@/app/(auth)/signup/_types/signup.interface'
 import {
@@ -31,6 +30,7 @@ import {
 } from '@/components/ui/input-otp'
 import { Timer } from '@/components/ui/timer'
 import { BASE_DOMAIN } from '@/configs/global'
+import { StepperFormActions } from './stepper-form-actions'
 
 const getTwoMinutesFromNow = (): Date => {
   const time = new Date()
@@ -76,7 +76,10 @@ function VerifyForm({ domain, phoneNumber }: VerifyFormType) {
     validationForm.clearErrors()
 
     startNewCodeTransition(() =>
-      newCodeAction({ phoneNumber: validationForm.getValues().phoneNumber }),
+      newCodeAction({
+        phoneNumber: validationForm.getValues('phoneNumber'),
+        domain: validationForm.getValues('domain') || domain,
+      }),
     )
   }
 

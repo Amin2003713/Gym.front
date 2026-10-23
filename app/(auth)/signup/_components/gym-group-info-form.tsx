@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { StepperFormActions } from '@/app/(auth)/signup/_components/signup-form'
+import { StepperFormActions } from '@/app/(auth)/signup/_components/stepper-form-actions'
 import { SignupValues, StepFormProps } from '@/app/(auth)/signup/_types/signup.interface'
 import { CustomFormField } from '@/components/ui/custom-form-field'
 import { Form } from '@/components/ui/form'
@@ -74,8 +74,7 @@ function GymGroupInfoForm({ form }: StepFormProps) {
 
   return (
     <Form {...form}>
-      <form onSubmit={(event) => event.preventDefault()} className="space-y-4 rounded-2xl border border-border bg-card p-4 text-card-foreground shadow-sm shadow-black/5 sm:p-6 dark:shadow-black/20">
-        <div className="mb-2 border-r-4 border-[#fb9a3c] pr-3"><h3 className="font-black text-foreground">هویت گروه ورزشی</h3><p className="mt-1 text-xs leading-6 text-muted-foreground">نامی انتخاب کن که اعضا و شعبه‌ها با آن شناخته شوند.</p></div>
+      <form onSubmit={(event) => event.preventDefault()} className="space-y-5 border-0 bg-transparent p-0 text-card-foreground shadow-none pt-10">
         <div className="relative">
           <CustomFormField<SignupValues>
             control={form.control}
@@ -92,10 +91,10 @@ function GymGroupInfoForm({ form }: StepFormProps) {
               </span>
             }
             onBlur={handleCheckDomain}
-            label="آدرس اختصاصی گروه ورزشی"
+            label="دامنه اختصاصی"
           />
         </div>
-        <CustomFormField<SignupValues> control={form.control} name="name" label="نام گروه ورزشی" />
+        <CustomFormField<SignupValues> control={form.control} name="name" label="نام گروه ورزشی" placeholder="مثلاً باشگاه آیرون" />
         <StepperFormActions onNext={onNextStep} />
       </form>
     </Form>
