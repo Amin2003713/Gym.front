@@ -13,6 +13,8 @@ import { Button } from '@/components/ui/button'
 import { Step, Stepper, useStepper } from '@/components/ui/stepper'
 
 import { SignupValues } from '../_types/signup.interface'
+import { HamOwjBrand } from '@/components/branding/hamowj-mark'
+import { ModeToggle } from '@/components/mode-toggle'
 
 const steps = [
   { label: 'مشخصات باشگاه', description: 'نام گروه و آدرس اختصاصی' },
@@ -30,8 +32,12 @@ export const SignupForm = () => {
     <div className="min-w-0 px-2 py-8 text-foreground sm:px-5 sm:py-10">
       <div className="mx-auto w-full max-w-xl">
         <div className="mb-7 px-3 text-right">
-          <div className="mb-4 flex size-12 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-md shadow-primary/15"><Dumbbell className="size-6" /></div>
-          <p className="text-xs font-black tracking-[0.15em] text-[var(--brand-bronze)]">GYM GROUP SETUP</p>
+          <div className="mb-5 flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <HamOwjBrand />
+            </div>
+            <ModeToggle />
+          </div>
           <h2 className="mt-2 text-2xl font-black tracking-tight text-foreground sm:text-3xl">پایه‌های باشگاهت را بچین</h2>
           <p className="mt-2 text-sm leading-7 text-muted-foreground">گروه ورزشی‌ات را ثبت کن و مدیریت شعبه‌ها، مربی‌ها و اعضا را یک‌جا شروع کن.</p>
         </div>

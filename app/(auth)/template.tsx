@@ -10,12 +10,6 @@ export default async function AuthLayout({ children }: { children: React.ReactNo
       <div aria-hidden className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(251,154,60,0.16),transparent_38%),linear-gradient(135deg,transparent_45%,rgba(255,255,255,0.025)_45%,rgba(255,255,255,0.025)_46%,transparent_46%)]" />
       <div aria-hidden className="absolute inset-x-0 top-0 h-1 bg-gradient-to-l from-[#f6f3ed] via-[#fb9a3c] to-[#a96d20]" />
       <div className="relative z-10 w-full max-w-6xl">
-        <div className="mb-5 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <HamOwjBrand />
-          </div>
-          <ModeToggle />
-        </div>
         <Card className="overflow-hidden rounded-3xl border border-border bg-card text-card-foreground shadow-2xl shadow-black/20">
           <CardContent className="grid p-0 md:grid-cols-[1fr_0.9fr]">
             <section className="min-w-0 bg-background text-foreground transition-colors">{children}</section>
