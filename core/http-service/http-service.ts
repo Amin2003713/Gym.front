@@ -1,30 +1,89 @@
 import axios, { AxiosRequestConfig, AxiosRequestHeaders } from 'axios'
 import { getSession } from 'next-auth/react'
-import { toast } from 'sonner'
 
 import { auth } from '@/auth'
 import { API_URL } from '@/configs/global'
 import { ApiError } from '@/types/http-errors.interface'
 
 import { errorHandler, networkErrorStrategy } from './http-error-strategies'
+import { cwd } from 'process'
 
-const getBaseURL = async (): Promise<string> => {
-  const configuredUrl = API_URL?.trim()
+const normalizeHost = (value: string): string =>
+  value
+    .split(',')[0]
+    .trim()
+    .toLowerCase()
+    .replace(/^https?:\/\//, '')
+    .split('/')[0]
+    .replace(/:\d+$/, '')
 
-  if (!configuredUrl) {
-    throw new Error('NEXT_PUBLIC_API_URL must be configured before making API requests.')
+const getTenantFromClientHost = (clientHost: string): string | null => {
+  const host = normalizeHost(clientHost)
+  // Prefer the configured client base domain so only its direct tenant
+  // subdomains can affect the API host.
+  const configuredClientBase = process.env.NEXT_PUBLIC_BASE_DOMAIN
+  const clientBase = configuredClientBase ? normalizeHost(configuredClientBase) : ''
+
+  if (clientBase && host.endsWith(`.${clientBase}`)) {
+    const prefix = host.slice(0, -(clientBase.length + 1))
+    if (prefix && !prefix.includes('.') && prefix !== 'www' && prefix !== 'api') return prefix
+    return null
   }
 
-  // Development currently uses plain HTTP. Normalize URLs regardless of whether
-  // the environment value includes a protocol, and never accidentally prepend
-  // a second scheme or duplicate a tenant subdomain.
-  const normalizedUrl = /^https?:\/\//i.test(configuredUrl)
-    ? configuredUrl
-    : `http://${configuredUrl}`
-  const baseUrl = new URL(normalizedUrl)
-  baseUrl.protocol = 'http:'
-  return baseUrl.origin
+  // Local/dev and deployments without NEXT_PUBLIC_BASE_DOMAIN.
+  if (!clientBase && host !== 'localhost' && host !== '127.0.0.1') {
+    const parts = host.split('.')
+    if (parts.length > 2 && parts[0] !== 'www' && parts[0] !== 'api') return parts[0]
+  }
+  return null
 }
+
+
+const getBaseURL = async (): Promise<{ baseURL: string; tenant: string | null }> => {
+  const configuredApiUrl = API_URL?.trim()
+
+  if (!configuredApiUrl) {
+    throw new Error('NEXT_PUBLIC_API_URL is not configured.')
+  }
+
+  const apiUrl = new URL(
+    /^[a-z][a-z0-9+.-]*:\/\//i.test(configuredApiUrl)
+      ? configuredApiUrl
+      : `http://${configuredApiUrl}`,
+  )
+
+  let clientHost = ''
+
+  if (typeof window !== 'undefined') {
+    clientHost = window.location.hostname
+  } else {
+    const { headers } = await import('next/headers')
+    const requestHeaders = await headers()
+
+    clientHost =
+      requestHeaders.get('x-forwarded-host') ||
+      requestHeaders.get('host') ||
+      ''
+  }
+
+  const tenant = getTenantFromClientHost(clientHost)
+
+  if (tenant) {
+    if (process.env.NODE_ENV === 'development') {
+      // Avoid Node.js ENOTFOUND for tenant.localhost.
+      apiUrl.hostname = 'localhost'
+    } else {
+      // Keep tenant subdomains in production if your API requires them.
+      apiUrl.hostname = `${tenant}.${apiUrl.hostname}`
+    }
+  }
+
+  return {
+    baseURL: apiUrl.toString().replace(/\/$/, ''),
+    tenant,
+  }
+}
+
 
 const httpService = axios.create({
   headers: {
@@ -35,59 +94,24 @@ const httpService = axios.create({
 
 httpService.interceptors.response.use(
   (response) => response,
-  (error: unknown) => {
-    let normalizedError: unknown = error
-    let description = 'در ارتباط با سرور خطایی رخ داد.'
+  (error) => {
+    if (error?.response) {
+      const statusCode = error.response.status
+      const errorData: ApiError = error.response.data
 
-    if (axios.isAxiosError(error)) {
-      const responseData = error.response?.data as
-        | { detail?: string; title?: string; message?: string; errors?: Record<string, string[] | string> }
-        | string
-        | undefined
-
-      if (responseData && typeof responseData === 'object') {
-        description = responseData.detail || responseData.title || responseData.message || description
-        if (!responseData.detail && !responseData.title && !responseData.message && responseData.errors) {
-          const firstError = Object.values(responseData.errors)[0]
-          description = Array.isArray(firstError) ? firstError[0] || description : firstError || description
-        }
-      } else if (error.code === 'ERR_NETWORK') {
-        description = 'خطا در اتصال به سرور؛ اتصال شبکه و آدرس API را بررسی کنید.'
-      } else if (error.response?.status === 404) {
-        description = 'سرویس مورد نظر یافت نشد.'
-      }
-
-      const statusCode = error.response?.status
-      if (statusCode && error.response?.data && typeof responseData === 'object') {
-        try {
-          errorHandler[statusCode]?.(responseData as ApiError)
-        } catch (handledError) {
-          normalizedError = handledError
-          const handled = handledError as { detail?: string; title?: string }
-          description = handled.detail || handled.title || description
-        }
-      } else if (!error.response) {
-        try {
-          networkErrorStrategy()
-        } catch (handledError) {
-          normalizedError = handledError
-          const handled = handledError as { detail?: string }
-          description = handled.detail || description
-        }
-      }
-    }
-
-    // Browser API failures are surfaced consistently. Server actions return their
-    // errors to the calling form, which displays them through its own toast.
-    if (typeof window !== 'undefined') {
-      toast.error('خطا در درخواست', {
-        description,
-        duration: 5000,
-        position: 'top-right',
+      errorHandler[statusCode]?.(errorData)
+    } else {
+      console.error('HTTP network error:', {
+        message: error?.message,
+        code: error?.code,
+        url: error?.config?.url,
+        method: error?.config?.method,
       })
+
+      networkErrorStrategy()
     }
 
-    return Promise.reject(normalizedError)
+    return Promise.reject(error)
   },
 )
 
@@ -107,10 +131,14 @@ const apiBase = async <T>(
   const baseURL = await getBaseURL()
   const fullURL = `${baseURL}/api/${url}` // Construct full URL to handle both client and server.
 
+
   const response = await httpService(fullURL, {
     ...options,
     headers,
   })
+
+  console.log(response)
+
 
   return response.data as T
 }
@@ -145,8 +173,8 @@ const updateData = async <TModel, TResult>(
   headers?:
     | AxiosRequestHeaders
     | {
-        'X-Tenant': string
-      },
+      'X-Tenant': string
+    },
 ): Promise<TResult> => {
   const options: AxiosRequestConfig = {
     method: 'PUT',
