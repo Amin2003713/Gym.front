@@ -7,7 +7,6 @@ import { SigninUserModel } from '@/app/(auth)/signin/_types/signin-user-model.ty
 import { createData } from '@/core/http-service'
 import { Problem } from '@/types/http-errors.interface'
 import { SignedInUser, UserSession, User } from '@/types/user.interface'
-import { normalizeProblem } from '@/utils/normalize-problem'
 
 import { authConfig } from './auth-config'
 
@@ -28,12 +27,11 @@ declare module 'next-auth/jwt' {
 }
 
 export class AuthorizeError extends CredentialsSignin {
-  code = 'authorize_error'
   problem: Problem
 
-  constructor(problem: Problem) {
-    super('authorize_error')
-    this.problem = problem
+  constructor(err: Problem) {
+    super()
+    this.problem = err
   }
 }
 
@@ -45,63 +43,67 @@ export const {
 } = NextAuth({
   ...authConfig,
   secret: process.env.AUTH_SECRET,
-  trustHost: true,
   providers: [
     CredentialsProvider({
       name: 'credentials',
       credentials: {
-        // Fast path: signinAction already validated the credentials against the API
-        // and passes the resulting token. authorize() just trusts it.
-        accessToken: { label: 'accessToken', type: 'text' },
-        // Fallback: direct credential post (e.g. a form that doesn't use the server action).
-        userName: { label: 'userName', type: 'text', required: false },
-        password: { label: 'password', type: 'text', required: false },
+        userName: { label: 'userName', type: 'text' },
+        password: { label: 'password', type: 'text' },
       },
       async authorize(credentials) {
-        // 1) Token already issued by our own server action — trust it.
+  try {
+    // The server action has already authenticated the user.
+    // Reuse that token instead of calling the login API again.
+    const accessToken = credentials?.accessToken
 
-        console.log("on cred")
-        if (credentials?.accessToken) {
-          return { accessToken: credentials.accessToken as string }
-        }
+    if (
+      typeof accessToken === 'string' &&
+      accessToken.length > 0
+    ) {
+      return {
+        accessToken,
+      }
+    }
 
-        // 2) Fallback: perform the login ourselves so `Problem` is preserved.
-        if (!credentials?.userName || !credentials?.password) {
-          return null
-        }
+    // Optional fallback for normal username/password sign-in.
+    if (
+      typeof credentials?.userName !== 'string' ||
+      typeof credentials?.password !== 'string'
+    ) {
+      return null
+    }
 
-        try {
-          const user = await createData<SigninUserModel, SignedInUser>('user/login', {
-            userName: credentials.userName as string,
-            password: credentials.password as string,
-          })
-
-          console.log(user)
-
-
-          // Some APIs wrap the response (e.g. { data: { token } }). Handle both shapes.
-          const raw = user as any
-          const token: string | undefined =
-            raw?.token ?? raw?.accessToken ?? raw?.data?.token ?? raw?.data?.accessToken
-
-          if (!token) {
-            return null
-          }
-
-          return { accessToken: token }
-        } catch (error: unknown) {
-          throw new AuthorizeError(
-            normalizeProblem(error, 'نام کاربری یا رمز عبور اشتباه است'),
-          )
-        }
+    const user = await createData<SigninUserModel, SignedInUser>(
+      'user/login',
+      {
+        userName: credentials.userName,
+        password: credentials.password,
       },
+    )
+
+    if (!user?.token) {
+      return null
+    }
+
+    return {
+      accessToken: user.token,
+    }
+  } catch (error: unknown) {
+    console.error('Credentials authorization failed:', error)
+    throw new AuthorizeError(error as Problem)
+  }
+}
     }),
   ],
   callbacks: {
     async jwt({ token, user }) {
-      if (user?.accessToken) {
+      if (user) {
+              console.log("decode ")
+
         token.user = jwtDecode<User>(user.accessToken)
         token.user.accessToken = user.accessToken
+              console.log("sat in calback")
+
       }
       return token
     },

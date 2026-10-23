@@ -101,12 +101,6 @@ httpService.interceptors.response.use(
 
       errorHandler[statusCode]?.(errorData)
     } else {
-      console.error('HTTP network error:', {
-        message: error?.message,
-        code: error?.code,
-        url: error?.config?.url,
-        method: error?.config?.method,
-      })
 
       networkErrorStrategy()
     }
@@ -121,23 +115,26 @@ const apiBase = async <T>(
 ): Promise<T> => {
   const session = await (typeof window !== 'undefined' ? getSession() : auth())
 
+
+  const baseURL = await getBaseURL()
+  const fullURL = `${baseURL.baseURL}/api/${url}`
+
+
   const headers = {
     ...options?.headers,
+    ...(baseURL.tenant && {
+      'X-Tenant': baseURL.tenant,
+    }),
     ...(session?.user?.accessToken && {
       Authorization: `Bearer ${session.user.accessToken}`,
     }),
   }
-
-  const baseURL = await getBaseURL()
-  const fullURL = `${baseURL}/api/${url}` // Construct full URL to handle both client and server.
-
 
   const response = await httpService(fullURL, {
     ...options,
     headers,
   })
 
-  console.log(response)
 
 
   return response.data as T

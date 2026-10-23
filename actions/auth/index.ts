@@ -12,6 +12,7 @@ import { createData, updateData } from '@/core/http-service'
 import { OperationResult } from '@/types/operation-result'
 import { SignedInUser } from '@/types/user.interface'
 import { normalizeProblem } from '@/utils/normalize-problem'
+import { cwd } from 'process'
 
 export const signupCompanyAction = async (
   formState: OperationResult<string> | null,
@@ -59,6 +60,7 @@ export async function signinAction(
     // 2) Establish the NextAuth session using the token we already have.
     //    No second HTTP call — `authorize` trusts this token.
     await signIn('credentials', { accessToken: user.token, redirect: false })
+      console.log(" no faid")
 
     return { isSuccess: true }
   } catch (error) {

@@ -48,14 +48,12 @@ export const checkDomain = async (domain: string | undefined): Promise<boolean> 
         status: res.status,
         endpoint: url.pathname,
       })
-        console.log(res)
       return false
     }
 
     const domainStatus = (await res.json()) as { exist?: boolean }
     const exists = domainStatus.exist === true
 
-    console.log(domainStatus)
 
     const timeout = setTimeout(() => domainCache.delete(normalizedDomain), 60_000)
     domainCache.set(normalizedDomain, { value: exists, timeout })

@@ -27,6 +27,7 @@ const getTwoMinutesFromNow = (): Date => {
 
 interface CodeVerificationInputProps<T extends FieldValues> {
   phoneNumber: string
+  domain: string
   formControl: Control<T>
   isSubmitting?: boolean
   name: Path<T>
@@ -37,6 +38,7 @@ interface CodeVerificationInputProps<T extends FieldValues> {
 
 function CodeVerificationInput<T extends FieldValues>({
   phoneNumber,
+  domain,
   formControl,
   isSubmitting,
   name,
@@ -58,7 +60,10 @@ function CodeVerificationInput<T extends FieldValues>({
   }
 
   const requestNewCode = () => {
-    startTransition(() => action({ phoneNumber }))
+    startTransition(() => action({
+      phoneNumber,
+      domain
+    }))
   }
 
   useEffect(() => {
