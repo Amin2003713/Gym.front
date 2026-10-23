@@ -23,6 +23,8 @@ import {
   Upload,
 } from 'lucide-react'
 import Link from 'next/link'
+import { ExerciseLibrary } from './exercise-library'
+import { WorkoutExercisePicker } from './workout-exercise-picker'
 
 export type GymFeatureKey =
   | 'overview'
@@ -119,24 +121,18 @@ function WorkspacePreview({ feature }: { feature: GymFeatureKey }) {
     ]
     return <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">{shortcuts.map((shortcut) => {
       const ShortcutIcon = shortcut.icon
-      return <Link key={shortcut.href} href={shortcut.href} className={`${panel} group transition-colors hover:border-primary/40`}><span className="mb-4 flex size-11 items-center justify-center rounded-xl bg-primary/10 text-primary"><ShortcutIcon className="size-5" /></span><h3 className="font-semibold">{shortcut.label}</h3><p className="mt-1 text-sm leading-6 text-muted-foreground">{shortcut.detail}</p><span className="mt-4 inline-flex items-center gap-2 text-xs font-semibold text-primary">ورود به بخش <ArrowUpLeft className="size-4 transition-transform group-hover:-translate-x-1" /></span></Link>
+      return <Link key={shortcut.href} href={shortcut.href} className={`${panel} brand-card-interactive group transition-colors hover:border-primary/40`}><span className="mb-4 flex size-11 items-center justify-center rounded-xl bg-primary/10 text-primary"><ShortcutIcon className="size-5" /></span><h3 className="font-semibold">{shortcut.label}</h3><p className="mt-1 text-sm leading-6 text-muted-foreground">{shortcut.detail}</p><span className="mt-4 inline-flex items-center gap-2 text-xs font-semibold text-primary">ورود به بخش <ArrowUpLeft className="size-4 transition-transform group-hover:-translate-x-1" /></span></Link>
     })}</section>
   }
 
-  if (feature === 'exercises') return <section className={panel}>
-    <div className="flex flex-col gap-3 md:flex-row"><label className="relative flex-1"><Search className="absolute right-3 top-3 size-4 text-muted-foreground" /><input className={`${field} pr-9`} placeholder="جست‌وجوی حرکت..." disabled /></label><select className={`${field} md:max-w-48`} disabled defaultValue=""><option value="">همه گروه‌های عضلانی</option></select><select className={`${field} md:max-w-40`} disabled defaultValue=""><option value="">همه تجهیزات</option></select><button className={action} disabled><Plus className="size-4" /> افزودن حرکت</button></div>
-    <div className="mt-5"><Empty title="کتابخانه حرکات هنوز بارگذاری نشده است" detail="پس از اتصال API، فهرست حرکات با جست‌وجو و فیلترها نمایش داده می‌شود. تصاویر، GIF و SVG متحرک فقط در صورت ارسال URL معتبر از سمت سرور نمایش داده خواهند شد." /></div>
-  </section>
+  if (feature === 'exercises') return <ExerciseLibrary />
 
   if (feature === 'routines') return <section className={panel}>
     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div><h2 className="font-semibold">برنامه‌های شما</h2><p className="mt-1 text-sm text-muted-foreground">برنامه‌های هفتگی، چرخشی و قالب‌های قابل ویرایش</p></div><button className={action} disabled><Plus className="size-4" /> برنامه جدید</button></div>
     <div className="mt-5"><Empty title="هنوز برنامه‌ای در دسترس نیست" detail="بعد از اتصال بک‌اند، برنامه‌ها، روزهای تمرین، ترتیب حرکات، سوپرست‌ها و ست‌های هدف در این قسمت مدیریت می‌شوند." /></div>
   </section>
 
-  if (feature === 'workouts') return <section className="grid gap-4 lg:grid-cols-[1.3fr_0.7fr]">
-    <div className={panel}><div className="flex items-center gap-3"><span className="flex size-11 items-center justify-center rounded-xl bg-primary/10 text-primary"><Timer className="size-5" /></span><div><h2 className="font-semibold">جلسه تمرینی جدید</h2><p className="mt-1 text-sm text-muted-foreground">از یک برنامه شروع کنید یا جلسه آزاد بسازید.</p></div></div><div className="mt-5 space-y-3"><label className="block text-sm font-medium">انتخاب برنامه<select className={`${field} mt-2`} disabled defaultValue=""><option value="">ابتدا API را متصل کنید</option></select></label><button className={`${action} w-full justify-center`} disabled><CalendarDays className="size-4" /> شروع تمرین</button></div></div>
-    <div className={panel}><h2 className="font-semibold">آماده تمرین؟</h2><p className="mt-2 text-sm leading-6 text-muted-foreground">نمای جلسه شامل ست‌های کاری و گرم‌کردن، تایمر استراحت، RPE/RIR و ثبت رکورد پس از اتصال API فعال می‌شود.</p><div className="mt-4"><Empty title="جلسه فعالی وجود ندارد" detail="برای جلوگیری از داده ساختگی، جلسه تمرینی تا زمان اتصال سرویس ایجاد نمی‌شود." /></div></div>
-  </section>
+  if (feature === 'workouts') return <WorkoutExercisePicker />
 
   if (feature === 'history') return <section className={panel}><div className="flex flex-col gap-3 sm:flex-row"><input className={field} placeholder="از تاریخ" disabled /><input className={field} placeholder="تا تاریخ" disabled /><select className={field} disabled defaultValue=""><option value="">همه اعضا</option></select><button className={quiet} disabled><Filter className="ml-2 inline size-4" /> فیلتر</button></div><div className="mt-5"><Empty title="تاریخچه‌ای برای نمایش وجود ندارد" detail="جلسه‌های تکمیل‌شده و جزئیات ست‌ها پس از اتصال API و دریافت داده واقعی نمایش داده می‌شوند." /></div></section>
 
@@ -156,8 +152,8 @@ export function GymFeaturePage({ feature }: { feature: GymFeatureKey }) {
   const Icon = item.icon
 
   return (
-    <main dir="rtl" className="mx-auto w-full max-w-[1440px] space-y-6 p-3 sm:p-5 lg:p-7">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+    <main dir="rtl" className="mx-auto w-full max-w-[1440px] space-y-6 p-3 sm:p-5 lg:space-y-7 lg:p-7">
+      <div className="relative overflow-hidden rounded-2xl border bg-card p-5 shadow-sm sm:p-6 lg:p-7"><div className="pointer-events-none absolute -left-12 -top-16 size-48 rounded-full bg-primary/10 blur-3xl" /><div className="relative flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div className="space-y-2">
           <div className="flex items-center gap-2 text-xs font-semibold text-primary">
             <span className="rounded-full bg-primary/10 px-3 py-1">{item.eyebrow}</span>
@@ -167,12 +163,12 @@ export function GymFeaturePage({ feature }: { feature: GymFeatureKey }) {
           <p className="max-w-2xl text-sm leading-7 text-muted-foreground">{item.description}</p>
         </div>
         <div className="flex items-center gap-2 self-start rounded-xl border bg-card px-3 py-2 text-xs text-muted-foreground sm:self-auto">
-          <span className="size-2 rounded-full bg-amber-500" />
-          اتصال API در انتظار پیکربندی
+          <span className={`size-2 rounded-full ${feature === 'exercises' ? 'bg-emerald-500' : 'bg-amber-500'}`} />
+          {feature === 'exercises' ? 'اتصال API حرکات پیاده‌سازی شده' : 'اتصال API در انتظار پیکربندی'}
         </div>
-      </div>
+      </div></div>
 
-      <section className="grid gap-4 xl:grid-cols-[minmax(0,1.5fr)_minmax(280px,0.8fr)]">
+      {feature !== 'exercises' && <section className="grid gap-4 xl:grid-cols-[minmax(0,1.5fr)_minmax(280px,0.8fr)]">
         <div className="overflow-hidden rounded-2xl border bg-card">
           <div className="flex items-start gap-4 border-b p-5 sm:p-6">
             <div className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
@@ -227,7 +223,7 @@ export function GymFeaturePage({ feature }: { feature: GymFeatureKey }) {
             </p>
           </div>
         </aside>
-      </section>
+      </section>}
 
       <WorkspacePreview feature={feature} />
 

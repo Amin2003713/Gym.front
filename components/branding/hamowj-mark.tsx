@@ -20,10 +20,8 @@ export function HamOwjMark({ className, title = 'HamOwj', monochrome = false, 'a
       xmlns="http://www.w3.org/2000/svg"
     >
       {!ariaHidden && <title>{title}</title>}
-      <path d="M8 64 36 22 49 41 64 64H45L36 51 27 64H8Z"
-        fill={monochrome ? 'currentColor' : 'var(--brand-mark-primary, #FB9A3C)'} />
-      <path d="M35 64 59 30 88 64H69L59 51 50 64H35Z"
-        fill={monochrome ? 'currentColor' : 'var(--brand-mark-secondary, #C97B4A)'} />
+      <path d="M8 64 36 22 49 41 64 64H45L36 51 27 64H8Z" fill={monochrome ? 'currentColor' : '#FB9A3C'} />
+      <path d="M35 64 59 30 88 64H69L59 51 50 64H35Z" fill={monochrome ? 'currentColor' : '#F6F3ED'} />
     </svg>
   )
 }

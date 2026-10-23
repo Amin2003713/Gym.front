@@ -1,6 +1,7 @@
 'use client'
 
-import { ChevronRight, Dumbbell } from 'lucide-react'
+import { ChevronRight } from 'lucide-react'
+import { HamOwjMark } from '@/components/branding/hamowj-mark'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useSession } from 'next-auth/react'
@@ -44,15 +45,13 @@ export function MainSidebar({ data: user, error, ...props }: MainSidebarProps) {
       className="border-border top-[calc(theme(spacing.14))] !h-[calc(100svh-calc(theme(spacing.14)))]"
       {...props}
     >
-      <SidebarMenuButton asChild className="my-2 h-auto">
-        <Link href="/" className="flex h-fit flex-col items-center gap-2 py-3">
-          <span className="flex size-12 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-sm">
-            <Dumbbell className="size-6" />
-          </span>
-          <span className="flex-1 text-center text-sm font-bold">گروه باشگاهی</span>
-          <span className="text-center text-[11px] text-muted-foreground">مدیریت و برنامه تمرین</span>
+      <div className="mx-3 my-3 rounded-2xl border bg-card px-3 py-4 shadow-sm">
+        <Link href="/" aria-label="هم‌اوج؛ داشبورد" className="flex flex-col items-center gap-2 rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-ring">
+          <span className="flex size-12 items-center justify-center rounded-2xl bg-foreground text-background"><HamOwjMark className="size-8" /></span>
+          <span className="text-center text-sm font-bold">هم‌اوج</span>
+          <span className="text-center text-[11px] leading-5 text-muted-foreground">هم‌مسیرِ پیشرفت</span>
         </Link>
-      </SidebarMenuButton>
+      </div>
 
       <SidebarContent>
         <SidebarGroup>
@@ -100,10 +99,10 @@ function Tree({
       <SidebarMenuButton
         asChild // Use asChild for wrapping Link to maintain accessibility
         isActive={path ? pathname === path : false}
-        className="data-[active=true]:bg-primary/20"
+        className="rounded-xl transition-colors data-[active=true]:bg-primary/15 data-[active=true]:font-semibold data-[active=true]:text-foreground hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring"
       >
         {path ? (
-          <Link href={path} className="flex items-center gap-2">
+          <Link href={path} className="flex items-center gap-2 rounded-xl transition-colors hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring">
             <span className={colorClass}>{icon}</span>
             {name}
           </Link>
@@ -125,7 +124,7 @@ function Tree({
         defaultOpen
       >
         <CollapsibleTrigger asChild>
-          <SidebarMenuButton className="flex items-center gap-2">
+          <SidebarMenuButton className="flex items-center gap-2 rounded-xl transition-colors hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring">
             <ChevronRight className="h-4 w-4 transition-transform" />
             <span className={colorClass}>{icon}</span>
             {name}

@@ -334,11 +334,42 @@
     -ms-overflow-style: none;
     scrollbar-width: none;
 }
+
+/* HamOwj Phase 2 design-system primitives + Phase 3 application surfaces. */
 :root {
-  --brand-mark-primary: #FB9A3C;
-  --brand-mark-secondary: #3f352e;   /* gray-orange for light mode */
+  --brand-focus: #a96d20;
+  --brand-divider: color-mix(in srgb, var(--foreground) 12%, transparent);
+  --surface-raised: var(--card);
+  --surface-subtle: color-mix(in srgb, var(--background) 72%, var(--foreground) 4%);
+  --shadow-card: 0 2px 10px rgb(27 26 27 / 4%), 0 1px 2px rgb(27 26 27 / 3%);
+  --shadow-elevated: 0 16px 42px rgb(27 26 27 / 10%), 0 3px 10px rgb(27 26 27 / 4%);
 }
+
 .dark {
-  --brand-mark-primary: #FB9A3C;
-  --brand-mark-secondary: #F6F3ED;   /* original cream for dark mode */
+  --brand-divider: color-mix(in srgb, var(--foreground) 16%, transparent);
+  --surface-subtle: color-mix(in srgb, var(--card) 82%, var(--foreground) 4%);
+  --shadow-card: 0 2px 12px rgb(0 0 0 / 15%);
+  --shadow-elevated: 0 18px 48px rgb(0 0 0 / 28%);
+}
+
+@layer base {
+  :focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+  ::selection { background: color-mix(in srgb, var(--primary) 30%, transparent); color: var(--foreground); }
+  button, a, input, textarea, select { -webkit-tap-highlight-color: transparent; }
+  button:not(:disabled), [role="button"]:not([aria-disabled="true"]) { cursor: pointer; }
+  button:disabled { cursor: not-allowed; }
+}
+
+@layer utilities {
+  .brand-card { border: 1px solid var(--brand-divider); border-radius: 1rem; background: var(--surface-raised); box-shadow: var(--shadow-card); }
+  .brand-card-interactive { transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease; }
+  .brand-card-interactive:hover { border-color: color-mix(in srgb, var(--primary) 45%, var(--border)); box-shadow: var(--shadow-elevated); }
+  .brand-eyebrow { color: var(--muted-foreground); font-size: .72rem; font-weight: 700; letter-spacing: .025em; }
+  .brand-divider { border-color: var(--brand-divider); }
+  .brand-focus-ring:focus-visible { outline: 2px solid var(--ring); outline-offset: 3px; }
+  .text-balance { text-wrap: balance; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
 }
