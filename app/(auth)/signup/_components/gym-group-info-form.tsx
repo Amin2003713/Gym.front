@@ -25,7 +25,7 @@ function GymGroupInfoForm({ form }: StepFormProps) {
     if (!isValid) return
 
     try {
-      const response = await readData<{ exist: boolean }>(`panel/check-domain`, {
+      const response = await readData<{ exist: boolean }>(`tenant/check-domain`, {
         params: { domain },
       })
       if (response.exist) {
@@ -51,7 +51,7 @@ function GymGroupInfoForm({ form }: StepFormProps) {
 
     const domain = form.getValues('domain')
     try {
-      const response = await readData<{ exist: boolean }>(`panel/check-domain`, { params: { domain } })
+      const response = await readData<{ exist: boolean }>(`tenant/check-domain`, { params: { domain } })
       if (response.exist) {
         form.setError('domain', {
           type: 'manual',

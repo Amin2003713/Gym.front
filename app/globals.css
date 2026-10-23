@@ -184,7 +184,7 @@
     }
 }
 
-/* GHODRAT brand palette: warm ivory, champion orange, muted slate and bronze. */
+/* HamOwj brand tokens: warm ivory, orange, muted slate, bronze, stone and ink. */
 :root {
     color-scheme: light;
     --radius: 0.75rem;
@@ -194,6 +194,10 @@
     --brand-bronze: #a96d20;
     --brand-ewa: #463f41;
     --brand-black: #1b1a1b;
+    --brand-ink: var(--brand-black);
+    --brand-stone: var(--brand-ewa);
+    --brand-canvas: var(--brand-ivory);
+    --brand-action: var(--brand-orange);
 
     --background: #f6f3ed;
     --foreground: #463f41;
@@ -329,4 +333,12 @@
 .no-scrollbar {
     -ms-overflow-style: none;
     scrollbar-width: none;
+}
+:root {
+  --brand-mark-primary: #FB9A3C;
+  --brand-mark-secondary: #3f352e;   /* gray-orange for light mode */
+}
+.dark {
+  --brand-mark-primary: #FB9A3C;
+  --brand-mark-secondary: #F6F3ED;   /* original cream for dark mode */
 }

@@ -11,7 +11,9 @@ export const checkDomain = async (domain: string | undefined): Promise<boolean |
   }
 
   try {
-    const res = await fetch(`https://${API_URL}/api/panel/check-domain?domain=${domain}`, {
+    if (!API_URL) throw new Error('NEXT_PUBLIC_API_URL is not configured.')
+    const apiHost = API_URL.replace(/^https?:\/\//i, '').replace(/\/$/, '')
+    const res = await fetch(`http://${apiHost}/api/tenant/check-domain?domain=${encodeURIComponent(domain)}`, {
       cache: 'no-store',
       method: 'GET',
       headers: {

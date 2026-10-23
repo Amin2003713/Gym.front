@@ -10,7 +10,7 @@ import { OperationResult } from '@/types/operation-result'
 
 export const signupCompanyAction = async (formState: OperationResult<string> | null, data: SignupValues) => {
   return serverActionWrapper(
-    async () => await createData<SignupValues, string>('panel/initialize-company', data),
+    async () => await createData<SignupValues, string>('tenant/initialize-company', data),
   )
 }
 

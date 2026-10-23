@@ -1,4 +1,5 @@
-import { ArrowUpLeft, Dumbbell, ShieldCheck, Trophy } from 'lucide-react'
+import { ShieldCheck, Users, TrendingUp } from 'lucide-react'
+import { HamOwjBrand, HamOwjMark } from '@/components/branding/hamowj-mark'
 
 import { ModeToggle } from '@/components/mode-toggle'
 import { Card, CardContent } from '@/components/ui/card'
@@ -11,8 +12,7 @@ export default async function AuthLayout({ children }: { children: React.ReactNo
       <div className="relative z-10 w-full max-w-6xl">
         <div className="mb-5 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <span className="flex size-11 items-center justify-center rounded-xl bg-[#fb9a3c] text-[#1b1a1b] shadow-lg shadow-orange-500/20"><Dumbbell className="size-6" strokeWidth={2.5} /></span>
-            <div><p className="font-black tracking-tight">قدرت | GHODRAT</p><p className="text-xs text-[#a9b1af]">سامانه مدیریت گروه‌های ورزشی</p></div>
+            <HamOwjBrand />
           </div>
           <ModeToggle />
         </div>
@@ -23,15 +23,15 @@ export default async function AuthLayout({ children }: { children: React.ReactNo
               <div aria-hidden className="absolute inset-0 bg-[linear-gradient(150deg,rgba(251,154,60,0.15),transparent_45%),repeating-linear-gradient(135deg,transparent,transparent_22px,rgba(255,255,255,0.018)_23px,rgba(255,255,255,0.018)_24px)]" />
               <div className="relative">
                 <span className="inline-flex items-center gap-2 rounded-full border border-[#fb9a3c]/30 bg-[#fb9a3c]/10 px-3 py-1.5 text-xs font-bold text-[#fb9a3c]"><ShieldCheck className="size-4" /> مدیریت حرفه‌ای باشگاه</span>
-                <h1 className="mt-8 text-4xl font-black leading-[1.35] tracking-tight lg:text-5xl">باشگاهت را بساز.<br /><span className="text-[#fb9a3c]">قوی‌تر مدیریت کن.</span></h1>
-                <p className="mt-5 max-w-sm text-sm leading-8 text-[#d6d0c7]">شعبه‌ها، مربی‌ها، اعضا و مسیر پیشرفت ورزشی را در یک پنل یکپارچه مدیریت کن.</p>
+                <h1 className="mt-8 text-4xl font-black leading-[1.35] tracking-tight lg:text-5xl">هم‌مسیرِ پیشرفت.<br /><span className="text-[#fb9a3c]">قوی‌تر، منسجم‌تر، رو به اوج.</span></h1>
+                <p className="mt-5 max-w-sm text-sm leading-8 text-[#d6d0c7]">از مدیریت گروه و شعبه‌ها تا همراهی مربی‌ها و اعضا؛ همه در یک تجربه یکپارچه و قابل اعتماد.</p>
               </div>
               <div className="relative grid grid-cols-2 gap-3">
-                <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4"><Trophy className="mb-3 size-5 text-[#fb9a3c]" /><p className="font-bold">تمرکز روی پیشرفت</p><p className="mt-1 text-xs leading-6 text-[#a9b1af]">برنامه و رکورد در یک مسیر</p></div>
-                <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4"><Dumbbell className="mb-3 size-5 text-[#fb9a3c]" /><p className="font-bold">کنترل یکپارچه</p><p className="mt-1 text-xs leading-6 text-[#a9b1af]">از یک شعبه تا یک گروه</p></div>
-                <p className="col-span-2 mt-2 text-xs text-[#788584]">قدرت — مدیریت ورزشی، بدون حاشیه.</p>
+                <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4"><TrendingUp className="mb-3 size-5 text-[#fb9a3c]" /><p className="font-bold">تمرکز روی پیشرفت</p><p className="mt-1 text-xs leading-6 text-[#a9b1af]">برنامه و رکورد در یک مسیر</p></div>
+                <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4"><Users className="mb-3 size-5 text-[#fb9a3c]" /><p className="font-bold">کنترل یکپارچه</p><p className="mt-1 text-xs leading-6 text-[#a9b1af]">از یک شعبه تا یک گروه</p></div>
+                <p className="col-span-2 mt-2 text-xs text-[#788584]">هم‌اوج — هم‌مسیرِ پیشرفت.</p>
               </div>
-              <ArrowUpLeft aria-hidden className="absolute bottom-10 left-10 size-28 text-white/[0.035]" />
+              <HamOwjMark title="" aria-hidden className="absolute bottom-8 left-8 h-28 w-36 opacity-[0.045]" />
             </aside>
           </CardContent>
         </Card>

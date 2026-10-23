@@ -78,8 +78,10 @@ const iranSans = localFont({
 })
 
 export const metadata: Metadata = {
-  title: 'قدرت | مدیریت گروه‌های ورزشی',
-  description: 'سامانه حرفه‌ای مدیریت گروه‌های ورزشی، شعبه‌ها، مربی‌ها، اعضا و برنامه‌های تمرینی',
+  title: 'هم‌اوج | مدیریت گروه‌های ورزشی',
+  applicationName: 'HamOwj',
+  icons: { icon: '/hamowj-mark.svg' },
+  description: 'هم‌اوج؛ سامانه یکپارچه مدیریت گروه‌های ورزشی، شعبه‌ها، مربی‌ها و اعضا.',
 }
 
 export default function RootLayout({

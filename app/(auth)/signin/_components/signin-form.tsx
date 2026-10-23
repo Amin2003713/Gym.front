@@ -1,6 +1,7 @@
 'use client'
 
-import { ArrowLeft, Dumbbell } from 'lucide-react'
+import { ArrowLeft } from 'lucide-react'
+import { HamOwjMark } from '@/components/branding/hamowj-mark'
 import { useRouter } from 'next/navigation'
 import { useActionState, useEffect, useTransition } from 'react'
 import { toast } from 'sonner'
@@ -48,8 +49,8 @@ export function SigninForm() {
       {(form) => (
         <div className="flex flex-col gap-6">
           <div className="flex flex-col items-center gap-3 text-center">
-            <span className="flex size-12 items-center justify-center rounded-2xl bg-[#1b1a1b] text-[#fb9a3c]"><Dumbbell className="size-6" /></span>
-            <h1 className="text-xl font-black sm:text-2xl">ورود به قدرت</h1>
+            <span className="flex size-14 items-center justify-center rounded-2xl bg-[#1b1a1b] p-2.5"><HamOwjMark className="h-full w-full" /></span>
+            <h1 className="text-xl font-black sm:text-2xl">ورود به هم‌اوج</h1>
             <p className="text-muted-foreground text-sm text-balance sm:text-base">
               به پنل مدیریت گروه ورزشی وارد شوید
             </p>

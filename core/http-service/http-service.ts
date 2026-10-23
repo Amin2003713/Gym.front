@@ -8,27 +8,21 @@ import { ApiError } from '@/types/http-errors.interface'
 import { errorHandler, networkErrorStrategy } from './http-error-strategies'
 
 const getBaseURL = async (): Promise<string> => {
-  let host: string
+  const configuredUrl = API_URL?.trim()
 
-  if (typeof window !== 'undefined') {
-    host = window.location.host
-  } else {
-    // Server-side: Dynamically import 'next/headers' to avoid client-side import errors.
-    const { headers } = await import('next/headers')
-    const serverHeaders = await headers()
-    host = serverHeaders.get('host') || API_URL!
+  if (!configuredUrl) {
+    throw new Error('NEXT_PUBLIC_API_URL must be configured before making API requests.')
   }
 
-  const hostParts = host.split('.')
-  const potentialSubdomain = hostParts[0]
-
-  const hasValidSubdomain = hostParts.length > 2
-
-  const domain = hasValidSubdomain
-    ? `${potentialSubdomain}.${API_URL}`
-    : API_URL
-
-  return `https://${domain}`
+  // Development currently uses plain HTTP. Normalize URLs regardless of whether
+  // the environment value includes a protocol, and never accidentally prepend
+  // a second scheme or duplicate a tenant subdomain.
+  const normalizedUrl = /^https?:\/\//i.test(configuredUrl)
+    ? configuredUrl
+    : `http://${configuredUrl}`
+  const baseUrl = new URL(normalizedUrl)
+  baseUrl.protocol = 'http:'
+  return baseUrl.origin
 }
 
 const httpService = axios.create({
