@@ -1,0 +1,33 @@
+.rmdp-wrapper, .rmdp-ep-arrow:after, .rmdp-month-picker, .rmdp-year-picker {
+    @apply !bg-background;
+}
+
+.rmdp-header {
+    @apply border-b border-b-border !py-0.5 !mt-0;
+}
+
+.rmdp-header-values {
+    @apply !bg-foreground/10 border !text-foreground p-0.5 rounded;
+}
+
+.rmdp-day {
+    @apply !text-foreground;
+}
+
+.rmdp-ep-arrow[direction=top] {
+    @apply !border-transparent;
+}
+
+.rmdp-day.rmdp-selected span:not(.highlight) {
+    @apply !bg-primary;
+}
+
+@media (hover: hover) {
+    .rmdp-day:not(.rmdp-disabled,.rmdp-day-hidden) span:hover {
+        @apply !bg-primary/50;
+    }
+
+    .rmdp-header-values:hover {
+        @apply !bg-foreground/20 transition-all duration-300;
+    }
+}

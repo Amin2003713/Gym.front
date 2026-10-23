@@ -1,0 +1,33 @@
+version: "3.8"
+services:
+  web:
+    container_name: front
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    ports:
+      - "8595:3000"
+    networks:
+      - webnet
+    environment:
+      NODE_ENV: production
+    env_file:
+      - .env.production
+
+#  nginx:
+#    container_name: nginx
+#    image: nginx:latest
+#    depends_on:
+#      - web
+#    ports:
+#      - "1881:80"
+#    volumes:
+#      - /home/Configs/enginx.conf:/etc/nginx/conf.d/default.conf:ro
+##      - ./enginx.conf:/etc/nginx/conf.d/default.conf:ro # this is for local win based
+#    networks:
+#      - webnet
+#      - shared_net
+
+networks:
+  webnet:
+    driver: bridge

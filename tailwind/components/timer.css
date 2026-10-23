@@ -1,0 +1,208 @@
+.timer {
+    @apply flex justify-center;
+
+    /* timer sizes styles */
+
+    &.timer-xs {
+        @apply gap-3;
+
+        .timer-progress {
+            > span {
+                @apply text-xl;
+            }
+
+            .timer-progress-date-part {
+                @apply -bottom-5  text-[0.6rem];
+            }
+        }
+    }
+
+    &.timer-sm {
+        @apply gap-4;
+
+        .timer-progress {
+            > span {
+                @apply text-2xl;
+            }
+
+            .timer-progress-date-part {
+                @apply -bottom-6  text-[0.65em];
+            }
+        }
+    }
+
+    &.timer-md {
+        @apply gap-5;
+
+        .timer-progress {
+            > span {
+                @apply text-3xl;
+            }
+
+            .timer-progress-date-part {
+                @apply -bottom-7  text-xs;
+            }
+        }
+    }
+
+    &.timer-lg {
+        @apply gap-4;
+
+        .timer-progress {
+            > span {
+                @apply text-4xl;
+            }
+
+            .timer-progress-date-part {
+                @apply -bottom-8  text-xs;
+            }
+        }
+    }
+
+    /* timer variants styles */
+
+    &.timer-ghost {
+        .timer-progress {
+            .timer-progress-back-bar {
+                @apply stroke-white;
+                opacity: 0.2;
+            }
+
+            .timer-front-bar {
+                @apply stroke-white;
+            }
+        }
+    }
+
+    &.timer-primary {
+        .timer-progress {
+            .timer-progress-back-bar {
+                @apply stroke-primary;
+                opacity: 0.2;
+            }
+
+            .timer-progress-front-bar {
+                @apply stroke-primary;
+            }
+        }
+    }
+
+    &.timer-secondary {
+        .timer-progress {
+            .timer-progress-back-bar {
+                @apply stroke-secondary;
+                opacity: 0.2;
+            }
+
+            .timer-progress-front-bar {
+                @apply stroke-secondary;
+            }
+        }
+    }
+
+    &.timer-accent {
+        .timer-progress {
+            .timer-progress-back-bar {
+                @apply stroke-accent;
+                opacity: 0.2;
+            }
+
+            .timer-progress-front-bar {
+                @apply stroke-accent;
+            }
+        }
+    }
+
+    &.timer-info {
+        .timer-progress {
+            .timer-progress-back-bar {
+                @apply stroke-sky-500;
+                opacity: 0.2;
+            }
+
+            .timer-progress-front-bar {
+                @apply stroke-sky-500;
+            }
+        }
+    }
+
+    &.timer-success {
+        .timer-progress {
+            .timer-progress-back-bar {
+                @apply stroke-green-500;
+                opacity: 0.2;
+            }
+
+            .timer-progress-front-bar {
+                @apply stroke-green-500;
+            }
+        }
+    }
+
+    &.timer-warning {
+        .timer-progress {
+            .timer-progress-back-bar {
+                @apply stroke-orange-500;
+                opacity: 0.2;
+            }
+
+            .timer-progress-front-bar {
+                @apply stroke-orange-500;
+            }
+        }
+    }
+
+    &.timer-error {
+        .timer-progress {
+            .timer-progress-back-bar {
+                @apply stroke-red-500;
+                opacity: 0.2;
+            }
+
+            .timer-progress-front-bar {
+                @apply stroke-red-500;
+            }
+        }
+    }
+
+    &.timer-gradient {
+        .timer-progress {
+            .timer-progress-back-bar {
+                stroke: url(#gradientColor);
+                opacity: 0.2;
+            }
+
+            .timer-progress-front-bar {
+                stroke: url(#gradientColor);
+            }
+        }
+    }
+
+    .timer-progress {
+        @apply relative flex flex-col items-center;
+
+        > span {
+            @apply absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 font-light;
+        }
+
+        .timer-progress-date-part {
+            @apply uppercase absolute font-normal tracking-[0.2em] ;
+        }
+
+        .timer-progress-back-bar {
+            stroke-linecap: round;
+            fill: none;
+            opacity: 0.2;
+        }
+
+        .timer-progress-front-bar {
+            stroke-linecap: round;
+            fill: none;
+            stroke-width: 5px;
+            stroke-dasharray: 332.669;
+            transform: rotate(-90deg);
+            transform-origin: center center;
+            transition: all 0.2s linear;
+        }
+    }
+}
