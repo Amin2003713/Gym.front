@@ -1,7 +1,6 @@
 'use client'
 
 import * as React from 'react'
-import { useTheme } from 'next-themes'
 
 type HamOwjMarkProps = {
   className?: string
@@ -16,11 +15,6 @@ export function HamOwjMarkSvg({
   monochrome = false,
   'aria-hidden': ariaHidden,
 }: HamOwjMarkProps) {
-  const { resolvedTheme } = useTheme()
-
-  const secondaryColor =
-    resolvedTheme === 'dark' ? '#F6F3ED' : '#352820'
-
   return (
     <svg
       aria-label={ariaHidden ? undefined : title}
@@ -40,7 +34,7 @@ export function HamOwjMarkSvg({
 
       <path
         d="M35 64 59 30 88 64H69L59 51 50 64H35Z"
-        fill={monochrome ? 'currentColor' : secondaryColor}
+        fill={monochrome ? 'currentColor' : 'var(--brand-logo-secondary, #352820)'}
       />
     </svg>
   )

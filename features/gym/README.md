@@ -48,3 +48,7 @@ media is included here.
 - Create/edit sends the exact command-shaped fields supplied in the request contracts. Muscle IDs are entered as existing GUIDs (`GUID|1` primary or `GUID|2` secondary). Media linking requires an already-uploaded asset ID and the numeric `ExerciseMediaRole` enum value because the enum definition and upload endpoint were not included.
 - Phase 2 design tokens add reusable surface/divider/shadow/focus primitives and reduced-motion behavior. Phase 3 applies the HamOwj mark, active navigation styling, and branded page headers to the tenant shell.
 - Workout/routine persistence is still intentionally not wired: no workout or routine HTTP routes/request/response DTOs were included with the exercise contracts. The existing workout/routine placeholders remain non-writing rather than calling guessed endpoints. Supply those contracts to connect start/log/complete/history operations safely.
+
+## HamOwj phases 4–8 status
+
+The non-exercise workspaces currently use clearly labelled local demo data because the user confirmed those API areas are not implemented. No routes or DTOs are guessed. See `PHASES-2-4.md`, `../..//docs/PHASES-5-8.md`, and `../../README-HAMOWJ-ALL-PHASES.md` for scope, tenant-theme constraints, localization foundation, QA and release guidance.

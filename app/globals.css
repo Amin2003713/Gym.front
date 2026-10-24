@@ -198,6 +198,7 @@
     --brand-stone: var(--brand-ewa);
     --brand-canvas: var(--brand-ivory);
     --brand-action: var(--brand-orange);
+    --brand-logo-secondary: #352820;
 
     --background: #f6f3ed;
     --foreground: #463f41;
@@ -240,6 +241,7 @@
 }
 
 .dark {
+  --brand-logo-secondary: #f6f3ed;
     color-scheme: dark;
     --background: #1b1a1b;
     --foreground: #f6f3ed;
@@ -371,3 +373,9 @@
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
 }
+
+/* Phase 5: opt-in tenant brand themes. Only apply these attributes from trusted tenant configuration. */
+[data-brand="ocean"] { --primary: #2c7a86; --primary-foreground: #ffffff; --ring: #2c7a86; --brand-action: #2c7a86; }
+[data-brand="forest"] { --primary: #477a54; --primary-foreground: #ffffff; --ring: #477a54; --brand-action: #477a54; }
+[data-brand="sunset"] { --primary: #c46b36; --primary-foreground: #ffffff; --ring: #c46b36; --brand-action: #c46b36; }
+[data-brand] { --brand-focus: var(--ring); }
