@@ -16,15 +16,11 @@ import {
   ShieldCheck,
   Users,
   type LucideIcon,
-  Search,
-  Plus,
-  Filter,
-  Timer,
-  Upload,
 } from 'lucide-react'
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import { ExerciseLibrary } from './exercise-library'
-import { WorkoutExercisePicker } from './workout-exercise-picker'
+import { GymDemoWorkspace } from './gym-demo-workspace'
 
 export type GymFeatureKey =
   | 'overview'
@@ -99,55 +95,13 @@ const features: Record<GymFeatureKey, {
 }
 
 function WorkspacePreview({ feature }: { feature: GymFeatureKey }) {
-  const panel = 'rounded-2xl border bg-card p-5 sm:p-6'
-  const disabled = 'cursor-not-allowed opacity-50'
-  const action = 'inline-flex items-center gap-2 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50'
-  const field = 'h-10 w-full rounded-lg border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring disabled:opacity-60'
-  const quiet = 'rounded-lg border bg-background px-3 py-2 text-sm text-muted-foreground'
-  const Empty = ({ title, detail }: { title: string; detail: string }) => (
-    <div className="flex min-h-36 flex-col items-center justify-center gap-2 rounded-xl border border-dashed bg-muted/20 px-4 py-7 text-center">
-      <span className="flex size-10 items-center justify-center rounded-full bg-muted"><CircleAlert className="size-5 text-muted-foreground" /></span>
-      <p className="text-sm font-semibold">{title}</p>
-      <p className="max-w-md text-xs leading-6 text-muted-foreground">{detail}</p>
-    </div>
-  )
-
-  if (feature === 'overview') {
-    const shortcuts: Array<{ href: string; label: string; detail: string; icon: LucideIcon }> = [
-      { href: '/workouts', label: 'شروع تمرین', detail: 'جلسه هدایت‌شده و ثبت ست‌ها', icon: Timer },
-      { href: '/routines', label: 'برنامه‌ها', detail: 'ساخت و ویرایش برنامه تمرینی', icon: BookOpen },
-      { href: '/exercises', label: 'کتابخانه حرکات', detail: 'جست‌وجوی حرکت و عضلات هدف', icon: Dumbbell },
-      { href: '/progress', label: 'پیشرفت', detail: 'رکوردها و روند تمرین', icon: ChartNoAxesCombined },
-    ]
-    return <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">{shortcuts.map((shortcut) => {
-      const ShortcutIcon = shortcut.icon
-      return <Link key={shortcut.href} href={shortcut.href} className={`${panel} brand-card-interactive group transition-colors hover:border-primary/40`}><span className="mb-4 flex size-11 items-center justify-center rounded-xl bg-primary/10 text-primary"><ShortcutIcon className="size-5" /></span><h3 className="font-semibold">{shortcut.label}</h3><p className="mt-1 text-sm leading-6 text-muted-foreground">{shortcut.detail}</p><span className="mt-4 inline-flex items-center gap-2 text-xs font-semibold text-primary">ورود به بخش <ArrowUpLeft className="size-4 transition-transform group-hover:-translate-x-1" /></span></Link>
-    })}</section>
-  }
-
   if (feature === 'exercises') return <ExerciseLibrary />
-
-  if (feature === 'routines') return <section className={panel}>
-    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div><h2 className="font-semibold">برنامه‌های شما</h2><p className="mt-1 text-sm text-muted-foreground">برنامه‌های هفتگی، چرخشی و قالب‌های قابل ویرایش</p></div><button className={action} disabled><Plus className="size-4" /> برنامه جدید</button></div>
-    <div className="mt-5"><Empty title="هنوز برنامه‌ای در دسترس نیست" detail="بعد از اتصال بک‌اند، برنامه‌ها، روزهای تمرین، ترتیب حرکات، سوپرست‌ها و ست‌های هدف در این قسمت مدیریت می‌شوند." /></div>
-  </section>
-
-  if (feature === 'workouts') return <WorkoutExercisePicker />
-
-  if (feature === 'history') return <section className={panel}><div className="flex flex-col gap-3 sm:flex-row"><input className={field} placeholder="از تاریخ" disabled /><input className={field} placeholder="تا تاریخ" disabled /><select className={field} disabled defaultValue=""><option value="">همه اعضا</option></select><button className={quiet} disabled><Filter className="ml-2 inline size-4" /> فیلتر</button></div><div className="mt-5"><Empty title="تاریخچه‌ای برای نمایش وجود ندارد" detail="جلسه‌های تکمیل‌شده و جزئیات ست‌ها پس از اتصال API و دریافت داده واقعی نمایش داده می‌شوند." /></div></section>
-
-  if (feature === 'progress' || feature === 'measurements') return <section className="grid gap-4 lg:grid-cols-2"><div className={panel}><h2 className="font-semibold">روند در طول زمان</h2><p className="mt-1 text-sm text-muted-foreground">نمودار از داده‌های واقعی کاربر ساخته می‌شود.</p><div className="mt-5"><Empty title="داده‌ای برای نمودار وجود ندارد" detail="برای جلوگیری از نتیجه‌گیری اشتباه، نمودار تا زمان دریافت اندازه‌گیری‌ها و تاریخچه تمرین خالی می‌ماند." /></div></div><div className={panel}><h2 className="font-semibold">{feature === 'measurements' ? 'ثبت اندازه‌گیری' : 'رکوردهای شخصی'}</h2><p className="mt-1 text-sm text-muted-foreground">{feature === 'measurements' ? 'وزن، درصد چربی و اندازه‌های بدن' : 'بهترین عملکرد ثبت‌شده برای هر حرکت'}</p>{feature === 'measurements' ? <div className="mt-4 grid grid-cols-2 gap-3"><input className={field} placeholder="وزن (کیلوگرم)" disabled /><input className={field} placeholder="درصد چربی" disabled /><input className={field} placeholder="دور کمر (سانتی‌متر)" disabled /><input className={field} placeholder="دور سینه (سانتی‌متر)" disabled /><button className={`${action} col-span-2 justify-center`} disabled><Plus className="size-4" /> ثبت اندازه‌گیری</button></div> : <div className="mt-5"><Empty title="رکوردی ثبت نشده است" detail="رکوردها بعد از دریافت سوابق واقعی تمرین محاسبه می‌شوند." /></div>}</div></section>
-
-  if (feature === 'imports') return <section className={panel}><div className="mx-auto flex max-w-2xl flex-col items-center rounded-2xl border border-dashed px-6 py-12 text-center"><span className="flex size-14 items-center justify-center rounded-2xl bg-primary/10 text-primary"><Upload className="size-7" /></span><h2 className="mt-4 font-semibold">واردکردن سابقه تمرین</h2><p className="mt-2 text-sm leading-6 text-muted-foreground">ناحیه انتخاب فایل برای قالب‌های پشتیبانی‌شده بعد از مشخص‌شدن قراردادهای .NET فعال می‌شود.</p><button className={`${action} mt-5`} disabled><FileUp className="size-4" /> انتخاب فایل</button><p className="mt-3 text-xs text-muted-foreground">در این نسخه هیچ فایلی بارگذاری یا پردازش نمی‌شود.</p></div></section>
-
-  if (feature === 'branches' || feature === 'members' || feature === 'trainers') return <section className={panel}><div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div><h2 className="font-semibold">{feature === 'branches' ? 'شعبه‌های گروه' : feature === 'members' ? 'فهرست اعضا' : 'انتساب مربی به شاگرد'}</h2><p className="mt-1 text-sm text-muted-foreground">اطلاعات باید در محدوده tenant و مجوزهای نقش جاری فیلتر شود.</p></div><button className={action} disabled><Plus className="size-4" /> {feature === 'branches' ? 'شعبه جدید' : feature === 'members' ? 'دعوت عضو' : 'انتساب جدید'}</button></div><div className="mt-5"><Empty title="اطلاعاتی دریافت نشده است" detail={feature === 'trainers' ? 'مربی فقط سابقه تمرین شاگردان اختصاص‌یافته را می‌بیند؛ این محدودیت باید در بک‌اند نیز اعمال شود.' : 'پس از اتصال API، فهرست و عملیات مجاز برای نقش کاربر نمایش داده می‌شود.'} /></div></section>
-
-  if (feature === 'settings') return <section className={panel}><h2 className="font-semibold">ترجیحات تمرین</h2><p className="mt-1 text-sm text-muted-foreground">تنظیمات حساب پس از اتصال API از سرور خوانده و ذخیره می‌شود.</p><div className="mt-5 grid gap-4 sm:grid-cols-2"><label className="text-sm font-medium">زبان<select className={`${field} mt-2`} disabled defaultValue="fa"><option value="fa">فارسی</option><option value="en">English</option></select></label><label className="text-sm font-medium">واحد وزن<select className={`${field} mt-2`} disabled defaultValue="kg"><option value="kg">کیلوگرم</option><option value="lb">پوند</option></select></label><label className="text-sm font-medium">شروع هفته<select className={`${field} mt-2`} disabled defaultValue="monday"><option value="monday">دوشنبه</option><option value="sunday">یکشنبه</option></select></label><label className="text-sm font-medium">استراحت پیش‌فرض<input className={`${field} mt-2`} placeholder="۹۰ ثانیه" disabled /></label></div><button className={`${action} mt-5`} disabled>ذخیره تنظیمات</button></section>
-
-  return <section className={panel}><Empty title="اطلاعاتی برای نمایش وجود ندارد" detail="پس از اتصال API، این بخش با داده‌های واقعی tenant جاری نمایش داده می‌شود." /></section>
+  return <GymDemoWorkspace feature={feature} />
 }
 
 export function GymFeaturePage({ feature }: { feature: GymFeatureKey }) {
+  const pathname = usePathname()
+  const tenantBase = `/tenants/${pathname.split('/').filter(Boolean)[1] ?? ''}`
   const item = features[feature]
   const Icon = item.icon
 
@@ -164,7 +118,7 @@ export function GymFeaturePage({ feature }: { feature: GymFeatureKey }) {
         </div>
         <div className="flex items-center gap-2 self-start rounded-xl border bg-card px-3 py-2 text-xs text-muted-foreground sm:self-auto">
           <span className={`size-2 rounded-full ${feature === 'exercises' ? 'bg-emerald-500' : 'bg-amber-500'}`} />
-          {feature === 'exercises' ? 'اتصال API حرکات پیاده‌سازی شده' : 'اتصال API در انتظار پیکربندی'}
+          {feature === 'exercises' ? 'اتصال API حرکات پیاده‌سازی شده' : 'پیش‌نمایش تعاملی · داده نمونه'}
         </div>
       </div></div>
 
@@ -177,7 +131,7 @@ export function GymFeaturePage({ feature }: { feature: GymFeatureKey }) {
             <div className="space-y-1">
               <h2 className="font-semibold">آماده اتصال به سرویس .NET</h2>
               <p className="text-sm leading-6 text-muted-foreground">
-                این صفحه به قراردادهای تایپ‌شده بخش Gym متکی است. تا زمان اتصال پیاده‌سازی API، داده نمونه نمایش داده نمی‌شود و هیچ اطلاعاتی به‌صورت ساختگی تولید نخواهد شد.
+                این صفحه در حالت پیش‌نمایش از داده‌های نمونه و تعاملات محلی استفاده می‌کند. هیچ عملیات نمایشی به سرور ارسال نمی‌شود؛ اتصال API پس از ارائه قراردادهای واقعی انجام خواهد شد.
               </p>
             </div>
           </div>
@@ -186,7 +140,7 @@ export function GymFeaturePage({ feature }: { feature: GymFeatureKey }) {
               <CircleAlert className="mt-0.5 size-5 shrink-0 text-amber-600" />
               <div className="space-y-1">
                 <p className="text-sm font-semibold">سرویس هنوز متصل نیست</p>
-                <p className="text-sm leading-6 text-muted-foreground">پس از دریافت بک‌اند شما، متدهای API به endpointهای واقعی نگاشت می‌شوند. در حال حاضر عملیات خواندن و نوشتن غیرفعال است.</p>
+                <p className="text-sm leading-6 text-muted-foreground">این بخش با داده‌های ساختگی برای ارزیابی طراحی و جریان کار فعال است. هیچ endpoint یا قرارداد API جدیدی فرض نشده و داده‌ها به سرور ارسال نمی‌شوند.</p>
               </div>
             </div>
             <div>
@@ -229,7 +183,7 @@ export function GymFeaturePage({ feature }: { feature: GymFeatureKey }) {
 
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-dashed p-4 text-sm text-muted-foreground">
         <span>رسانه تمرین: فقط URL ارائه‌شده از سمت API؛ در نبود رسانه، جای‌نگهدار خالی نمایش داده می‌شود.</span>
-        <Link href="/" className="inline-flex items-center gap-2 font-medium text-primary hover:underline">
+        <Link href={tenantBase} className="inline-flex items-center gap-2 font-medium text-primary hover:underline">
           بازگشت به داشبورد <ArrowUpLeft className="size-4" />
         </Link>
       </div>

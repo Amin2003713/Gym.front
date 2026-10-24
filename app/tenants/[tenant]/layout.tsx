@@ -35,7 +35,7 @@ export default async function DashboardLayout({
             <MainSidebar data={user} error={error} />
             <SidebarInset className="@container/main overflow-hidden [--full-h:calc(100svh-0.8px-var(--header-height))]">
               {/* اگر scrollArea مشکلی ایجاد کرد فقط کلاس ها با SidebarInset جایگزین بشوند تا از scroll پیش فرض مرورگر استفاده بشه */}
-              <ScrollArea className="h-[calc(100svh-0.8px-var(--header-height))] gap-4 p-2">
+              <ScrollArea className="h-[calc(100svh-0.8px-var(--header-height))] gap-4 p-2 sm:p-3 lg:p-4">
                 {children}
               </ScrollArea>
             </SidebarInset>

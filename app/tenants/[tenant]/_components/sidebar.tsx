@@ -38,6 +38,9 @@ type MainSidebarProps = React.ComponentProps<typeof Sidebar> &
 export function MainSidebar({ data: user, error, ...props }: MainSidebarProps) {
   const { data: session } = useSession()
   const userRoles = session?.user?.role ?? []
+  const pathname = usePathname()
+  const tenantSlug = pathname.split('/').filter(Boolean)[1]
+  const tenantBase = tenantSlug ? `/tenants/${tenantSlug}` : ''
 
   return (
     <Sidebar
@@ -46,7 +49,7 @@ export function MainSidebar({ data: user, error, ...props }: MainSidebarProps) {
       {...props}
     >
       <div className="mx-3 my-3 rounded-2xl border bg-card px-3 py-4 shadow-sm">
-        <Link href="/" aria-label="هم‌اوج؛ داشبورد" className="flex flex-col items-center gap-2 rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-ring">
+        <Link href={tenantBase || "/"} aria-label="هم‌اوج؛ داشبورد" className="flex flex-col items-center gap-2 rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-ring">
           <span className="flex size-12 items-center justify-center rounded-2xl bg-foreground text-background"><HamOwjMark className="size-8" /></span>
           <span className="text-center text-sm font-bold">هم‌اوج</span>
           <span className="text-center text-[11px] leading-5 text-muted-foreground">هم‌مسیرِ پیشرفت</span>
@@ -63,6 +66,7 @@ export function MainSidebar({ data: user, error, ...props }: MainSidebarProps) {
                   key={`${item.name}-${index}`}
                   item={item}
                   userRoles={userRoles}
+                  tenantBase={tenantBase}
                 />
               ))}
             </SidebarMenu>
@@ -79,13 +83,16 @@ export function MainSidebar({ data: user, error, ...props }: MainSidebarProps) {
 function Tree({
   item,
   userRoles,
+  tenantBase,
 }: {
   item: SidebarItem
   userRoles: UserRoleEnum[]
+  tenantBase: string
 }) {
   const isMounted = useIsMounted()
   const pathname = usePathname() // For checking active route
   const { name, path, icon, colorClass, children, role } = item
+  const href = path ? `${tenantBase}${path === '/' ? '' : path}` || '/' : undefined
   const hasRoleAccess = role ? role.some((r) => userRoles.includes(r)) : true
 
   // prevent hydration mismatch
@@ -98,11 +105,11 @@ function Tree({
     return (
       <SidebarMenuButton
         asChild // Use asChild for wrapping Link to maintain accessibility
-        isActive={path ? pathname === path : false}
+        isActive={href ? pathname === href : false}
         className="rounded-xl transition-colors data-[active=true]:bg-primary/15 data-[active=true]:font-semibold data-[active=true]:text-foreground hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring"
       >
-        {path ? (
-          <Link href={path} className="flex items-center gap-2 rounded-xl transition-colors hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring">
+        {href ? (
+          <Link href={href} className="flex items-center gap-2 rounded-xl transition-colors hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring">
             <span className={colorClass}>{icon}</span>
             {name}
           </Link>
@@ -137,6 +144,7 @@ function Tree({
                 key={`${subItem.name}-${index}`}
                 item={subItem}
                 userRoles={userRoles}
+                tenantBase={tenantBase}
               />
             ))}
           </SidebarMenuSub>

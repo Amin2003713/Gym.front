@@ -32,6 +32,8 @@ export default function Header({ data: user, error }: HeaderProps) {
   const pathname = usePathname()
   const { toggleSidebar } = useSidebar()
   const pathSegments = pathname.split('/').filter((segment) => segment)
+  const tenantSlug = pathSegments[1]
+  const tenantBase = tenantSlug ? `/tenants/${tenantSlug}` : '/'
 
   const setUser = useUserStore((state) => state.setUser)
 
@@ -53,7 +55,7 @@ export default function Header({ data: user, error }: HeaderProps) {
   }
 
   return (
-    <header className="bg-secondary sticky top-0 z-50 flex w-full items-center border-b">
+    <header className="sticky top-0 z-50 flex w-full items-center border-b bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/85">
       <div className="flex h-[var(--header-height)] w-full items-center gap-2 px-4">
         <Button
           className="h-8 w-8"
@@ -67,7 +69,7 @@ export default function Header({ data: user, error }: HeaderProps) {
         <Breadcrumb className="hidden sm:block">
           <BreadcrumbList>
             <BreadcrumbItem>
-              <BreadcrumbLink href="/">داشبورد</BreadcrumbLink>
+              <BreadcrumbLink href={tenantBase}>داشبورد</BreadcrumbLink>
             </BreadcrumbItem>
             {!!pathSegments.length && <BreadcrumbSeparator />}
             {pathSegments.map((segment, index) => {
