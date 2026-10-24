@@ -1,4 +1,7 @@
+'use client'
+
 import * as React from 'react'
+import { useTheme } from 'next-themes'
 
 type HamOwjMarkProps = {
   className?: string
@@ -7,8 +10,17 @@ type HamOwjMarkProps = {
   'aria-hidden'?: boolean
 }
 
-/** Custom connected-ascent mark: two forms rise from a shared baseline. */
-export function HamOwjMarkSvg({ className, title = 'HamOwj', monochrome = false, 'aria-hidden': ariaHidden }: HamOwjMarkProps) {
+export function HamOwjMarkSvg({
+  className,
+  title = 'HamOwj',
+  monochrome = false,
+  'aria-hidden': ariaHidden,
+}: HamOwjMarkProps) {
+  const { resolvedTheme } = useTheme()
+
+  const secondaryColor =
+    resolvedTheme === 'dark' ? '#F6F3ED' : '#352820'
+
   return (
     <svg
       aria-label={ariaHidden ? undefined : title}
@@ -20,15 +32,25 @@ export function HamOwjMarkSvg({ className, title = 'HamOwj', monochrome = false,
       xmlns="http://www.w3.org/2000/svg"
     >
       {!ariaHidden && <title>{title}</title>}
-      <path d="M8 64 36 22 49 41 64 64H45L36 51 27 64H8Z"
-        fill={monochrome ? 'currentColor' : 'var(--brand-mark-primary, #FB9A3C)'} />
-      <path d="M35 64 59 30 88 64H69L59 51 50 64H35Z"
-        fill={monochrome ? 'currentColor' : 'var(--brand-mark-secondary, #C97B4A)'} />
+
+      <path
+        d="M8 64 36 22 49 41 64 64H45L36 51 27 64H8Z"
+        fill={monochrome ? 'currentColor' : '#FB9A3C'}
+      />
+
+      <path
+        d="M35 64 59 30 88 64H69L59 51 50 64H35Z"
+        fill={monochrome ? 'currentColor' : secondaryColor}
+      />
     </svg>
   )
 }
 
-export function HamOwjBrandSvg({ className = '' }: { className?: string }) {
+export function HamOwjBrandSvg({
+  className = '',
+}: {
+  className?: string
+}) {
   return (
     <span className={`inline-flex items-center gap-3 ${className}`}>
       <HamOwjMarkSvg className="h-10 w-12 shrink-0" />

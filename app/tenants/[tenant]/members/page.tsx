@@ -1,5 +1,5 @@
-import { GymFeaturePage } from '@/features/gym/components/gym-feature-page'
+import { UserManagement } from '@/features/users/components/user-management'
 
-export default function Page() {
-  return <GymFeaturePage feature="members" />
+export default function MembersPage() {
+  return <UserManagement />
 }
