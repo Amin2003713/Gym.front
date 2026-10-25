@@ -1,5 +1,5 @@
-import { GymFeaturePage } from '@/features/gym/components/gym-feature-page'
+import { RoleDashboard } from '@/features/gym/components/role-dashboard'
 
 export default function GymGroupDashboardPage() {
-  return <GymFeaturePage feature="overview" />
+  return <RoleDashboard />
 }

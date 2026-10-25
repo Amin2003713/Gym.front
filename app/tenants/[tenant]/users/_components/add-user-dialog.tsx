@@ -3,7 +3,7 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { useRouter } from 'next/navigation'
 import React, { useActionState, useEffect, useTransition } from 'react'
-import { toast } from 'sonner'
+import { toast } from '@/lib/toast'
 
 import { addUserAction } from '@/actions/user'
 import { UserForm } from '@/app/tenants/[tenant]/users/_components/user-form'

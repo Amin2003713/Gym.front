@@ -5,7 +5,7 @@ import React, {
   useState,
   useTransition,
 } from 'react'
-import { toast } from 'sonner'
+import { toast } from '@/lib/toast'
 
 import { newPasswordAction } from '@/actions/auth'
 import CodeVerificationInput from '@/components/common/code-verification-input'

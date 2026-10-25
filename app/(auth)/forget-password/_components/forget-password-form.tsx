@@ -2,7 +2,7 @@
 
 import React, { useActionState, useEffect, useRef, useTransition } from 'react'
 import { FieldValues, UseFormReturn } from 'react-hook-form'
-import { toast } from 'sonner'
+import { toast } from '@/lib/toast'
 
 import { sendActivationCodeAction } from '@/actions/auth'
 import { ForgetPasswordModel } from '@/app/(auth)/forget-password/_types/forget-password-model'

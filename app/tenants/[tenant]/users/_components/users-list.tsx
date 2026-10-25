@@ -2,7 +2,7 @@
 
 import { PlusCircleIcon, SearchIcon } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { toast } from 'sonner'
+import { toast } from '@/lib/toast'
 
 import AddUserDialog from '@/app/tenants/[tenant]/users/_components/add-user-dialog'
 import { usersListColumns } from '@/app/tenants/[tenant]/users/_components/column'

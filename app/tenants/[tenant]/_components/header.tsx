@@ -3,7 +3,7 @@
 import { SidebarIcon } from 'lucide-react'
 import { usePathname } from 'next/navigation'
 import { Fragment, useEffect } from 'react'
-import { toast } from 'sonner'
+import { toast } from '@/lib/toast'
 
 import { NavUser } from '@/app/tenants/[tenant]/_components/nav-user'
 import { ModeToggle } from '@/components/mode-toggle'

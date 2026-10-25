@@ -3,7 +3,7 @@
 import { REGEXP_ONLY_DIGITS } from 'input-otp'
 import React, { useActionState, useEffect, useRef, useTransition } from 'react'
 import { Control, FieldValues, Path } from 'react-hook-form'
-import { toast } from 'sonner'
+import { toast } from '@/lib/toast'
 
 import { sendActivationCodeAction } from '@/actions/auth'
 

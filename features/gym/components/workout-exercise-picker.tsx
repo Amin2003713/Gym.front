@@ -1,14 +1,14 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { AlertCircle, Check, Dumbbell, LoaderCircle, Search, Timer, Trash2 } from 'lucide-react'
-import { toast } from 'sonner'
+import { toast } from '@/lib/toast'
 import { exerciseApi, exerciseCoverUrl, type ExerciseListItemDto } from '../api/exercises-api'
 
 const field = 'h-11 w-full rounded-xl border border-input bg-background px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring'
 const button = 'inline-flex min-h-10 items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold transition focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50'
 
-export function WorkoutExercisePicker() {
+export function WorkoutExercisePicker({ onSelectionChange }: { onSelectionChange?: (items: ExerciseListItemDto[]) => void }) {
   const [search, setSearch] = useState('')
   const [items, setItems] = useState<ExerciseListItemDto[]>([])
   const [selectedIds, setSelectedIds] = useState<string[]>([])
@@ -38,6 +38,14 @@ export function WorkoutExercisePicker() {
   }, [selectedIds])
 
   const toggle = (id: string) => setSelectedIds(current => current.includes(id) ? current.filter(x => x !== id) : [...current, id])
+
+  const lastReported = useRef('')
+  useEffect(() => {
+    const signature = resolved.map(item => item.id).join('|')
+    if (signature === lastReported.current) return
+    lastReported.current = signature
+    onSelectionChange?.(resolved)
+  }, [resolved, onSelectionChange])
 
   return <div className="grid gap-4 xl:grid-cols-[minmax(0,1.1fr)_minmax(300px,0.9fr)]">
     <section className="overflow-hidden rounded-2xl border bg-card shadow-sm"><div className="border-b p-4 sm:p-5"><div className="flex items-center gap-3"><span className="flex size-10 items-center justify-center rounded-xl bg-primary/10 text-primary"><Dumbbell className="size-5" /></span><div><h2 className="font-bold">انتخاب حرکات جلسه</h2><p className="mt-1 text-xs text-muted-foreground">فهرست واقعی از API حرکات دریافت می‌شود.</p></div></div><label className="relative mt-4 block"><span className="sr-only">جست‌وجوی حرکت</span><Search className="absolute right-3 top-3 size-4 text-muted-foreground" /><input className={`${field} pr-9`} value={search} onChange={e => setSearch(e.target.value)} placeholder="جست‌وجوی حرکت..." /></label></div>

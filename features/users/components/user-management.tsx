@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react'
 import { AlertTriangle, Check, KeyRound, LoaderCircle, Pencil, Plus, RefreshCw, Search, ShieldCheck, Trash2, UserRound, Users, X } from 'lucide-react'
-import { toast } from 'sonner'
+import { toast } from '@/lib/toast'
 import { ApiUserRole, usersApi, type CreateUserInput, type UpdateUserInput, type UserDto } from '@/features/users/api/users-api'
 
 const roleOptions = [
@@ -79,6 +79,7 @@ export function UserManagement() {
     if (!form.firstName.trim() || !form.lastName.trim() || !form.email.trim()) { toast.error('نام، نام خانوادگی و ایمیل الزامی است.'); return }
     if (!editing && (!form.password || form.password.length < 8)) { toast.error('رمز عبور اولیه باید حداقل ۸ کاراکتر باشد.'); return }
     if (!editing && form.password !== form.confirmPassword) { toast.error('تکرار رمز عبور مطابقت ندارد.'); return }
+    console.log(form.role)
     const base: CreateUserInput = {
       firstName: form.firstName.trim(), lastName: form.lastName.trim(), email: form.email.trim(),
       phoneNumber: form.phoneNumber.trim() || null, phoneCountryCode: form.phoneCountryCode.trim() || '+49',

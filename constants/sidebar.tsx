@@ -42,11 +42,12 @@ const SIDEBAR_OPTIONS: { tree: SidebarItem[] } = {
       name: 'مدیریت گروه',
       icon: <Users className="size-4" />,
       colorClass: 'text-[#788584]',
-      role: [UserRoleEnum.Admin],
+      role: [UserRoleEnum.Owner, UserRoleEnum.Trainer],
       children: [
         { name: 'شعبه‌ها', path: '/branches', icon: <GitBranch className="size-4" />, colorClass: 'text-[#788584]' },
         { name: 'اعضای باشگاه', path: '/members', icon: <Users className="size-4" />, colorClass: 'text-[#788584]' },
         { name: 'مربی‌ها و شاگردها', path: '/trainers', icon: <ShieldCheck className="size-4" />, colorClass: 'text-[#788584]' },
+        { name: 'مدیریت کاربران و دسترسی‌ها', path: '/users', icon: <ShieldCheck className="size-4" />, colorClass: 'text-[#788584]' },
       ],
     },
     {

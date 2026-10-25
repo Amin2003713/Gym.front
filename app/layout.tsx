@@ -107,7 +107,7 @@ export default function RootLayout({
             </ThemeProvider>
           </ShadCnDirProvider>
         </ReactQueryProvider>
-        <Toaster richColors />
+        <Toaster />
       </body>
     </html>
   )

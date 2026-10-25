@@ -4,7 +4,7 @@ import { ArrowLeft } from 'lucide-react'
 import { HamOwjMark } from '@/components/branding/hamowj-mark'
 import { useRouter } from 'next/navigation'
 import { useActionState, useEffect, useTransition } from 'react'
-import { toast } from 'sonner'
+import { toast } from '@/lib/toast'
 
 import { signinAction } from '@/actions/auth'
 import { FormWrapper } from '@/components/forms/form-wrapper'

@@ -1,5 +1,5 @@
 import React, { useActionState, useEffect, useRef, useTransition } from 'react'
-import { toast } from 'sonner'
+import { toast } from '@/lib/toast'
 
 import { signupCompanyAction } from '@/actions/auth'
 import { StepperFormActions } from '@/app/(auth)/signup/_components/stepper-form-actions'

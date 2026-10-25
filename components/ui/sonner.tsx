@@ -1,27 +1,27 @@
 'use client'
 
 import { useTheme } from 'next-themes'
-import { Toaster as Sonner, ToasterProps } from 'sonner'
+import { Toaster as SileoToaster } from 'sileo'
 
-const Toaster = ({ ...props }: ToasterProps) => {
-  const { theme = 'system' } = useTheme()
+/**
+ * Keep the existing component path to avoid unnecessary layout churn while
+ * switching the underlying notification renderer from Sonner to Sileo.
+ */
+const Toaster = () => {
+  const { resolvedTheme } = useTheme()
 
   return (
-    <Sonner
-      theme={theme as ToasterProps['theme']}
-      className="toaster group !font-iranSans"
-      toastOptions={{
-        classNames: {
-          toast:
-            'group select-none toast group-[.toaster]:bg-background group-[.toaster]:text-foreground group-[.toaster]:border-border group-[.toaster]:shadow-lg',
-          description: 'group-[.toast]:text-muted-foreground',
-          actionButton:
-            'group-[.toast]:bg-primary group-[.toast]:text-primary-foreground font-medium',
-          cancelButton:
-            'group-[.toast]:bg-muted group-[.toast]:text-muted-foreground font-medium',
+    <SileoToaster
+      position="top-center"
+      offset={{ top: 16, left: 16, right: 16 }}
+      theme={resolvedTheme === 'dark' ? 'dark' : 'light'}
+      options={{
+        fill: 'var(--card)',
+        styles: {
+          title: 'font-iranSans text-foreground',
+          description: 'font-iranSans text-muted-foreground',
         },
       }}
-      {...props}
     />
   )
 }

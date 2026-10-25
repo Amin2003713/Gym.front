@@ -9,7 +9,7 @@ import React, {
   useTransition,
 } from 'react'
 import { useForm } from 'react-hook-form'
-import { toast } from 'sonner'
+import { toast } from '@/lib/toast'
 
 import { sendActivationCodeAction, verifyPhoneNumber } from '@/actions/auth'
 import { ThirdFormSchema } from '@/app/(auth)/signup/_types/signup-schema'

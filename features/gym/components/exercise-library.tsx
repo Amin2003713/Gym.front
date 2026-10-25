@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react'
 import { Activity, AlertCircle, ArrowLeft, Check, ChevronLeft, Dumbbell, LoaderCircle, Pencil, Plus, RefreshCw, Search, Trash2, X } from 'lucide-react'
-import { toast } from 'sonner'
+import { toast } from '@/lib/toast'
 import { exerciseApi, exerciseCoverUrl, type ExerciseDto, type ExerciseInput, type ExerciseListItemDto, type ExerciseMuscleRole } from '../api/exercises-api'
 
 const fieldClass = 'min-h-11 w-full rounded-xl border border-input bg-background px-3 py-2 text-sm outline-none transition focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-60'

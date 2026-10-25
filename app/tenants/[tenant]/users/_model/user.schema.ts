@@ -1,53 +1,25 @@
 import { z } from 'zod'
 
-import { GenderEnum } from '@/enums/gender.enum'
-import { UserRoleEnum } from '@/enums/user-role.enum'
-import { phoneNumberSchema } from '@/utils/phoneNumber-schema'
-
+/** Matches Application.Users.Commands.Create.CreateUserRequest. */
 export const userSchema = z.object({
-  firstName: z
-    .string('نام اجباری می باشد.')
-    .min(1, { error: 'نام اجباری می باشد.' }),
-  lastName: z
-    .string('نام خانوادگی اجباری می باشد.')
-    .min(1, { error: 'نام خانوادگی اجباری می باشد.' }),
-  nationalCode: z
-    .string('کدملی اجباری می باشد.')
-    .min(1, { error: 'کدملی اجباری می باشد.' })
-    .length(10, { error: 'کدملی باید 10 رقم باشد.' }),
-  isLeader: z.boolean(),
-  gender: z.enum(GenderEnum),
-  department: z.object(
-    {
-      id: z.string(),
-      label: z.string(),
-    },
-    { error: 'بخش کاربر اجباری می باشد.' },
-  ),
-  personnelNumber: z.string().optional().nullable(),
-  address: z.string().optional().nullable(),
-  birthDate: z.string().optional().nullable(),
-  phoneNumber: phoneNumberSchema,
-  imageFile: z
-    .array(z.file())
-    .max(1, 'فقط یک تصویر مجاز است.')
-    .optional()
-    .nullable(),
-  role: z
-    .array(z.enum(UserRoleEnum), { error: 'انتخاب حداقل یک نقش اجباری است.' })
-    .min(1, {
-      error: 'انتخاب حداقل یک نقش اجباری است.',
-    }),
+  firstName: z.string().trim().min(1, 'نام الزامی است.'),
+  lastName: z.string().trim().min(1, 'نام خانوادگی الزامی است.'),
+  email: z.email('ایمیل معتبر وارد کنید.'),
+  phoneNumber: z.string().trim().optional().nullable(),
+  phoneCountryCode: z.string().trim().default('+49'),
+  avatar: z.string().trim().optional().nullable(),
+  gender: z.union([z.number().int().min(0).max(1), z.null()]).optional(),
+  role: z.enum(['Admin', 'Tranner', 'Trainee']),
+  jobTitle: z.string().trim().optional().nullable(),
+  password: z.string().optional().nullable(),
+  confirmPassword: z.string().optional().nullable(),
+}).superRefine((data, ctx) => {
+  if (data.password && data.password !== data.confirmPassword) {
+    ctx.addIssue({ code: 'custom', path: ['confirmPassword'], message: 'تکرار رمز عبور مطابقت ندارد.' })
+  }
 })
 
-export const updateUserSchema = userSchema.extend({
-  userId: z.string(),
-  imageUrl: z.string().optional().nullable(),
-})
+export const updateUserSchema = userSchema.extend({ id: z.string().uuid() })
 
-export const updateUserSimSerialSchema = z.object({
-  userId: z.string(),
-  simSerial: z
-    .string('شناسه اجباری می باشد.')
-    .min(8, { error: 'شناسه حداقل باید 8 کاراکتر باشد.' }),
-})
+// Retained only for older imports; the supplied API has no SIM-serial endpoint.
+export const updateUserSimSerialSchema = z.object({ userId: z.string(), simSerial: z.string().optional() })

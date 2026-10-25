@@ -4,7 +4,7 @@ import { Loader2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import { ReactNode, useEffect } from 'react'
-import { toast } from 'sonner'
+import { toast } from '@/lib/toast'
 
 import { UserRoleEnum } from '@/enums/user-role.enum'
 

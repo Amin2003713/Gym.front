@@ -15,7 +15,7 @@ import {
   useState,
   useTransition,
 } from 'react'
-import { toast } from 'sonner'
+import { toast } from '@/lib/toast'
 
 import { activationUserAction } from '@/actions/user'
 import UpdateUserDialog from '@/app/tenants/[tenant]/users/_components/update-user-dialog'
