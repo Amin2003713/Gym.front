@@ -1,5 +1,5 @@
-import { GymFeaturePage } from '@/features/gym/components/gym-feature-page'
+import { StatsPage } from '@/features/gym/components/stats-page'
 
-export default function Page() {
-  return <GymFeaturePage feature="progress" />
+export default function ProgressPage() {
+  return <StatsPage />
 }
