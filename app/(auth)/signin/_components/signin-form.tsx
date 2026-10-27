@@ -1,16 +1,16 @@
 'use client'
 
 import { ArrowLeft } from 'lucide-react'
-import { HamOwjMark } from '@/components/branding/hamowj-mark'
 import { useRouter } from 'next/navigation'
 import { useActionState, useEffect, useTransition } from 'react'
-import { toast } from '@/lib/toast'
 
 import { signinAction } from '@/actions/auth'
+import { PasskeySigninButton } from '@/app/(auth)/signin/_components/passkey-signin-button'
+import { HamOwjMark } from '@/components/branding/hamowj-mark'
 import { FormWrapper } from '@/components/forms/form-wrapper'
 import { Button } from '@/components/ui/button'
 import { CustomFormField } from '@/components/ui/custom-form-field'
-import { BASE_DOMAIN } from '@/configs/global'
+import { toast } from '@/lib/toast'
 
 import { signinSchema } from '../_types/signin-schema'
 import { SigninUserModel } from '../_types/signin-user-model.type'
@@ -49,7 +49,9 @@ export function SigninForm() {
       {(form) => (
         <div className="flex flex-col gap-6">
           <div className="flex flex-col items-center gap-3 text-center">
-            <span className="flex size-14 items-center justify-center rounded-2xl bg-[#1b1a1b] p-2.5"><HamOwjMark className="h-full w-full" /></span>
+            <span className="flex size-14 items-center justify-center rounded-2xl bg-[#1b1a1b] p-2.5">
+              <HamOwjMark className="h-full w-full" />
+            </span>
             <h1 className="text-xl font-black sm:text-2xl">ورود به هم‌اوج</h1>
             <p className="text-muted-foreground text-sm text-balance sm:text-base">
               به پنل مدیریت گروه ورزشی وارد شوید
@@ -75,12 +77,29 @@ export function SigninForm() {
               بازیابی رمز عبور
             </a>
           </div>
-          <Button type="submit" className="w-full bg-primary font-bold text-primary-foreground hover:bg-primary/90" isLoading={isPending}>
+          <Button
+            type="submit"
+            className="bg-primary text-primary-foreground hover:bg-primary/90 w-full font-bold"
+            isLoading={isPending}
+          >
             ورود به پنل <ArrowLeft className="mr-2 size-4" />
           </Button>
-          <div className="flex flex-col gap-3 border-t border-border pt-5 text-center text-sm">
-            <p className="text-muted-foreground">هنوز گروه ورزشی ثبت نکرده‌اید؟</p>
-            <a href="/signup" className="font-bold text-[var(--brand-bronze)] underline underline-offset-4">ثبت گروه ورزشی جدید</a>
+
+          <div className="text-muted-foreground relative py-1 text-center text-xs">
+            <span className="bg-background px-3">یا</span>
+          </div>
+
+          <PasskeySigninButton />
+          <div className="border-border flex flex-col gap-3 border-t pt-5 text-center text-sm">
+            <p className="text-muted-foreground">
+              هنوز گروه ورزشی ثبت نکرده‌اید؟
+            </p>
+            <a
+              href="/signup"
+              className="font-bold text-[var(--brand-bronze)] underline underline-offset-4"
+            >
+              ثبت گروه ورزشی جدید
+            </a>
           </div>
         </div>
       )}

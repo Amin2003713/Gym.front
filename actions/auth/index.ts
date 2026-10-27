@@ -1,25 +1,35 @@
 'use server'
 
-import { AuthError, CredentialsSignin } from 'next-auth'
+import { AxiosRequestHeaders } from 'axios'
 import { isRedirectError } from 'next/dist/client/components/redirect-error'
+import { AuthError, CredentialsSignin } from 'next-auth'
 
 import { serverActionWrapper } from '@/actions/server-action-wrapper'
 import { NewPasswordModel } from '@/app/(auth)/forget-password/_types/new-password-model'
+import {
+  PasskeyLoginRequest,
+  PasskeyLoginResponse,
+  PasskeyOptionsResponse,
+} from '@/app/(auth)/signin/_types/passkey-auth.types'
 import { SigninUserModel } from '@/app/(auth)/signin/_types/signin-user-model.type'
-import { SignupValues, VerificationValues } from '@/app/(auth)/signup/_types/signup.interface'
+import {
+  SignupValues,
+  VerificationValues,
+} from '@/app/(auth)/signup/_types/signup.interface'
 import { AuthorizeError, signIn, signOut } from '@/auth'
 import { createData, updateData } from '@/core/http-service'
 import { OperationResult } from '@/types/operation-result'
 import { SignedInUser } from '@/types/user.interface'
 import { normalizeProblem } from '@/utils/normalize-problem'
-import { cwd } from 'process'
+
 
 export const signupCompanyAction = async (
   formState: OperationResult<string> | null,
   data: SignupValues,
 ) => {
   return serverActionWrapper(
-    async () => await createData<SignupValues, string>('tenant/initialize-tenant', data),
+    async () =>
+      await createData<SignupValues, string>('tenant/initialize-tenant', data),
   )
 }
 
@@ -44,7 +54,10 @@ export async function signinAction(
 ): Promise<OperationResult<void>> {
   try {
     // 1) Perform the real login here so we keep the full `Problem` shape.
-    const user = await createData<SigninUserModel, SignedInUser>('user/login', data)
+    const user = await createData<SigninUserModel, SignedInUser>(
+      'user/login',
+      data,
+    )
 
     if (!user?.token) {
       return {
@@ -52,7 +65,7 @@ export async function signinAction(
         error: {
           detail: 'نام کاربری یا رمز عبور اشتباه است',
           title: '',
-          status: 0
+          status: 0,
         },
       }
     }
@@ -60,7 +73,7 @@ export async function signinAction(
     // 2) Establish the NextAuth session using the token we already have.
     //    No second HTTP call — `authorize` trusts this token.
     await signIn('credentials', { accessToken: user.token, redirect: false })
-      console.log(" no faid")
+    console.log(' no faid')
 
     return { isSuccess: true }
   } catch (error) {
@@ -76,17 +89,20 @@ export async function signinAction(
         error: {
           detail: 'نام کاربری یا رمز عبور اشتباه است',
           title: '',
-          status: 0
+          status: 0,
         },
       }
     }
 
     if (error instanceof AuthError) {
-      return { isSuccess: false, error: {
-        detail: 'خطا در احراز هویت',
-        title: '',
-        status: 0
-      } }
+      return {
+        isSuccess: false,
+        error: {
+          detail: 'خطا در احراز هویت',
+          title: '',
+          status: 0,
+        },
+      }
     }
 
     // Real API failures land here — return the actual Problem.
@@ -112,7 +128,10 @@ export const sendActivationCodeAction = async (
   data: { phoneNumber: string; domain: string },
 ) => {
   const { phoneNumber, domain } = data
-  const headers = domain ? { 'X-Tenant': domain } : undefined
+
+  const headers: AxiosRequestHeaders | undefined = domain
+    ? ({ 'X-Tenant': domain } as unknown as AxiosRequestHeaders)
+    : undefined
 
   return serverActionWrapper(
     async () =>
@@ -129,6 +148,112 @@ export const newPasswordAction = async (
   data: NewPasswordModel,
 ) => {
   return serverActionWrapper(
-    async () => await updateData<NewPasswordModel, void>('user/forgot-password', data),
+    async () =>
+      await updateData<NewPasswordModel, void>('user/forgot-password', data),
   )
+}
+
+export async function getPasskeyLoginOptionsAction(): Promise<
+  OperationResult<PasskeyOptionsResponse>
+> {
+  try {
+    const response = await createData<
+      Record<string, never>,
+      PasskeyOptionsResponse
+    >('user/passkey/login-options', {})
+
+    if (!response?.cid || !response?.optionsJson) {
+      return {
+        isSuccess: false,
+        error: {
+          title: 'خطا در ورود',
+          detail: 'دریافت اطلاعات ورود با کلید عبور ناموفق بود.',
+          status: 0,
+        },
+      }
+    }
+
+    return {
+      isSuccess: true,
+      response,
+    }
+  } catch (error: unknown) {
+    return {
+      isSuccess: false,
+      error: normalizeProblem(
+        error,
+        'دریافت اطلاعات ورود با کلید عبور ناموفق بود.',
+      ),
+    }
+  }
+}
+
+/**
+ * Step 2: Verify the WebAuthn assertion and establish
+ * the existing NextAuth credentials session using the returned token.
+ */
+export async function verifyPasskeyLoginAction(
+  request: PasskeyLoginRequest,
+): Promise<OperationResult<void>> {
+  try {
+    const result = await createData<PasskeyLoginRequest, PasskeyLoginResponse>(
+      'user/passkey/login',
+      request,
+    )
+
+    const accessToken = result?.token
+
+    if (!accessToken) {
+      return {
+        isSuccess: false,
+        error: {
+          title: 'خطا در ورود',
+          detail: 'ورود با کلید عبور ناموفق بود.',
+          status: 0,
+        },
+      }
+    }
+
+    // Reuse your existing Credentials provider and JWT callbacks.
+    await signIn('credentials', {
+      accessToken,
+      redirect: false,
+    })
+
+    return { isSuccess: true }
+  } catch (error: unknown) {
+    if (error instanceof AuthorizeError) {
+      return {
+        isSuccess: false,
+        error: error.problem,
+      }
+    }
+
+    if (error instanceof CredentialsSignin) {
+      return {
+        isSuccess: false,
+        error: {
+          title: 'خطا در ورود',
+          detail: 'ورود با کلید عبور ناموفق بود.',
+          status: 0,
+        },
+      }
+    }
+
+    if (error instanceof AuthError) {
+      return {
+        isSuccess: false,
+        error: {
+          title: 'خطا در احراز هویت',
+          detail: 'ایجاد نشست کاربری ناموفق بود.',
+          status: 0,
+        },
+      }
+    }
+
+    return {
+      isSuccess: false,
+      error: normalizeProblem(error, 'ورود با کلید عبور ناموفق بود.'),
+    }
+  }
 }

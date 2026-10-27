@@ -48,62 +48,53 @@ export const {
       name: 'credentials',
       credentials: {
         userName: { label: 'userName', type: 'text' },
-        password: { label: 'password', type: 'text' },
+        password: { label: 'password', type: 'password' },
+        accessToken: { label: 'accessToken', type: 'text' },
       },
+
       async authorize(credentials) {
-  try {
-    // The server action has already authenticated the user.
-    // Reuse that token instead of calling the login API again.
-    const accessToken = credentials?.accessToken
+        try {
+          const accessToken = credentials?.accessToken
 
-    if (
-      typeof accessToken === 'string' &&
-      accessToken.length > 0
-    ) {
-      return {
-        accessToken,
-      }
-    }
+          if (typeof accessToken === 'string' && accessToken.length > 0) {
+            return { accessToken }
+          }
 
-    // Optional fallback for normal username/password sign-in.
-    if (
-      typeof credentials?.userName !== 'string' ||
-      typeof credentials?.password !== 'string'
-    ) {
-      return null
-    }
+          if (
+            typeof credentials?.userName !== 'string' ||
+            typeof credentials?.password !== 'string'
+          ) {
+            return null
+          }
 
-    const user = await createData<SigninUserModel, SignedInUser>(
-      'user/login',
-      {
-        userName: credentials.userName,
-        password: credentials.password,
+          const user = await createData<SigninUserModel, SignedInUser>(
+            'user/login',
+            {
+              userName: credentials.userName,
+              password: credentials.password,
+            },
+          )
+
+          if (!user?.token) {
+            return null
+          }
+
+          return { accessToken: user.token }
+        } catch (error: unknown) {
+          console.error('Credentials authorization failed:', error)
+          throw new AuthorizeError(error as Problem)
+        }
       },
-    )
-
-    if (!user?.token) {
-      return null
-    }
-
-    return {
-      accessToken: user.token,
-    }
-  } catch (error: unknown) {
-    console.error('Credentials authorization failed:', error)
-    throw new AuthorizeError(error as Problem)
-  }
-}
     }),
   ],
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-              console.log("decode ")
+        console.log('decode ')
 
         token.user = jwtDecode<User>(user.accessToken)
         token.user.accessToken = user.accessToken
-              console.log("sat in calback")
-
+        console.log('sat in calback')
       }
       return token
     },
