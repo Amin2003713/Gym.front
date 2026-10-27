@@ -9,8 +9,7 @@ export const userSchema = z.object({
   phoneCountryCode: z.string().trim().default('+49'),
   avatar: z.string().trim().optional().nullable(),
   gender: z.union([z.number().int().min(0).max(1), z.null()]).optional(),
-  role: z.enum(['Admin', 'Tranner', 'Trainee']),
-  jobTitle: z.string().trim().optional().nullable(),
+  role: z.enum(['Admin', 'Trainer', 'Trainee']),
   password: z.string().optional().nullable(),
   confirmPassword: z.string().optional().nullable(),
 }).superRefine((data, ctx) => {

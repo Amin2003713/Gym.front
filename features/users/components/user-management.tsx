@@ -7,7 +7,7 @@ import { ApiUserRole, usersApi, type CreateUserInput, type UpdateUserInput, type
 
 const roleOptions = [
   { value: ApiUserRole.Admin, label: 'مدیر' },
-  { value: ApiUserRole.Tranner, label: 'مربی' },
+  { value: ApiUserRole.Trainer, label: 'مربی' },
   { value: ApiUserRole.Trainee, label: 'ورزشکار' },
 ]
 
@@ -22,7 +22,7 @@ function roleName(roles?: string[] | null) {
   return roles.map((raw) => {
     const normalized = raw.toLowerCase().replace(/[ _-]/g, '')
     if (normalized === 'admin') return 'مدیر'
-    if (normalized === 'tranner' || normalized === 'trainer') return 'مربی'
+    if (normalized === 'Trainer' || normalized === 'trainer') return 'مربی'
     if (normalized === 'trainee' || normalized === 'member') return 'ورزشکار'
     return raw
   }).join('، ')
@@ -68,7 +68,7 @@ export function UserManagement() {
   const openCreate = () => { setEditing(null); setForm(emptyForm); setDialogOpen(true) }
   const openEdit = (user: UserDto) => {
     const role = (user.role?.[0] ?? '').toLowerCase()
-    const selectedRole = role.includes('admin') ? ApiUserRole.Admin : (role.includes('tranner') || role.includes('trainer')) ? ApiUserRole.Tranner : ApiUserRole.Trainee
+    const selectedRole = role.includes('admin') ? ApiUserRole.Admin : (role.includes('Trainer') || role.includes('trainer')) ? ApiUserRole.Trainer : ApiUserRole.Trainee
     setEditing(user)
     setForm({ ...emptyForm, firstName: user.firstName ?? '', lastName: user.lastName ?? '', email: user.email ?? user.username ?? '', phoneNumber: user.phoneNumber ?? '', phoneCountryCode: user.phoneCountryCode || '+49', role: selectedRole })
     setDialogOpen(true)

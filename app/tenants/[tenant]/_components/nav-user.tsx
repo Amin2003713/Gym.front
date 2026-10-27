@@ -143,6 +143,12 @@ export function NavUser({ isHeader, data: user, error }: NavUserProp) {
               ویرایش حساب
             </Link>
           </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link href="/users/passkeys">
+              <UserRoundPen />
+              کلید های ورود
+            </Link>
+          </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>

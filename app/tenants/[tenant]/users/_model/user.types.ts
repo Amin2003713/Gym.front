@@ -1,11 +1,16 @@
 import { z } from 'zod'
-import { userSchema, updateUserSchema, updateUserSimSerialSchema } from './user.schema'
+
+import {
+  userSchema,
+  updateUserSchema,
+  updateUserSimSerialSchema,
+} from './user.schema'
 
 export type AddUserModel = z.infer<typeof userSchema>
 export type UpdateUserModel = z.infer<typeof updateUserSchema>
 export type UpdateUserSimSerialModel = z.infer<typeof updateUserSimSerialSchema>
 
-export type ApiUserRole = 'Admin' | 'Tranner' | 'Trainee'
+export type ApiUserRole = 'Admin' | 'Trainer' | 'Trainee'
 export interface ApiUser {
   id: string
   username?: string | null

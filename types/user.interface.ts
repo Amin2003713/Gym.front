@@ -1,3 +1,4 @@
+import { GenderEnum } from '@/enums/gender.enum'
 import { UserRoleEnum } from '@/enums/user-role.enum'
 
 export interface SignedInUser {
@@ -11,6 +12,7 @@ export interface User {
   lastName: string
   phoneNumber: string
   imageUrl: string | null
+  gender: GenderEnum | null
   imageUrlCompress: string | null
   role: UserRoleEnum[]
   username: string
@@ -25,6 +27,7 @@ export interface PublicUser extends SafeUser {
   branchId?: string | null
   branchName?: string | null
   isActive?: boolean
+  gender: GenderEnum | null
   trainerId?: string | null
   membershipStatus?: 'active' | 'paused' | 'expired' | null
 }

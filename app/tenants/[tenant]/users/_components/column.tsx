@@ -55,13 +55,6 @@ export const usersListColumns: ColumnDef<PublicUser>[] = [
     meta: { classname: 'text-center' },
   },
   {
-    id: 'nationalCode',
-    accessorKey: 'nationalCode',
-    header: 'کدملی',
-    cell: ({ row }) => row.original.nationalCode,
-    meta: { classname: 'text-center' },
-  },
-  {
     id: 'isActive',
     accessorKey: 'isActive',
     header: 'وضعیت',
@@ -77,20 +70,6 @@ export const usersListColumns: ColumnDef<PublicUser>[] = [
         {row.original.isActive ? 'فعال' : 'غیرفعال'}
       </Badge>
     ),
-    meta: { classname: 'text-center' },
-  },
-  {
-    id: 'personnelNumber',
-    accessorKey: 'personnelNumber',
-    header: 'شماره پرسنلی',
-    cell: ({ row }) => row.original.personnelNumber ?? '--',
-    meta: { classname: 'text-center' },
-  },
-  {
-    id: 'departmentName',
-    accessorKey: 'departmentName',
-    header: 'بخش',
-    cell: ({ row }) => row.original.department?.label ?? '--',
     meta: { classname: 'text-center' },
   },
   {

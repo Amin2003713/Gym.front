@@ -3,7 +3,6 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { useRouter } from 'next/navigation'
 import React, { useActionState, useEffect, useTransition } from 'react'
-import { toast } from '@/lib/toast'
 
 import { addUserAction } from '@/actions/user'
 import { UserForm } from '@/app/tenants/[tenant]/users/_components/user-form'
@@ -17,6 +16,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { GenderEnum } from '@/enums/gender.enum'
+import { toast } from '@/lib/toast'
 
 type AddUserDialogProps = {
   open: boolean
@@ -25,7 +25,6 @@ type AddUserDialogProps = {
 
 const defaultValues: Partial<AddUserModel> = {
   gender: GenderEnum.Male,
-  isLeader: false,
 }
 
 export default function AddUserDialog({

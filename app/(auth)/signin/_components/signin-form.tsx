@@ -6,7 +6,7 @@ import { useActionState, useEffect, useTransition } from 'react'
 
 import { signinAction } from '@/actions/auth'
 import { PasskeySigninButton } from '@/app/(auth)/signin/_components/passkey-signin-button'
-import { HamOwjMark } from '@/components/branding/hamowj-mark'
+import { HamOwjBrand } from '@/components/branding/hamowj-mark'
 import { FormWrapper } from '@/components/forms/form-wrapper'
 import { Button } from '@/components/ui/button'
 import { CustomFormField } from '@/components/ui/custom-form-field'
@@ -50,7 +50,7 @@ export function SigninForm() {
         <div className="flex flex-col gap-6">
           <div className="flex flex-col items-center gap-3 text-center">
             <span className="flex size-14 items-center justify-center rounded-2xl bg-[#1b1a1b] p-2.5">
-              <HamOwjMark className="h-full w-full" />
+              <HamOwjBrand className="h-full w-full" />
             </span>
             <h1 className="text-xl font-black sm:text-2xl">ورود به هم‌اوج</h1>
             <p className="text-muted-foreground text-sm text-balance sm:text-base">

@@ -23,10 +23,10 @@ export interface UserDto {
   scheduledDeletionAt?: string | null
 }
 
-/** C# Roles enum uses byte values: Admin=0, Tranner=1, Trainee=2. */
+/** C# Roles enum uses byte values: Admin=0, Trainer=1, Trainee=2. */
 export enum ApiUserRole {
   Admin = 0,
-  Tranner = 1,
+  Trainer = 1,
   Trainee = 2,
 }
 

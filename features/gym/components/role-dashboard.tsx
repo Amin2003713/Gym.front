@@ -35,7 +35,7 @@ type Role = 'owner' | 'trainer' | 'trainee'
 function normalizeRole(value: unknown): Role | null {
   const role = String(value ?? '').toLowerCase().replace(/[ _-]/g, '')
   if (['owner', 'admin', 'administrator', 'branchmanager'].includes(role)) return 'owner'
-  if (['trainer', 'tranner', 'coach'].includes(role)) return 'trainer'
+  if (['trainer', 'Trainer', 'coach'].includes(role)) return 'trainer'
   if (['trainee', 'member', 'user'].includes(role)) return 'trainee'
   return null
 }

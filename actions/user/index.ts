@@ -16,7 +16,6 @@ export const addUserAction = async (
 ) => {
   const formattedImageFile = {
     ...data,
-    imageFile: { mediaFile: data.imageFile?.[0] },
   }
   const formData = objectToFormData(formattedImageFile, {
     useDotNotation: true,
@@ -33,7 +32,6 @@ export const updateUserAction = async (
 ) => {
   const formattedImageFile = {
     ...data,
-    imageFile: { mediaFile: data.imageFile?.[0], mediaUrl: data.imageUrl },
   }
   const formData = objectToFormData(formattedImageFile, {
     useDotNotation: true,
