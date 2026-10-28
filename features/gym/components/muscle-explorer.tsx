@@ -5,7 +5,8 @@ import {useSession} from 'next-auth/react'
 import {usersApi} from '@/features/users/api/users-api'
 import {Activity, Dumbbell, Search, X} from 'lucide-react'
 import BodyMap, {BodyMapLegend} from './body-map'
-import {exerciseApi, exerciseCoverUrl, type ExerciseListItemDto} from '../api/exercises-api'
+import {exerciseApi, exerciseCoverUrl} from '@/app/tenants/[tenant]/exercises/_api/exercise-api'
+import type {ExerciseListItem} from '@/app/tenants/[tenant]/exercises/_model/exercise.types'
 
 const muscles = [
     {id: 'trapezius', name: 'ذوزنقه‌ای', bodyPart: ['trapezius', 'traps', 'ذوزنقه']},
@@ -64,7 +65,7 @@ function genderFromToken(token: unknown): FigureGender | null {
 }
 
 // Does an exercise belong to a given muscle?
-function matchesMuscle(ex: ExerciseListItemDto, m: Muscle) {
+function matchesMuscle(ex: ExerciseListItem, m: Muscle) {
     const target = `${ex.target ?? ''} ${ex.bodyPart ?? ''} ${ex.category ?? ''}`
     return m.bodyPart.some(alias => contains(target, alias)) || contains(ex.target, m.name)
 }
@@ -79,14 +80,14 @@ export function MuscleExplorer() {
     const [figureGender, setFigureGender] = useState<FigureGender>(
         () => genderFromToken(sessionUser?.accessToken) ?? normalizeGender(sessionUser?.gender) ?? 'male'
     )
-    const [items, setItems] = useState<ExerciseListItemDto[]>([])
+    const [items, setItems] = useState<ExerciseListItem[]>([])
     const [loading, setLoading] = useState(true)
     const [apiError, setApiError] = useState(false)
     const [selected, setSelected] = useState('chest')
     const [query, setQuery] = useState('')
     const [bodyPart, setBodyPart] = useState('')
     const [equipment, setEquipment] = useState('')
-    const [selectedExercise, setSelectedExercise] = useState<ExerciseListItemDto | null>(null)
+    const [selectedExercise, setSelectedExercise] = useState<ExerciseListItem | null>(null)
 
     useEffect(() => {
         let alive = true

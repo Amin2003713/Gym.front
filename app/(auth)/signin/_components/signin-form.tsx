@@ -14,6 +14,8 @@ import { toast } from '@/lib/toast'
 
 import { signinSchema } from '../_types/signin-schema'
 import { SigninUserModel } from '../_types/signin-user-model.type'
+import { ModeToggle } from '@/components/mode-toggle'
+import * as React from 'react'
 
 export function SigninForm() {
   const router = useRouter()
@@ -48,15 +50,25 @@ export function SigninForm() {
     >
       {(form) => (
         <div className="flex flex-col gap-6">
-          <div className="flex flex-col items-center gap-3 text-center">
-            <span className="flex size-14 items-center justify-center rounded-2xl bg-[#1b1a1b] p-2.5">
-              <HamOwjBrand className="h-full w-full" />
-            </span>
-            <h1 className="text-xl font-black sm:text-2xl">ورود به هم‌اوج</h1>
-            <p className="text-muted-foreground text-sm text-balance sm:text-base">
-              به پنل مدیریت گروه ورزشی وارد شوید
-            </p>
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3 text-start">
+              <span className="bg-foreground text-background flex size-12 items-center justify-center rounded-2xl">
+                <HamOwjBrand className="size-8" />
+              </span>
+              <div className="flex flex-col gap-1">
+                <h1 className="text-xl font-black sm:text-2xl">
+                  ورود به هم‌اوج
+                </h1>
+
+                <p className="text-muted-foreground text-sm text-balance sm:text-base">
+                  به پنل مدیریت گروه ورزشی وارد شوید
+                </p>
+              </div>
+            </div>
+
+            <ModeToggle />
           </div>
+
           <div className="grid gap-2">
             <CustomFormField
               control={form.control}

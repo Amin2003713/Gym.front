@@ -1,0 +1,59 @@
+import { createData, deleteData, readData, updateData } from '@/core/http-service'
+
+import type {
+  ExerciseDetail,
+  ExerciseInput,
+  ExerciseListItem,
+  ExerciseMedia,
+  ExercisePage,
+  ListExercisesFilter,
+} from '../_model/exercise.types'
+
+const route = 'exercise/exercise'
+
+const queryString = (values: Record<string, unknown>) => {
+  const query = new URLSearchParams()
+  Object.entries(values).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== '') query.set(key, String(value))
+  })
+  return query.toString()
+}
+
+export const exerciseApi = {
+  list: (filter: ListExercisesFilter) =>
+    readData<ExercisePage<ExerciseListItem>>(`${route}?${queryString(filter)}`),
+  get: (id: string, languageCode?: string) =>
+    readData<ExerciseDetail>(
+      `${route}/${encodeURIComponent(id)}${languageCode ? `?${queryString({ languageCode })}` : ''}`,
+    ),
+  byIds: (ids: string[], languageCode?: string) =>
+    createData<{ ids: string[]; languageCode?: string }, ExerciseListItem[]>(
+      `${route}/by-ids`,
+      { ids, languageCode },
+    ),
+  create: (input: ExerciseInput) => createData<ExerciseInput, ExerciseDetail>(route, input),
+  update: (id: string, input: ExerciseInput) =>
+    updateData<ExerciseInput & { id: string }, void>(route, { id, ...input }),
+  delete: (id: string) => deleteData<{ id: string }>(route, undefined, { id }),
+}
+
+/** URL of the small thumbnail variant — used for card covers to keep list responses light. */
+export function exerciseThumbUrl(media?: ExerciseMedia | null): string | undefined {
+  if (!media?.asset?.variants?.length) return undefined
+  const variants = media.asset.variants
+  const thumb = variants.find(
+    (x) => /thumb/i.test(x.variantName) && x.url,
+  )
+  return (thumb?.url ?? exerciseCoverUrl(media)) || undefined
+}
+
+/** URL of the preview variant of an exercise media entry (larger box). */
+export function exerciseCoverUrl(media?: ExerciseMedia | null): string | undefined {
+  if (!media?.asset?.variants?.length) return undefined
+  const variants = media.asset.variants
+  return (
+    variants.find((x) => /preview/i.test(x.variantName) && x.url)?.url ??
+    variants.find((x) => x.url)?.url ??
+    undefined
+  )
+}

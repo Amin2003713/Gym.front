@@ -16,7 +16,9 @@ import type {
   WorkoutSessionType,
 } from '../_model/workout.types'
 
-const BASE = '/api/workout'
+
+
+const BASE = 'workout'
 
 const query = (values: Record<string, string | number | undefined | null>) => {
   const params = new URLSearchParams()

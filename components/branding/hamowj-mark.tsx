@@ -10,6 +10,11 @@ type HamOwjMarkProps = {
   'aria-hidden'?: boolean
 }
 
+type HamOwjBrandProps = {
+  className?: string
+  showText?: boolean
+}
+
 export function HamOwjMarkDark({
   className,
   title = 'HamOwj',
@@ -27,12 +32,10 @@ export function HamOwjMarkDark({
       xmlns="http://www.w3.org/2000/svg"
     >
       {!ariaHidden && <title>{title}</title>}
-
       <path
         d="M8 64 36 22 49 41 64 64H45L36 51 27 64H8Z"
         fill={monochrome ? 'currentColor' : '#FB9A3C'}
       />
-
       <path
         d="M35 64 59 30 88 64H69L59 51 50 64H35Z"
         fill={monochrome ? 'currentColor' : '#352820'}
@@ -58,12 +61,10 @@ export function HamOwjMarkLite({
       xmlns="http://www.w3.org/2000/svg"
     >
       {!ariaHidden && <title>{title}</title>}
-
       <path
         d="M8 64 36 22 49 41 64 64H45L36 51 27 64H8Z"
         fill={monochrome ? 'currentColor' : '#FB9A3C'}
       />
-
       <path
         d="M35 64 59 30 88 64H69L59 51 50 64H35Z"
         fill={monochrome ? 'currentColor' : '#F6F3ED'}
@@ -75,27 +76,26 @@ export function HamOwjMarkLite({
 export function HamOwjBrand({
   className = '',
   showText = false,
-}: {
-  className?: string
-  showText?: boolean
-}) {
+}: HamOwjBrandProps) {
   const { resolvedTheme } = useTheme()
-  const isDark = resolvedTheme === 'dark'
+  const [mounted, setMounted] = React.useState(false)
+
+  React.useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  // Keep server HTML and the first client render identical.
+  // After mounting, render the logo for the resolved theme.
+  const isDark = mounted && resolvedTheme === 'dark'
 
   return (
     <span
       className={`inline-flex items-center justify-center gap-3 ${className}`}
     >
       {isDark ? (
-        <HamOwjMarkDark
-          className="block h-10 w-12 shrink-0"
-          aria-hidden={true}
-        />
+        <HamOwjMarkDark className="block h-10 w-12 shrink-0" aria-hidden />
       ) : (
-        <HamOwjMarkLite
-          className="block h-10 w-12 shrink-0"
-          aria-hidden={true}
-        />
+        <HamOwjMarkLite className="block h-10 w-12 shrink-0" aria-hidden />
       )}
 
       {showText && (

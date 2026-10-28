@@ -1,7 +1,9 @@
 import { createData, deleteData, readData, updateData } from '@/core/http-service'
+
 import type { PlanCatalogResponse, PlanDetail, PlanSummary, PlanWriteRequest, PlanGoal, PlanLevel, PlanDurationType } from '../_model/plan.types'
 
-const BASE = '/api/plan'
+
+const BASE = 'plan'
 const query = (values: Record<string, string | number | undefined | null>) => {
   const params = new URLSearchParams()
   Object.entries(values).forEach(([key, value]) => {

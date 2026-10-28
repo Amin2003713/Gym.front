@@ -1,5 +1,7 @@
-import { GymFeaturePage } from '@/features/gym/components/gym-feature-page'
+import WorkoutHistoryPage from './workout-history-page'
+
+export const metadata = { title: 'تاریخچه تمرین' }
 
 export default function Page() {
-  return <GymFeaturePage feature="history" />
+  return <WorkoutHistoryPage />
 }

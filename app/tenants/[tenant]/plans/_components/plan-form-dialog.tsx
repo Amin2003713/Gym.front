@@ -1,18 +1,23 @@
 'use client'
 
-import { useEffect, useState } from 'react'
 import { Plus, Trash2, X } from 'lucide-react'
-import { toast } from '@/lib/toast'
+import { useEffect, useState } from 'react'
+
+
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import type { PlanDetail, PlanDurationType, PlanGoal, PlanLevel, PlanSummary, PlanVisibility, PlanWriteRequest } from '../_model/plan.types'
+import { Input } from '@/components/ui/input'
+import { toast } from '@/lib/toast'
+
 import { createPlan, getPlan, updatePlan } from '../_api/plan-api'
+import type { PlanDetail, PlanDurationType, PlanGoal, PlanLevel, PlanSummary, PlanVisibility, PlanWriteRequest } from '../_model/plan.types'
+
+import ExercisePicker, { type ExercisePickerSelection } from './exercise-picker'
 
 type Props = { open: boolean; plan?: PlanSummary | null; onOpenChange: (open: boolean) => void; onSaved: () => void }
-type ExerciseRow = { exerciseId: string; targetSets: string; targetRepsMin: string; targetRepsMax: string; targetRir: string; restSeconds: string; notes: string }
+type ExerciseRow = { exerciseId: string; exerciseName: string; targetSets: string; targetRepsMin: string; targetRepsMax: string; targetRir: string; restSeconds: string; notes: string }
 type DayRow = { name: string; exercises: ExerciseRow[] }
-const blankExercise = (): ExerciseRow => ({ exerciseId: '', targetSets: '3', targetRepsMin: '8', targetRepsMax: '12', targetRir: '', restSeconds: '90', notes: '' })
+const blankExercise = (): ExerciseRow => ({ exerciseId: '', exerciseName: '', targetSets: '3', targetRepsMin: '8', targetRepsMax: '12', targetRir: '', restSeconds: '90', notes: '' })
 const blankDay = (index: number): DayRow => ({ name: `روز ${index + 1}`, exercises: [blankExercise()] })
 const asNum = (v: string) => v.trim() === '' ? undefined : Number(v)
 const toPayload = (f: { title: string; description: string; visibility: PlanVisibility; durationType: PlanDurationType; totalSessions: string; durationWeeks: string; goal: PlanGoal; level: PlanLevel; days: DayRow[] }): PlanWriteRequest => ({
@@ -59,7 +64,7 @@ export function PlanFormDialog({ open, plan, onOpenChange, onSaved }: Props) {
         setTitle(d.title); setDescription(d.description ?? ''); setVisibility(d.visibility); setDurationType(d.durationType)
         setTotalSessions(String(d.totalSessions ?? 12)); setDurationWeeks(String(d.durationWeeks ?? 4)); setGoal(d.goal); setLevel(d.level)
         setDays(d.days.length ? d.days.map((day) => ({ name: day.name, exercises: day.exercises.length ? day.exercises.map((e) => ({
-          exerciseId: e.exerciseId, targetSets: String(e.targetSets ?? ''), targetRepsMin: String(e.targetRepsMin ?? ''),
+          exerciseId: e.exerciseId, exerciseName: e.exerciseName ?? '', targetSets: String(e.targetSets ?? ''), targetRepsMin: String(e.targetRepsMin ?? ''),
           targetRepsMax: String(e.targetRepsMax ?? ''), targetRir: String(e.targetRir ?? ''), restSeconds: String(e.restSeconds ?? 90), notes: e.notes ?? '',
         })) : [blankExercise()] })) : [blankDay(0)])
       } catch (e) {
@@ -77,7 +82,6 @@ export function PlanFormDialog({ open, plan, onOpenChange, onSaved }: Props) {
     event.preventDefault()
     if (!title.trim()) return toast.error('عنوان برنامه الزامی است')
     if (!days.length || days.some((d) => !d.name.trim())) return toast.error('نام تمام روزهای برنامه الزامی است')
-    if (days.some((d) => d.exercises.some((e) => e.exerciseId.trim() && !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(e.exerciseId.trim())))) return toast.error('شناسه حرکت باید یک GUID معتبر باشد')
     setSaving(true)
     try {
       const payload = toPayload({ title, description, visibility, durationType, totalSessions, durationWeeks, goal, level, days })
@@ -106,7 +110,16 @@ export function PlanFormDialog({ open, plan, onOpenChange, onSaved }: Props) {
           {days.map((day, di) => <div key={di} className="space-y-3 rounded-lg border p-3">
             <div className="flex gap-2"><Input value={day.name} onChange={e => updateDay(di, { name: e.target.value })} placeholder="نام روز" /><Button type="button" variant="ghost" size="icon" disabled={days.length === 1} onClick={() => setDays(old => old.filter((_, i) => i !== di))}><Trash2 className="size-4 text-destructive" /></Button></div>
             {day.exercises.map((ex, ei) => <div key={ei} className="grid gap-2 rounded-md bg-muted/30 p-2 sm:grid-cols-3">
-              <label className="space-y-1 text-xs sm:col-span-3"><span>شناسه حرکت (GUID)</span><Input value={ex.exerciseId} onChange={e => updateExercise(di, ei, { exerciseId: e.target.value })} dir="ltr" placeholder="exerciseId" /></label>
+              <div className="space-y-1 text-xs sm:col-span-3">
+                <span>حرکت</span>
+                <ExercisePicker
+                  value={ex.exerciseId || null}
+                  valueLabel={ex.exerciseName || null}
+                  onSelect={(sel: ExercisePickerSelection | null) =>
+                    updateExercise(di, ei, { exerciseId: sel?.id ?? '', exerciseName: sel?.name ?? '' })
+                  }
+                />
+              </div>
               <label className="space-y-1 text-xs"><span>ست هدف</span><Input type="number" min="1" value={ex.targetSets} onChange={e => updateExercise(di, ei, { targetSets: e.target.value })} /></label>
               <label className="space-y-1 text-xs"><span>حداقل تکرار</span><Input type="number" min="1" value={ex.targetRepsMin} onChange={e => updateExercise(di, ei, { targetRepsMin: e.target.value })} /></label>
               <label className="space-y-1 text-xs"><span>حداکثر تکرار</span><Input type="number" min="1" value={ex.targetRepsMax} onChange={e => updateExercise(di, ei, { targetRepsMax: e.target.value })} /></label>

@@ -1,5 +1,7 @@
 const GYM_ROUTES = [
     {segment: 'exercises', title: 'کتابخانه حرکات'},
+    {segment: 'plans', title: 'برنامه‌های تمرینی'},
+    {segment: 'assignments', title: 'تخصیص برنامه‌ها'},
     {segment: 'routines', title: 'برنامه‌های تمرینی'},
     {segment: 'workouts', title: 'تمرین امروز'},
     {segment: 'history', title: 'تاریخچه تمرین'},

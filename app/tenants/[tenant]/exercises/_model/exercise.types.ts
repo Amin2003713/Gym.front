@@ -1,0 +1,117 @@
+export type ExerciseMuscleRole = 1 | 2
+export type ExerciseMediaRole = number
+
+export interface ExerciseMediaVariant {
+  id: string
+  variantName: string
+  width?: number | null
+  height?: number | null
+  url?: string | null
+  kind: number
+  sizeBytes?: number | null
+  contentType: string
+}
+
+export interface ExerciseAsset {
+  id: string
+  originalFileName: string
+  contentType: string
+  extension: string
+  sizeBytes: number
+  sha256?: string | null
+  width?: number | null
+  height?: number | null
+  status: number
+  visibility: number
+  createdAt: string
+  primary: boolean
+  order: number
+  variants: ExerciseMediaVariant[]
+}
+
+export interface ExerciseMedia {
+  role: ExerciseMediaRole
+  order: number
+  isPrimary: boolean
+  asset: ExerciseAsset
+}
+
+export interface ExerciseDetail {
+  id: string
+  sourceId: string
+  sourceLanguageCode: string
+  languageCode: string
+  name: string
+  description?: string | null
+  category?: string | null
+  bodyPart?: string | null
+  equipment?: string | null
+  target?: string | null
+  level?: string | null
+  mechanic?: string | null
+  force?: string | null
+  exerciseType?: string | null
+  attribution?: string | null
+  license?: string | null
+  muscles: Array<{ muscleId: string; code: string; name: string; role: ExerciseMuscleRole }>
+  instructions: Array<{ stepNumber: number; text: string }>
+  media: ExerciseMedia[]
+  createdAtUtc: string
+  updatedAtUtc: string
+}
+
+export interface ExerciseListItem {
+  id: string
+  name: string
+  description?: string | null
+  category?: string | null
+  bodyPart?: string | null
+  equipment?: string | null
+  target?: string | null
+  level?: string | null
+  mechanic?: string | null
+  force?: string | null
+  exerciseType?: string | null
+  cover?: ExerciseMedia | null
+}
+
+export interface ExerciseInput {
+  name: string
+  description?: string | null
+  languageCode?: string | null
+  category?: string | null
+  bodyPart?: string | null
+  equipment?: string | null
+  target?: string | null
+  level?: string | null
+  mechanic?: string | null
+  force?: string | null
+  exerciseType?: string | null
+  muscles: Array<{ muscleId: string; role: ExerciseMuscleRole }>
+  instructions: string[]
+  media: Array<{ assetId: string; role: number; order: number; isPrimary: boolean }>
+}
+
+export type ListExercisesFilter = {
+  pageNumber: number
+  pageSize: number
+  search?: string
+  category?: string
+  bodyPart?: string
+  equipment?: string
+  target?: string
+  level?: string
+  mechanic?: string
+  force?: string
+  exerciseType?: string
+  muscleId?: string
+  languageCode?: string
+}
+
+export interface ExercisePage<T> {
+  results: T[]
+  currentPage: number
+  pageCount: number
+  pageSize: number
+  rowCount: number
+}

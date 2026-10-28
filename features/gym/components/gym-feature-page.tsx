@@ -17,7 +17,6 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { ExerciseLibrary } from './exercise-library'
 import { OpenGymWorkspace } from './open-gym-workspace'
 
 export type GymFeatureKey =
@@ -93,7 +92,6 @@ const features: Record<GymFeatureKey, {
 }
 
 function WorkspacePreview({ feature }: { feature: GymFeatureKey }) {
-  if (feature === 'exercises') return <ExerciseLibrary />
   return <OpenGymWorkspace feature={feature} />
 }
 
@@ -123,7 +121,13 @@ export function GymFeaturePage({ feature }: { feature: GymFeatureKey }) {
         </div>
       </header>
 
-      {feature === 'exercises' ? <ExerciseLibrary /> : <WorkspacePreview feature={feature} />}
+      {feature === 'exercises' ? (
+        <div className="rounded-2xl border border-dashed p-6 text-sm text-muted-foreground">
+          کتابخانه حرکات صفحه اختصاصی خودش را دارد.
+        </div>
+      ) : (
+        <WorkspacePreview feature={feature} />
+      )}
 
       <footer className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-dashed p-4 text-sm text-muted-foreground">
         <span>رسانه تمرین: فقط URL ارائه‌شده از سمت API؛ در نبود رسانه، جای‌نگهدار خالی نمایش داده می‌شود.</span>

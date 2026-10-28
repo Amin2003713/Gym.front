@@ -3,16 +3,17 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { AlertCircle, Check, Dumbbell, LoaderCircle, Search, Timer, Trash2 } from 'lucide-react'
 import { toast } from '@/lib/toast'
-import { exerciseApi, exerciseCoverUrl, type ExerciseListItemDto } from '../api/exercises-api'
+import { exerciseApi, exerciseCoverUrl } from '@/app/tenants/[tenant]/exercises/_api/exercise-api'
+import type { ExerciseListItem } from '@/app/tenants/[tenant]/exercises/_model/exercise.types'
 
 const field = 'h-11 w-full rounded-xl border border-input bg-background px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring'
 const button = 'inline-flex min-h-10 items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold transition focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50'
 
-export function WorkoutExercisePicker({ onSelectionChange }: { onSelectionChange?: (items: ExerciseListItemDto[]) => void }) {
+export function WorkoutExercisePicker({ onSelectionChange }: { onSelectionChange?: (items: ExerciseListItem[]) => void }) {
   const [search, setSearch] = useState('')
-  const [items, setItems] = useState<ExerciseListItemDto[]>([])
+  const [items, setItems] = useState<ExerciseListItem[]>([])
   const [selectedIds, setSelectedIds] = useState<string[]>([])
-  const [resolved, setResolved] = useState<ExerciseListItemDto[]>([])
+  const [resolved, setResolved] = useState<ExerciseListItem[]>([])
   const [loading, setLoading] = useState(true)
   const [resolving, setResolving] = useState(false)
   const [error, setError] = useState('')

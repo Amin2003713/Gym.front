@@ -30,7 +30,8 @@ const SIDEBAR_OPTIONS: { tree: SidebarItem[] } = {
       colorClass: 'text-primary',
       children: [
         { name: 'کتابخانه حرکات', path: '/exercises', icon: <Dumbbell className="size-4" />, colorClass: 'text-primary' },
-        { name: 'برنامه‌های تمرینی', path: '/routines', icon: <BookOpen className="size-4" />, colorClass: 'text-primary' },
+        { name: 'برنامه‌های تمرینی', path: '/plans', icon: <BookOpen className="size-4" />, colorClass: 'text-primary' },
+        { name: 'تخصیص برنامه‌ها', path: '/assignments', icon: <CalendarCheck className="size-4" />, colorClass: 'text-primary' },
         { name: 'تمرین امروز', path: '/workouts', icon: <CalendarCheck className="size-4" />, colorClass: 'text-primary' },
         { name: 'تاریخچه تمرین', path: '/history', icon: <History className="size-4" />, colorClass: 'text-primary' },
         { name: 'پیشرفت و رکوردها', path: '/progress', icon: <ChartNoAxesCombined className="size-4" />, colorClass: 'text-primary' },

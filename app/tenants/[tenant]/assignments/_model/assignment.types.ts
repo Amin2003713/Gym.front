@@ -35,4 +35,5 @@ export interface AssignmentListItem extends AssignmentStatusResponse {
   planId?: string
   planTitle?: string | null
   source?: PlanAssignmentSource
+  planDayId?: string | null
 }
