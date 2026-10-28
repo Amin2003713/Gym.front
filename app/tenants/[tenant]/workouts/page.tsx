@@ -34,7 +34,8 @@ export default function WorkoutsPage() {
   const load = useCallback(async () => {
     setLoading(true)
     try {
-      const result = await listMyWorkouts(type as WorkoutSessionType | '')
+      // type arrives as the numeric enum value (''/0/1) from the filter select.
+      const result = await listMyWorkouts(type === '' ? '' : (Number(type) as WorkoutSessionType))
       setItems(Array.isArray(result) ? result : [...(result.items ?? []), ...(result.results ?? [])])
     } catch (e) {
       toast.error('دریافت سوابق تمرین ناموفق بود', {
@@ -214,8 +215,8 @@ export default function WorkoutsPage() {
             onChange={(e) => setType(e.target.value)}
           >
             <option value="">همه انواع</option>
-            <option value="Planned">برنامه‌ریزی‌شده</option>
-            <option value="Free">آزاد</option>
+            <option value="0">برنامه‌ریزی‌شده</option>
+            <option value="1">آزاد</option>
           </select>
         </CardHeader>
         <CardContent>

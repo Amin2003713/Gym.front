@@ -1,5 +1,31 @@
-export type WorkoutSessionType = 'Planned' | 'Free'
-export type WorkoutSessionStatus = 'InProgress' | 'Completed' | 'Abandoned'
+// The API contract is numeric end-to-end: the frontend sends numbers and the
+// backend returns numbers. Enums below mirror the C# declarations.
+// TODO: verify numeric enum values with the backend contract.
+export enum WorkoutSessionType {
+  Planned = 0,
+  Free = 1,
+}
+
+// TODO: verify numeric enum values with the backend contract.
+export enum WorkoutSessionStatus {
+  InProgress = 0,
+  Completed = 1,
+  Abandoned = 2,
+}
+
+/** Accepts numeric enum members (or legacy string names) from the API and normalizes. */
+export function normalizeSessionType(value: unknown): WorkoutSessionType | null {
+  if (value === WorkoutSessionType.Planned || value === 'Planned' || value === '0') return WorkoutSessionType.Planned
+  if (value === WorkoutSessionType.Free || value === 'Free' || value === '1') return WorkoutSessionType.Free
+  return null
+}
+export function normalizeSessionStatus(value: unknown): WorkoutSessionStatus | null {
+  if (value === WorkoutSessionStatus.InProgress || value === 'InProgress' || value === '0') return WorkoutSessionStatus.InProgress
+  if (value === WorkoutSessionStatus.Completed || value === 'Completed' || value === '1') return WorkoutSessionStatus.Completed
+  if (value === WorkoutSessionStatus.Abandoned || value === 'Abandoned' || value === '2') return WorkoutSessionStatus.Abandoned
+  return null
+}
+
 export interface LoggedSetItem {
   setId: string
   setNumber: number

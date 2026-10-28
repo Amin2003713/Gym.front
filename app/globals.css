@@ -347,6 +347,7 @@
   --shadow-elevated: 0 16px 42px rgb(27 26 27 / 10%), 0 3px 10px rgb(27 26 27 / 4%);
 }
 
+
 .dark {
   --brand-divider: color-mix(in srgb, var(--foreground) 16%, transparent);
   --surface-subtle: color-mix(in srgb, var(--card) 82%, var(--foreground) 4%);
@@ -373,6 +374,41 @@
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
 }
+
+/* ---------------------------------- */
+/* Body map (SVG muscle figures)       */
+/* Palettes: trained=green scale,      */
+/* recovery=blue scale with red for    */
+/* muscles still recovering too little */
+/* ---------------------------------- */
+.bodymap { display: flex; align-items: stretch; justify-content: center; gap: .35rem; width: 100%; }
+.bodymap .bm-v { display: block; height: auto; min-width: 0; max-height: 380px; flex: 1 1 50%; }
+.bm-ph { display: block; width: 78%; margin: 0 auto; aspect-ratio: 727 / 1280; border-radius: 1rem; background: color-mix(in srgb, var(--muted) 70%, transparent); }
+.bm-sil { fill: color-mix(in srgb, var(--muted-foreground) 22%, transparent); }
+.bm-m { transition: fill 240ms ease; }
+/* Trained load: brighter = more trained */
+.bm-m.l0, .bodymap[data-palette="load"] .bm-m.l0 { fill: color-mix(in srgb, var(--muted-foreground) 10%, transparent); }
+.bodymap[data-palette="load"] .bm-m.l1 { fill: #86efac; opacity: .55; }
+.bodymap[data-palette="load"] .bm-m.l2 { fill: #4ade80; opacity: .75; }
+.bodymap[data-palette="load"] .bm-m.l3 { fill: #22c55e; opacity: .9; }
+.bodymap[data-palette="load"] .bm-m.l4 { fill: #16a34a; opacity: 1; }
+/* Recovery: bright blue = recovered, red = not enough recovery yet */
+.bodymap[data-palette="recovery"] .bm-m.l4 { fill: #2563eb; opacity: .95; }
+.bodymap[data-palette="recovery"] .bm-m.l3 { fill: #3b82f6; opacity: .75; }
+.bodymap[data-palette="recovery"] .bm-m.l2 { fill: #93c5fd; opacity: .55; }
+.bodymap[data-palette="recovery"] .bm-m.l1 { fill: #fca5a5; opacity: .55; }
+.bodymap[data-palette="recovery"] .bm-m.l0 { fill: #ef4444; opacity: .9; }
+.bodymap .bm-m.sel { stroke: var(--primary); stroke-width: 2.5px; }
+/* Legend swatches */
+.hm-legend { display: inline-flex; align-items: center; gap: .4rem; font-size: .68rem; color: var(--muted-foreground); }
+.hm-c { display: inline-block; width: .8rem; height: .8rem; border-radius: .2rem; }
+.hm-c.l0 { background: color-mix(in srgb, var(--muted-foreground) 10%, transparent); }
+.hm-c.g1 { background: #86efac; } .hm-c.g2 { background: #4ade80; }
+.hm-c.g3 { background: #22c55e; } .hm-c.g4 { background: #16a34a; }
+.hm-c.b1 { background: #93c5fd; } .hm-c.b2 { background: #3b82f6; }
+.hm-c.b3 { background: #2563eb; }
+.hm-c.r1 { background: #fca5a5; } .hm-c.r0 { background: #ef4444; }
+
 
 /* Phase 5: opt-in tenant brand themes. Only apply these attributes from trusted tenant configuration. */
 [data-brand="ocean"] { --primary: #2c7a86; --primary-foreground: #ffffff; --ring: #2c7a86; --brand-action: #2c7a86; }

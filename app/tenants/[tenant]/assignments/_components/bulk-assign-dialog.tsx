@@ -15,6 +15,7 @@ import { bulkAssignPlan } from '../_api/assignment-api'
 import type { BulkAssignmentResponse } from '../_model/assignment.types'
 
 import MemberPicker, { type MemberPickerSelection } from './member-picker'
+import MemberBodyMapPanel from './member-body-map-panel'
 
 interface SelectedMember {
   id: string
@@ -132,6 +133,17 @@ export function BulkAssignDialog({
               </ul>
             )}
           </div>
+
+          {[...new Set(members.map((m) => m.id))].length === 1 ? (
+            <MemberBodyMapPanel
+              memberId={members[0].id}
+              memberName={members[0].name}
+            />
+          ) : (
+            <p className="text-muted-foreground rounded-lg bg-muted/40 p-3 text-xs">
+              برای نمایش نقشه بدن یک عضو، ابتدا فقط یک شاگرد را در فهرست نگه دارید یا اولین شاگرد را انتخاب کنید.
+            </p>
+          )}
 
           <label className="block space-y-1 text-sm">
             <span>تاریخ شروع</span>

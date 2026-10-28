@@ -39,10 +39,12 @@ export const startWorkout = (payload: StartWorkoutRequest) =>
   createData<StartWorkoutRequest, StartSessionResponse>(BASE, payload)
 export const getWorkout = (sessionId: string) =>
   readData<SessionResponse>(`${BASE}/${encodeURIComponent(sessionId)}`)
+// type/status are numeric enum values both ways (see workout.types.ts).
 export const listMyWorkouts = (
   type?: WorkoutSessionType | '',
   cursor?: string | null,
   pageSize = 20,
+  memberId?: string | null,
 ) =>
   readData<
     | {
@@ -51,7 +53,7 @@ export const listMyWorkouts = (
         nextCursor?: string | null
       }
     | WorkoutListItem[]
-  >(`${BASE}/mine?${query({ type, cursor, pageSize })}`)
+  >(`${BASE}/mine?${query({ type, cursor, pageSize, memberId })}`)
 export const addWorkoutExercise = (
   sessionId: string,
   payload: {

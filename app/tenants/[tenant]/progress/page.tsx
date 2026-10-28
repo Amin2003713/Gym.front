@@ -1,5 +1,7 @@
-import { StatsPage } from '@/features/gym/components/stats-page'
+import { ProgressStatsPage } from './_components/progress-stats-page'
 
-export default function ProgressPage() {
-  return <StatsPage />
+export const metadata = { title: 'آمار و پیشرفت' }
+
+export default function Page() {
+  return <ProgressStatsPage />
 }

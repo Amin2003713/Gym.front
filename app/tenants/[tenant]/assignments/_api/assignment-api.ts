@@ -30,7 +30,7 @@ export const listCoachAssignments = (filters: {
   status?: PlanAssignmentStatus | ''
 }) =>
   readData<PagedResult<CoachAssignmentItem>>(
-    `${BASE}/coach?${query({ pageNumber: 1, pageSize: 100, ...filters })}`,
+    `${BASE}/list?${query({ pageNumber: 1, pageSize: 100, ...filters })}`,
   )
 export const bulkAssignPlan = (
   planId: string,

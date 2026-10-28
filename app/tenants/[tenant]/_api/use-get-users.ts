@@ -4,7 +4,7 @@ import { readData } from '@/core/http-service'
 import { Problem } from '@/types/http-errors.interface'
 import { PublicUser } from '@/types/user.interface'
 
-const getUsers = async () => await readData<PublicUser[]>('user/get-users')
+const getUsers = async () => await readData<PublicUser[]>('user/list-users')
 
 export const useGetUsers = () => {
   const query = useQuery<PublicUser[], Problem>({

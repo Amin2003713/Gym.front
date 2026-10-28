@@ -2,7 +2,7 @@
 
 import { ChevronLeft, Timer } from 'lucide-react'
 
-import type { WorkoutListItem } from '../../workouts/_model/workout.types'
+import { normalizeSessionType, type WorkoutListItem } from '../../workouts/_model/workout.types'
 
 interface Props {
   sessions: WorkoutListItem[]
@@ -56,7 +56,7 @@ export default function WorkoutHistoryTable({ sessions, loading, loadingMore, ha
               className="bg-card hover:bg-muted/40 flex w-full flex-col gap-2 rounded-2xl border p-4 text-right transition"
             >
               <div className="flex items-center justify-between gap-2">
-                <span className="truncate text-sm font-semibold">{item.title || (item.type === 'Free' ? 'جلسه آزاد' : 'جلسه برنامه‌ای')}</span>
+                <span className="truncate text-sm font-semibold">{item.title || (normalizeSessionType(item.type) === 1 ? 'جلسه آزاد' : 'جلسه برنامه‌ای')}</span>
                 <ChevronLeft className="text-muted-foreground size-4 shrink-0" />
               </div>
               <div className="text-muted-foreground flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
@@ -95,7 +95,7 @@ export default function WorkoutHistoryTable({ sessions, loading, loadingMore, ha
                 className="hover:bg-muted/40 cursor-pointer border-b transition last:border-0"
               >
                 <td className="max-w-[220px] truncate px-4 py-3 font-semibold">
-                  {item.title || (item.type === 'Free' ? 'جلسه آزاد' : 'جلسه برنامه‌ای')}
+                  {item.title || (normalizeSessionType(item.type) === 1 ? 'جلسه آزاد' : 'جلسه برنامه‌ای')}
                 </td>
                 <td className="text-muted-foreground px-4 py-3 text-xs">
                   {item.startedAt ? dateFmt.format(new Date(item.startedAt)) : '—'}

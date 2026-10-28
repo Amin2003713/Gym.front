@@ -27,6 +27,8 @@ function useBodyPaths() {
     return paths
 }
 
+export type BodyMapPalette = 'load' | 'recovery'
+
 type ViewProps = {
     view: ViewData
     levels: Record<string, number>
@@ -69,6 +71,8 @@ type BodyMapProps = {
     onMuscle?: (slug: string) => void
     selected?: string
     className?: string
+    /** 'load' = green scale (more trained = greener); 'recovery' = blue scale with red for insufficient recovery. */
+    palette?: BodyMapPalette
 }
 
 export default function BodyMap({
@@ -77,13 +81,14 @@ export default function BodyMap({
                                     body = 'male',
                                     onMuscle,
                                     selected,
-                                    className = ''
+                                    className = '',
+                                    palette = 'load'
                                 }: BodyMapProps) {
     const paths = useBodyPaths()
     const levels = levelsOf(load, thresholds)
     const g = paths && (paths[body] || paths.male)
     return (
-        <div className={'bodymap ' + className}>
+        <div className={'bodymap ' + className} data-palette={palette}>
             {g ? <>
                 <View view={g.front} levels={levels} onMuscle={onMuscle} selected={selected}/>
                 <View view={g.back} levels={levels} onMuscle={onMuscle} selected={selected}/>
@@ -92,14 +97,17 @@ export default function BodyMap({
     )
 }
 
-export function BodyMapLegend() {
-    return <div className="hm-legend" aria-label={`${('Less')} ${('More')}`}>
-        {('Less')}
-        <div className="hm-c l0"/>
-        <div className="hm-c l1"/>
-        <div className="hm-c l2"/>
-        <div className="hm-c l3"/>
-        <div className="hm-c l4"/>
-        {('More')}
+const legends = {
+    load: ['کم‌کارکرد', <div className="hm-c l0" key="l0"/>, <div className="hm-c g1" key="g1"/>,
+        <div className="hm-c g2" key="g2"/>, <div className="hm-c g3" key="g3"/>, <div className="hm-c g4" key="g4"/>,
+        'بیش‌کارکرد'],
+    recovery: ['نیاز به ریکاوری', <div className="hm-c r0" key="r0"/>, <div className="hm-c r1" key="r1"/>,
+        <div className="hm-c b1" key="b1"/>, <div className="hm-c b2" key="b2"/>, <div className="hm-c b3" key="b3"/>,
+        'رکاوری کامل'],
+} as const
+
+export function BodyMapLegend({palette = 'load'}: { palette?: BodyMapPalette }) {
+    return <div className="hm-legend" aria-label="کمتر تا بیشتر">
+        {legends[palette].map((part, index) => <span key={index}>{part}</span>)}
     </div>
 }

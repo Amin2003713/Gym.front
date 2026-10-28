@@ -41,19 +41,19 @@ export function MyWorkoutsTable({ items, loading, onResume }: MyWorkoutsTablePro
             <tr key={`${item.id}-${index}`} className="border-b last:border-0 hover:bg-muted/30">
               <td className="p-3 font-medium">{item.title || 'جلسه تمرین'}</td>
               <td className="p-3">
-                <Badge variant="secondary">{item.type ?? '—'}</Badge>
+                <Badge variant="secondary">{item.type === 1 ? 'آزاد' : item.type === 0 ? 'برنامه‌ریزی‌شده' : '—'}</Badge>
               </td>
               <td className="p-3">
                 <Badge
                   variant={
-                    item.status === 'Completed'
+                    item.status === 1 /* Completed (numeric enum) */
                       ? 'default'
-                      : item.status === 'Abandoned'
+                      : item.status === 2 /* Abandoned */
                         ? 'destructive'
                         : 'outline'
                   }
                 >
-                  {item.status ?? '—'}
+                  {item.status === 1 ? 'تکمیل‌شده' : item.status === 2 ? 'لغوشده' : item.status === 0 ? 'در جریان' : '—'}
                 </Badge>
               </td>
               <td className="p-3" dir="ltr">
@@ -69,7 +69,7 @@ export function MyWorkoutsTable({ items, loading, onResume }: MyWorkoutsTablePro
                   : '—'}
               </td>
               <td className="p-3">
-                {item.status === 'InProgress' && (
+                {item.status === 0 /* InProgress */ && (
                   <Button size="sm" onClick={() => onResume(item.sessionId ?? item.id)}>
                     ادامه تمرین
                   </Button>

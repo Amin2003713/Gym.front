@@ -5,7 +5,14 @@ import { useCallback, useEffect, useState } from 'react'
 import { History, LoaderCircle, RefreshCw } from 'lucide-react'
 
 import type { SessionResponse, WorkoutListItem, WorkoutSessionType } from '../workouts/_model/workout.types'
-import { getWorkout, listMyWorkouts } from '../workouts/_api/workout-api'
+import {
+  getWorkout,
+  listMyWorkouts,
+} from '../workouts/_api/workout-api'
+import {
+  normalizeSessionStatus,
+  WorkoutSessionStatus,
+} from '../workouts/_model/workout.types'
 
 import HistoryReportSection from './_components/history-report-section'
 import WorkoutHistoryTable from './_components/workout-history-table'
@@ -18,7 +25,10 @@ const normalizeList = (raw: Awaited<ReturnType<typeof listMyWorkouts>>): Normali
   const items = Array.isArray(value) ? value : value.items ?? value.results ?? []
   const nextCursor = Array.isArray(value) ? null : value.nextCursor ?? null
   // Server may still return incomplete "InProgress" sessions; list only finished ones.
-  const finished = items.filter((item) => (item.status ?? 'Completed') === 'Completed')
+  // Status arrives as a numeric enum (see workout.types.ts) and normalizes both ways.
+  const finished = items.filter(
+    (item) => normalizeSessionStatus(item.status ?? 'Completed') === WorkoutSessionStatus.Completed,
+  )
   return { items: finished, nextCursor }
 }
 
@@ -111,8 +121,8 @@ export default function WorkoutHistoryPage() {
               onChange={(e) => setType(e.target.value as WorkoutSessionType | '')}
             >
               <option value="">همه جلسات</option>
-              <option value="Planned">برنامه‌ای</option>
-              <option value="Free">آزاد</option>
+              <option value="0">برنامه‌ای</option>
+              <option value="1">آزاد</option>
             </select>
             <button
               type="button"

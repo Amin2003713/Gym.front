@@ -3,6 +3,7 @@
 import { X } from 'lucide-react'
 
 import type { SessionResponse } from '../../workouts/_model/workout.types'
+import { normalizeSessionType } from '../../workouts/_model/workout.types'
 
 interface Props {
   session: SessionResponse
@@ -27,7 +28,7 @@ export default function WorkoutSessionDialog({ session, onClose }: Props) {
       >
         <div className="mb-4 flex items-start justify-between gap-3">
           <div>
-            <h2 className="text-lg font-bold">{session.title || (session.type === 'Free' ? 'جلسه آزاد' : 'جلسه برنامه‌ای')}</h2>
+            <h2 className="text-lg font-bold">{session.title || (normalizeSessionType(session.type) === 1 ? 'جلسه آزاد' : 'جلسه برنامه‌ای')}</h2>
             <p className="text-muted-foreground mt-1 text-xs">
               {session.completedAt
                 ? `پایان‌یافته در ${new Intl.DateTimeFormat('fa-IR', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(session.completedAt))}`

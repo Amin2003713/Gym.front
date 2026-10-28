@@ -13,6 +13,7 @@ import { createPlan, getPlan, updatePlan } from '../_api/plan-api'
 import type { PlanDetail, PlanDurationType, PlanGoal, PlanLevel, PlanSummary, PlanVisibility, PlanWriteRequest } from '../_model/plan.types'
 
 import ExercisePicker, { type ExercisePickerSelection } from './exercise-picker'
+import PlanCoverageMap from './plan-coverage-map'
 
 type Props = { open: boolean; plan?: PlanSummary | null; onOpenChange: (open: boolean) => void; onSaved: () => void }
 type ExerciseRow = { exerciseId: string; exerciseName: string; targetSets: string; targetRepsMin: string; targetRepsMax: string; targetRir: string; restSeconds: string; notes: string }
@@ -130,6 +131,12 @@ export function PlanFormDialog({ open, plan, onOpenChange, onSaved }: Props) {
             </div>)}
           </div>)}
         </div>
+        <PlanCoverageMap
+          rows={days.flatMap((day) => day.exercises.map((ex) => ({
+            exerciseId: ex.exerciseId,
+            targetSets: Number(ex.targetSets) || undefined,
+          })))}
+        />
         <DialogFooter><Button type="submit" disabled={saving}>{saving ? 'در حال ذخیره…' : 'ذخیره برنامه'}</Button><Button type="button" variant="outline" disabled={saving} onClick={() => onOpenChange(false)}><X className="ml-1 size-4" />انصراف</Button></DialogFooter>
       </form>}
     </DialogContent>

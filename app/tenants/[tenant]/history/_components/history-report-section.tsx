@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react'
 
 import { Activity, CalendarCheck, Dumbbell, Timer } from 'lucide-react'
 
-import type { WorkoutListItem } from '../../workouts/_model/workout.types'
+import { normalizeSessionType, type WorkoutListItem } from '../../workouts/_model/workout.types'
 
 interface Props {
   sessions: WorkoutListItem[]
@@ -37,7 +37,7 @@ export default function HistoryReportSection({ sessions, loading }: Props) {
       const end = item.completedAt ? new Date(item.completedAt).getTime() : undefined
       if (start && end && end > start) totalMinutes += (end - start) / 60000
       if (start && start >= weekStart) thisWeek += 1
-      const key = item.title || (item.type === 'Free' ? 'جلسه آزاد' : 'جلسه برنامه‌ای')
+      const key = item.title || (normalizeSessionType(item.type) === 1 ? 'جلسه آزاد' : 'جلسه برنامه‌ای')
       perExercise.set(key, (perExercise.get(key) ?? 0) + 1)
     }
     const favourite = [...perExercise.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? '—'
