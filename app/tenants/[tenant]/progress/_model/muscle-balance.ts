@@ -226,21 +226,30 @@ export function computeRecovery(use: MuscleUse | undefined, nowMs: number): Reco
 }
 
 /** Levels 0-4 for the trained/load map: 0 none, brighter = more trained. */
+
 export function loadLevels(
-  perMuscle: Record<MuscleSlug, MuscleUse>,
+    perMuscle: Partial<Record<MuscleSlug, MuscleUse>> | null | undefined,
 ): Record<string, number> {
   const load: Record<string, number> = {}
+
   for (const slug of MUSCLES) {
-    load[slug] = perMuscle[slug].primarySets + perMuscle[slug].secondarySets
+    const use = perMuscle?.[slug]
+
+    load[slug] = (use?.primarySets ?? 0) + (use?.secondarySets ?? 0)
   }
-  const max = Math.max(0, ...MUSCLES.map((m) => load[m]))
+
+  const max = Math.max(0, ...Object.values(load))
   const out: Record<string, number> = {}
+
   for (const slug of MUSCLES) {
-    const v = load[slug]
-    out[slug] = !v || max <= 0
-      ? 0
-      : Math.max(1, Math.min(4, Math.ceil((v / max) * 4)))
+    const value = load[slug]
+
+    out[slug] =
+        value === 0 || max === 0
+            ? 0
+            : Math.max(1, Math.min(4, Math.ceil((value / max) * 4)))
   }
+
   return out
 }
 

@@ -24,7 +24,7 @@ import {
 } from 'recharts'
 
 import { useFigureGender } from '@/hooks/use-figure-gender'
-import type { MuscleSlug } from '@/lib/muscles'
+import { MUSCLES, MuscleSlug } from '@/lib/muscles'
 
 import {
   useMuscleBalance,
@@ -36,6 +36,7 @@ import {
   recoveryLevels,
   type CoachRow,
   type WorkoutMuscleStats,
+  MuscleUse,
 } from '../_model/muscle-balance'
 import BodyMapPanel from './body-map-panel'
 import CoachReportTable from './coach-report-table'
@@ -140,11 +141,26 @@ export function ProgressStatsPage() {
 
   // Captured once per mount so the memo stays pure; minute-level drift is irrelevant.
   const [nowMs] = useState(() => Date.now())
-  const payload = useMemo(() => ({
-    loadLevels: loadLevels(stats.perMuscle),
-    recovery: recoveryLevels(stats.perMuscle, nowMs),
-    rows: coachRows(stats.perMuscle, nowMs),
-  }), [stats, nowMs])
+
+  const payload = useMemo(() => {
+    const perMuscle = Object.fromEntries(
+      MUSCLES.map((slug) => [
+        slug,
+        stats?.perMuscle?.[slug] ?? {
+          primarySets: 0,
+          secondarySets: 0,
+          volumeKg: 0,
+          sessions: 0,
+        },
+      ]),
+    ) as Record<MuscleSlug, MuscleUse>
+
+    return {
+      loadLevels: loadLevels(perMuscle),
+      recovery: recoveryLevels(perMuscle, nowMs),
+      rows: coachRows(perMuscle, nowMs),
+    }
+  }, [stats, nowMs])
 
   return (
     <main
@@ -155,8 +171,7 @@ export function ProgressStatsPage() {
         <div className="bg-primary/10 pointer-events-none absolute -top-16 -left-10 size-48 rounded-full blur-3xl" />
         <div className="relative flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <span
-              className="bg-primary/10 text-primary inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold">
+            <span className="bg-primary/10 text-primary inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold">
               <TrendingUp className="size-3.5" /> آمار و پیشرفت
             </span>
             <h1 className="mt-3 text-2xl font-extrabold tracking-tight sm:text-3xl">
@@ -167,8 +182,7 @@ export function ProgressStatsPage() {
               گزارش کاربردی برای مربی — همه از جلسات ثبت‌شده در API تمرین.
             </p>
           </div>
-          <label
-            className="bg-background/80 text-muted-foreground inline-flex items-center gap-2 self-start rounded-xl border px-3 py-2 text-xs sm:self-auto">
+          <label className="bg-background/80 text-muted-foreground inline-flex items-center gap-2 self-start rounded-xl border px-3 py-2 text-xs sm:self-auto">
             بازه زمانی
             <select
               className="bg-background h-8 rounded-lg border px-2 text-xs"
@@ -241,8 +255,7 @@ export function ProgressStatsPage() {
         />
       )}
 
-      <footer
-        className="text-muted-foreground flex flex-wrap items-start gap-2 rounded-xl border border-dashed px-4 py-3 text-xs leading-5">
+      <footer className="text-muted-foreground flex flex-wrap items-start gap-2 rounded-xl border border-dashed px-4 py-3 text-xs leading-5">
         <Info className="mt-0.5 size-4 shrink-0" />
         <span>
           الگوی آمار از openGym؛ نقشه عضلات به رنگ سبز (کارکرد)، آبی (ریکاوری) و
