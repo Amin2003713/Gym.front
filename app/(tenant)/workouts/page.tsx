@@ -9,16 +9,23 @@ import { useUserRoles } from '@/hooks/use-user-roles'
 import { toast } from '@/lib/toast'
 
 import { listMyAssignments } from '../assignments/_api/assignment-api'
-import type { AssignmentListItem } from '../assignments/_model/assignment.types'
+import {
+  AssignmentListItem,
+  PlanAssignmentStatus,
+} from '../assignments/_model/assignment.types'
 
-import { getNextSession, listMyWorkouts, startWorkout, type NextSessionResponse } from './_api/workout-api'
+import {
+  getNextSession,
+  listMyWorkouts,
+  type NextSessionResponse,
+  startWorkout,
+} from './_api/workout-api'
 import { MyWorkoutsTable } from './_components/my-workouts-table'
 import { WorkoutSessionPanel } from './_components/workout-session-panel'
 import type {
   WorkoutListItem,
   WorkoutSessionType,
 } from './_model/workout.types'
-
 
 export default function WorkoutsPage() {
   const { isTraineeOnly, isAdmin, isTrainer } = useUserRoles()
@@ -35,8 +42,14 @@ export default function WorkoutsPage() {
     setLoading(true)
     try {
       // type arrives as the numeric enum value (''/0/1) from the filter select.
-      const result = await listMyWorkouts(type === '' ? '' : (Number(type) as WorkoutSessionType))
-      setItems(Array.isArray(result) ? result : [...(result.items ?? []), ...(result.results ?? [])])
+      const result = await listMyWorkouts(
+        type === '' ? '' : (Number(type) as WorkoutSessionType),
+      )
+      setItems(
+        Array.isArray(result)
+          ? result
+          : [...(result.items ?? []), ...(result.results ?? [])],
+      )
     } catch (e) {
       toast.error('دریافت سوابق تمرین ناموفق بود', {
         description: e instanceof Error ? e.message : 'خطای ناشناخته',
@@ -67,7 +80,11 @@ export default function WorkoutsPage() {
   const startFree = async () => {
     setStarting(true)
     try {
-      const result = await startWorkout({ mode: 'free', assignmentId: null, planDayId: null })
+      const result = await startWorkout({
+        mode: 'free',
+        assignmentId: null,
+        planDayId: null,
+      })
       const id = result.sessionId ?? result.id
       if (!id) throw new Error('پاسخ API شناسه جلسه را برنگرداند.')
       setActiveSessionId(id)
@@ -81,7 +98,10 @@ export default function WorkoutsPage() {
     }
   }
 
-  const startFromAssignment = async (assignmentId: string, planDayId: string | null) => {
+  const startFromAssignment = async (
+    assignmentId: string,
+    planDayId: string | null,
+  ) => {
     setStarting(true)
     try {
       // Ask the API which day/session comes next for this assignment when the
@@ -90,7 +110,11 @@ export default function WorkoutsPage() {
         const next = (await getNextSession(assignmentId)) as NextSessionResponse
         planDayId = typeof next?.planDayId === 'string' ? next.planDayId : null
       }
-      const result = await startWorkout({ mode: 'planned', assignmentId, planDayId })
+      const result = await startWorkout({
+        mode: 'planned',
+        assignmentId,
+        planDayId,
+      })
       const id = result.sessionId ?? result.id
       if (!id) throw new Error('پاسخ API شناسه جلسه را برنگرداند.')
       setActiveSessionId(id)
@@ -135,18 +159,28 @@ export default function WorkoutsPage() {
       <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
         <div>
           <h1 className="text-2xl font-bold">تمرین‌ها</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
+          <p className="text-muted-foreground mt-1 text-sm">
             {isTraineeOnly
               ? 'شروع جلسه بعدی برنامه مربی یا تمرین آزاد'
               : 'شروع تمرین آزاد یا برنامه‌ریزی‌شده، ثبت ست‌ها و مشاهده سوابق'}
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button variant="outline" onClick={() => void load()} disabled={loading}>
-            <RefreshCw className={`ml-2 size-4 ${loading ? 'animate-spin' : ''}`} />
+          <Button
+            variant="outline"
+            onClick={() => void load()}
+            disabled={loading}
+          >
+            <RefreshCw
+              className={`ml-2 size-4 ${loading ? 'animate-spin' : ''}`}
+            />
             بروزرسانی
           </Button>
-          <Button onClick={openPlannedFlow} disabled={starting} variant="outline">
+          <Button
+            onClick={openPlannedFlow}
+            disabled={starting}
+            variant="outline"
+          >
             <Play className="ml-2 size-4" />
             شروع جلسه برنامه‌ریزی‌شده
           </Button>
@@ -164,8 +198,9 @@ export default function WorkoutsPage() {
           </CardHeader>
           <CardContent className="space-y-2">
             {assignments.length === 0 ? (
-              <p className="py-6 text-center text-sm text-muted-foreground">
-                برنامه فعالی برای شروع جلسه بعدی ندارید. از بخش برنامه‌های من ثبت‌نام یا تخصیص را بررسی کنید.
+              <p className="text-muted-foreground py-6 text-center text-sm">
+                برنامه فعالی برای شروع جلسه بعدی ندارید. از بخش برنامه‌های من
+                ثبت‌نام یا تخصیص را بررسی کنید.
               </p>
             ) : (
               assignments.map((assignment) => {
@@ -181,15 +216,26 @@ export default function WorkoutsPage() {
                     className="flex flex-wrap items-center justify-between gap-2 rounded-lg border p-3"
                   >
                     <div className="min-w-0">
-                      <p className="font-medium">{assignment.planTitle ?? 'برنامه تمرینی'}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {assignment.completedSessions} از {assignment.totalSessions} جلسه تکمیل شده
+                      <p className="font-medium">
+                        {assignment.planTitle ?? 'برنامه تمرینی'}
+                      </p>
+                      <p className="text-muted-foreground text-xs">
+                        {assignment.completedSessions} از{' '}
+                        {assignment.totalSessions} جلسه تکمیل شده
                       </p>
                     </div>
                     <Button
                       size="sm"
-                      onClick={() => void startFromAssignment(id, assignment.planDayId ?? null)}
-                      disabled={starting || assignment.status !== 'Active'}
+                      onClick={() =>
+                        void startFromAssignment(
+                          id,
+                          assignment.planDayId ?? null,
+                        )
+                      }
+                      disabled={
+                        starting ||
+                        assignment.status !== PlanAssignmentStatus.Active
+                      }
                     >
                       شروع جلسه بعد
                     </Button>
@@ -210,7 +256,7 @@ export default function WorkoutsPage() {
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>سوابق تمرین</CardTitle>
           <select
-            className="h-10 rounded-md border bg-background px-3"
+            className="bg-background h-10 rounded-md border px-3"
             value={type}
             onChange={(e) => setType(e.target.value)}
           >
@@ -229,8 +275,9 @@ export default function WorkoutsPage() {
       </Card>
 
       {(isAdmin || isTrainer) && (
-        <p className="text-xs text-muted-foreground">
-          نقش شما: {isTrainer ? 'مربی' : 'مالک گروه'} · جلسه‌های فعال قابل بازیابی و تکمیل هستند.
+        <p className="text-muted-foreground text-xs">
+          نقش شما: {isTrainer ? 'مربی' : 'مالک گروه'} · جلسه‌های فعال قابل
+          بازیابی و تکمیل هستند.
         </p>
       )}
     </div>

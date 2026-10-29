@@ -1,8 +1,14 @@
 'use client'
 
 import { ArrowLeft } from 'lucide-react'
-import { useRouter } from 'next/navigation'
-import { useActionState, useEffect, useRef, useTransition } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
+import {
+  useActionState,
+  useEffect,
+  useRef,
+  useTransition,
+  useState,
+} from 'react'
 import * as React from 'react'
 
 import { sendActivationCodeAction, signinAction } from '@/actions/auth'
@@ -31,30 +37,38 @@ export function SigninForm() {
         loginState.error.status === 403 ||
         loginState.error.title === 'FORBIDDEN'
       ) {
-        toast.error('حساب شما تأیید نشده است!', {
-          description:
-            'برای فعال‌سازی حساب، کد تأیید برای شما ارسال می‌شود.',
-        })
         const userName = lastAttemptedUserName.current
+
+        toast.error('حساب شما تأیید نشده است!', {
+          description: 'برای فعال‌سازی حساب، کد تأیید برای شما ارسال می‌شود.',
+        })
+
         startTransition(async () => {
-          await sendActivationCodeAction(undefined, { phoneNumber: userName })
+          await sendActivationCodeAction(undefined, {
+            phoneNumber: userName,
+            domain: '',
+          })
+
           router.push(`/verify-account?u=${encodeURIComponent(userName)}`)
         })
+
         return
       }
+
       toast.error('خطا!', {
-        description: loginState.error.detail!,
+        description: loginState.error.detail || 'خطایی رخ داده است.',
       })
-    } else if (loginState && loginState.isSuccess) {
-      router.push('/')
+    } else if (loginState?.isSuccess) {
       toast.success('خوش آمدید')
+      router.push('/')
     }
-  }, [loginState, router, toast])
+  }, [loginState, router])
 
   const onSubmit = (data: SigninUserModel) => {
     lastAttemptedUserName.current = data.userName || ''
     startTransition(() => action(data))
   }
+
 
   return (
     <FormWrapper
@@ -126,7 +140,7 @@ export function SigninForm() {
             </p>
             <a
               href="/signup"
-              className="font-bold text-foreground underline underline-offset-4"
+              className="text-foreground font-bold underline underline-offset-4"
             >
               ثبت گروه ورزشی جدید
             </a>

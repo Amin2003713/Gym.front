@@ -80,10 +80,8 @@
         }
     }
 
-
     @keyframes wiggle {
-        0%,
-        100% {
+        0%, 100% {
             transform: rotate(-3deg);
         }
         50% {
@@ -186,107 +184,118 @@
     }
 }
 
-/* HamOwj brand tokens: warm ivory, orange, muted slate, bronze, stone and ink. */
+/* ==========================================================================
+   HamOwj color system (provisional brand — name/identity not yet approved)
+   Six brand colors are preserved exactly:
+     Decorator White #F6F3ED · Chat Orange #FB9A3C · Portsmouth #788584
+     Buckthorn Brown #A96D20 · Ewa #463F41 · Eerie Black #1B1A1B
+   Everything else is a DERIVED tint/shade or a PROPOSED status color and needs
+   brand approval. Contrast ratios (WCAG) are noted where they drive a rule.
+
+   Hard rules
+   - Text on Chat Orange is Eerie Black only (8.09:1). Never white (1.94:1).
+   - Chat Orange is a fill on light backgrounds, never text (1.94:1).
+   - Portsmouth / Buckthorn Brown on light: icons, borders, large text only.
+   - Dark theme muted text is #9FA9A8 (6.5:1+), not raw Portsmouth on cards.
+   ========================================================================== */
 :root {
     color-scheme: light;
-    --radius: 0.875rem; /* 14px per guide: controls -> rounded-sm (10px), cards -> rounded-lg (14px), pills -> 999px */
-    --brand-ivory: #f6f3ed;
-    --brand-orange: #fb9a3c;
-    --brand-slate: #788584;
-    --brand-bronze: #a96d20;
-    --brand-ewa: #463f41;
-    --brand-black: #1b1a1b;
-    --brand-ink: var(--brand-black);
-    --brand-stone: var(--brand-ewa);
-    --brand-canvas: var(--brand-ivory);
-    --brand-action: var(--brand-orange);
-    --brand-logo-secondary: #352820;
+    --radius: 0.875rem; /* 14px: controls -> rounded-sm (10px), cards -> rounded-lg (14px), pills -> 999px */
 
-    /* HamOwj semantic tokens — exact values from the visual guide (light). */
-    --background: #f6f3ed;               /* Decorator White  */
-    --foreground: #1b1a1b;               /* Eerie Black — DOM text */
-    --card: #fbf9f5;                     /* surface (mixed)  */
-    --card-foreground: #1b1a1b;
-    --popover: #fbf9f5;
-    --popover-foreground: #1b1a1b;
-    --primary: #fb9a3c;                  /* Chat Orange — action */
-    --primary-foreground: #1b1a1b;       /* on-action */
-    --secondary: #e9e6df;
-    --secondary-foreground: #1b1a1b;
-    --muted: #eeece6;
-    --muted-foreground: #463f41;         /* Ewa — muted text */
-    --accent: #f8e4cf;
-    --accent-foreground: #1b1a1b;
-    --destructive: #b3392f;              /* error */
-    --destructive-foreground: #f6f3ed;
-    --border: #ddd7cb;
-    --input: #788584;                    /* control-border (Portsmouth) */
-    --ring: #1b1a1b;                     /* focus */
-    --disabled: #b9b5ad;                 /* disabled text/icon */
-    --chart-1: #fb9a3c;
-    --chart-2: #788584;
-    --chart-3: #a96d20;
-    --chart-4: #463f41;
-    --chart-5: #c76f24;
-    --sidebar: #fbf9f4;
-    --sidebar-foreground: #1b1a1b;
-    --sidebar-primary: #fb9a3c;
-    --sidebar-primary-foreground: #1b1a1b;
-    --sidebar-accent: #f8e4cf;
-    --sidebar-accent-foreground: #1b1a1b;
-    --sidebar-border: #ddd7cb;
-    --sidebar-ring: #1b1a1b;
-    --success: #2e7d4f;                  /* success (solid, ivory text) */
-    --success-foreground: #f6f3ed;
-    --info: #3a6b8c;                     /* info (solid, ivory text) */
-    --info-foreground: #f6f3ed;
-    --warning: #8a5a00;                  /* warning (solid, ivory text) */
-    --warning-foreground: #f6f3ed;
+    /* Brand palette (fixed) */
+    --brand-ivory: #F6F3ED; /* Decorator White */
+    --brand-orange: #FB9A3C; /* Chat Orange */
+    --brand-slate: #788584; /* Portsmouth */
+    --brand-bronze: #A96D20; /* Buckthorn Brown */
+    --brand-ewa: #463F41; /* Ewa */
+    --brand-black: #1B1A1B; /* Eerie Black */
+    --brand-logo-secondary: #352820; /* logo 2nd shape on light (HamOwjMarkDark) */
+
+    /* Semantic tokens — light */
+    --background: #F6F3ED;
+    --foreground: #1B1A1B; /* 15.67:1 */
+    --card: #FBF9F5; /* derived surface */
+    --card-foreground: #1B1A1B;
+    --popover: #FBF9F5;
+    --popover-foreground: #1B1A1B;
+    --primary: #FB9A3C;
+    --primary-foreground: #1B1A1B; /* 8.09:1 */
+    --secondary: #EAE5DA; /* derived, 13.8:1 with foreground */
+    --secondary-foreground: #1B1A1B;
+    --muted: #EFEBE2; /* derived */
+    --muted-foreground: #463F41; /* Ewa, 8.6:1 on muted, 9.3:1 on bg */
+    --accent: #FDE3C7; /* orange tint, 14:1 with foreground */
+    --accent-foreground: #1B1A1B;
+    --destructive: #B3392F; /* proposed */
+    --destructive-foreground: rgb(255 14 14 / 0.93); /* 5.93:1 */
+    --border: #DDD7CB; /* decorative divider */
+    --input: #788584; /* control border, 3.5:1+ (WCAG 1.4.11) */
+    --ring: #1B1A1B; /* focus ring */
+    --disabled: #B9B5AD;
+    --chart-1: #A96D20; /* orange fails 3:1 on light, so bronze leads */
+    --chart-2: #FB9A3C; /* use with a dark stroke or label */
+    --chart-3: #3A6B8C;
+    --chart-4: #463F41;
+    --chart-5: #788584;
+    --sidebar: #FBF9F5;
+    --sidebar-foreground: #1B1A1B;
+    --sidebar-primary: #FB9A3C;
+    --sidebar-primary-foreground: #1B1A1B;
+    --sidebar-accent: #FDE3C7;
+    --sidebar-accent-foreground: #1B1A1B;
+    --sidebar-border: #DDD7CB;
+    --sidebar-ring: #1B1A1B;
+    --success: #2E7D4F; /* proposed, 4.56:1 on bg */
+    --success-foreground: #FFFFFF; /* 5.05:1 */
+    --info: #3A6B8C; /* proposed, 5.18:1 on bg */
+    --info-foreground: #FFFFFF; /* 5.74:1 */
+    --warning: #8A5A00; /* proposed, 5.35:1 on bg */
+    --warning-foreground: #FFFFFF; /* 5.93:1 */
 }
 
-/* HamOwj semantic tokens — exact values from the visual guide (dark). */
+/* Semantic tokens — dark */
 .dark {
-  --brand-logo-secondary: #f6f3ed;
     color-scheme: dark;
-    --background: #1b1a1b;               /* Eerie Black */
-    --foreground: #f6f3ed;               /* Decorator White — DOM text */
-    --card: #252324;                     /* surface (mixed) */
-    --card-foreground: #f6f3ed;
+    --brand-logo-secondary: #F6F3ED; /* HamOwjMarkLite */
+    --background: #1B1A1B;
+    --foreground: #F6F3ED; /* 15.67:1 */
+    --card: #252324; /* derived surface */
+    --card-foreground: #F6F3ED;
     --popover: #252324;
-    --popover-foreground: #f6f3ed;
-    --primary: #fb9a3c;                  /* Chat Orange — action */
-    --primary-foreground: #1b1a1b;       /* on-action */
-    --secondary: #343031;
-    --secondary-foreground: #f6f3ed;
-    --muted: #302d2e;
-    --muted-foreground: #9fa9a8;         /* muted text — never Portsmouth */
-    --accent: #453327;
-    --accent-foreground: #f6f3ed;
-    --destructive: #f08a80;              /* error */
-    --destructive-foreground: #1b1a1b;
-    --border: #3a3638;
-    --input: #788584;                    /* control-border (Portsmouth) */
-    --ring: #f6f3ed;                     /* focus */
-    --disabled: #5a5557;                 /* disabled text/icon */
-    --chart-1: #fb9a3c;
-    --chart-2: #9aa8a5;
-    --chart-3: #c88b42;
-    --chart-4: #d4cbc5;
-    --chart-5: #e8b078;
-    --sidebar: #211f20;
-    --sidebar-foreground: #f6f3ed;
-    --sidebar-primary: #fb9a3c;
-    --sidebar-primary-foreground: #1b1a1b;
-    --sidebar-accent: #343031;
-    --sidebar-accent-foreground: #f6f3ed;
-    --sidebar-border: #3a3638;
-    --sidebar-ring: #f6f3ed;
-    --success: #6fc08f;                  /* success (solid, ink text) */
-    --success-foreground: #1b1a1b;
-    --info: #8db8d6;                     /* info (solid, ink text) */
-    --info-foreground: #1b1a1b;
-    --warning: #e0b04f;                  /* warning (solid, ink text) */
-    --warning-foreground: #1b1a1b;
+    --popover-foreground: #F6F3ED;
+    --primary: #FB9A3C;
+    --primary-foreground: #1B1A1B; /* 8.09:1 */
+    --secondary: #302D2E; /* derived */
+    --secondary-foreground: #F6F3ED;
+    --muted: #2A2728; /* derived */
+    --muted-foreground: #9FA9A8; /* lightened Portsmouth, 6.1:1 on muted */
+    --accent: #3A2A17; /* dark orange tint */
+    --accent-foreground: #F6F3ED;
+    --destructive: #F08A80; /* proposed, 7.15:1 on bg */
+    --destructive-foreground: rgb(204 9 91 / 0.76);
+    --border: #3A3638;
+    --input: #788584; /* 4.5:1 on bg, 4.1:1 on card */
+    --ring: #F6F3ED;
+    --disabled: #5A5557;
+    --chart-1: #FB9A3C;
+    --chart-2: #F6F3ED;
+    --chart-3: #8DB8D6;
+    --chart-4: #C98A3E;
+    --chart-5: #9FA9A8;
+    --sidebar: #1F1D1E;
+    --sidebar-foreground: #F6F3ED;
+    --sidebar-primary: #FB9A3C;
+    --sidebar-primary-foreground: #1B1A1B;
+    --sidebar-accent: #302D2E;
+    --sidebar-accent-foreground: #F6F3ED;
+    --sidebar-border: #3A3638;
+    --sidebar-ring: #F6F3ED;
+    --success: #6FC08F; /* 7.94:1 on bg */
+    --success-foreground: #1B1A1B;
+    --info: #8DB8D6; /* 8.23:1 */
+    --info-foreground: #1B1A1B;
+    --warning: #E0B04F; /* 8.67:1 */
+    --warning-foreground: #1B1A1B;
 }
 
 @layer base {
@@ -342,81 +351,281 @@
     scrollbar-width: none;
 }
 
-/* HamOwj Phase 2 design-system primitives + Phase 3 application surfaces. */
+/* HamOwj design-system primitives + application surfaces. */
 :root {
-  --brand-focus: var(--ring);
-  --brand-divider: color-mix(in srgb, var(--foreground) 12%, transparent);
-  --surface-raised: var(--card);
-  --surface-subtle: color-mix(in srgb, var(--background) 72%, var(--foreground) 4%);
-  --shadow-card: 0 2px 10px rgb(27 26 27 / 4%), 0 1px 2px rgb(27 26 27 / 3%);
-  --shadow-elevated: 0 16px 42px rgb(27 26 27 / 10%), 0 3px 10px rgb(27 26 27 / 4%);
+    --brand-focus: var(--ring);
+    --brand-divider: color-mix(in srgb, var(--foreground) 12%, transparent);
+    --surface-raised: var(--card);
+    --surface-subtle: color-mix(in srgb, var(--background) 72%, var(--foreground) 4%);
+    --shadow-card: 0 2px 10px rgb(27 26 27 / 6%), 0 1px 2px rgb(27 26 27 / 5%);
+    --shadow-elevated: 0 16px 42px rgb(27 26 27 / 13%), 0 3px 10px rgb(27 26 27 / 6%);
 }
 
-
 .dark {
-  --brand-divider: color-mix(in srgb, var(--foreground) 16%, transparent);
-  --surface-subtle: color-mix(in srgb, var(--card) 82%, var(--foreground) 4%);
-  --shadow-card: 0 2px 12px rgb(0 0 0 / 15%);
-  --shadow-elevated: 0 18px 48px rgb(0 0 0 / 28%);
+    --brand-divider: color-mix(in srgb, var(--foreground) 16%, transparent);
+    --surface-subtle: color-mix(in srgb, var(--card) 82%, var(--foreground) 4%);
+    --shadow-card: 0 2px 12px rgb(0 0 0 / 18%);
+    --shadow-elevated: 0 18px 48px rgb(0 0 0 / 32%);
 }
 
 @layer base {
-  button, a, input, textarea, select { -webkit-tap-highlight-color: transparent; }
-  button:not(:disabled), [role="button"]:not([aria-disabled="true"]) { cursor: pointer; }
-  button:disabled { cursor: not-allowed; }
+    button, a, input, textarea, select {
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    button:not(:disabled), [role="button"]:not([aria-disabled="true"]) {
+        cursor: pointer;
+    }
+
+    button:disabled {
+        cursor: not-allowed;
+    }
 }
 
 @layer utilities {
-  .brand-card { border: 1px solid var(--brand-divider); border-radius: var(--radius); background: var(--surface-raised); box-shadow: var(--shadow-card); }
-  .brand-card-interactive { transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease; }
-  .brand-card-interactive:hover { border-color: color-mix(in srgb, var(--primary) 45%, var(--border)); box-shadow: var(--shadow-elevated); }
-  .brand-eyebrow { color: var(--muted-foreground); font-size: .72rem; font-weight: 700; letter-spacing: .025em; }
-  .brand-divider { border-color: var(--brand-divider); }
-  .brand-focus-ring:focus-visible { outline: 3px solid var(--brand-focus); outline-offset: 2px; }
-  .text-balance { text-wrap: balance; }
+    .brand-card {
+        border: 1px solid var(--brand-divider);
+        border-radius: var(--radius);
+        background: var(--surface-raised);
+        box-shadow: var(--shadow-card);
+    }
+
+    .brand-card-interactive {
+        transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+    }
+
+    .brand-card-interactive:hover {
+        border-color: color-mix(in srgb, var(--primary) 55%, var(--border));
+        box-shadow: var(--shadow-elevated);
+    }
+
+    .brand-eyebrow {
+        color: var(--muted-foreground);
+        font-size: .72rem;
+        font-weight: 700;
+        letter-spacing: .025em;
+    }
+
+    .brand-divider {
+        border-color: var(--brand-divider);
+    }
+
+    .brand-focus-ring:focus-visible {
+        outline: 3px solid var(--brand-focus);
+        outline-offset: 2px;
+    }
+
+    .text-balance {
+        text-wrap: balance;
+    }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+    *, *::before, *::after {
+        scroll-behavior: auto !important;
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: .01ms !important;
+    }
 }
 
 /* ---------------------------------- */
 /* Body map (SVG muscle figures)       */
-/* Palettes: trained=green scale,      */
-/* recovery=blue scale with red for    */
-/* muscles still recovering too little */
+/* Palettes now use theme tokens:      */
+/* load     = brand orange scale       */
+/* recovery = info (blue) scale, with  */
+/*            destructive for low      */
+/* Never rely on color alone: keep the */
+/* legend + numeric/text labels.       */
 /* ---------------------------------- */
-.bodymap { display: flex; align-items: stretch; justify-content: center; gap: .35rem; width: 100%; }
-.bodymap .bm-v { display: block; height: auto; min-width: 0; max-height: 380px; flex: 1 1 50%; }
-.bm-ph { display: block; width: 78%; margin: 0 auto; aspect-ratio: 727 / 1280; border-radius: 1rem; background: color-mix(in srgb, var(--muted) 70%, transparent); }
-.bm-sil { fill: color-mix(in srgb, var(--muted-foreground) 22%, transparent); }
-.bm-m { transition: fill 240ms ease; }
-/* Trained load: brighter = more trained */
-.bm-m.l0, .bodymap[data-palette="load"] .bm-m.l0 { fill: color-mix(in srgb, var(--muted-foreground) 10%, transparent); }
-.bodymap[data-palette="load"] .bm-m.l1 { fill: #86efac; opacity: .55; }
-.bodymap[data-palette="load"] .bm-m.l2 { fill: #4ade80; opacity: .75; }
-.bodymap[data-palette="load"] .bm-m.l3 { fill: #22c55e; opacity: .9; }
-.bodymap[data-palette="load"] .bm-m.l4 { fill: #16a34a; opacity: 1; }
-/* Recovery: bright blue = recovered, red = not enough recovery yet */
-.bodymap[data-palette="recovery"] .bm-m.l4 { fill: #2563eb; opacity: .95; }
-.bodymap[data-palette="recovery"] .bm-m.l3 { fill: #3b82f6; opacity: .75; }
-.bodymap[data-palette="recovery"] .bm-m.l2 { fill: #93c5fd; opacity: .55; }
-.bodymap[data-palette="recovery"] .bm-m.l1 { fill: #fca5a5; opacity: .55; }
-.bodymap[data-palette="recovery"] .bm-m.l0 { fill: #ef4444; opacity: .9; }
-.bodymap .bm-m.sel { stroke: var(--primary); stroke-width: 2.5px; }
-/* Legend swatches */
-.hm-legend { display: inline-flex; align-items: center; gap: .4rem; font-size: .68rem; color: var(--muted-foreground); }
-.hm-c { display: inline-block; width: .8rem; height: .8rem; border-radius: .2rem; }
-.hm-c.l0 { background: color-mix(in srgb, var(--muted-foreground) 10%, transparent); }
-.hm-c.g1 { background: #86efac; } .hm-c.g2 { background: #4ade80; }
-.hm-c.g3 { background: #22c55e; } .hm-c.g4 { background: #16a34a; }
-.hm-c.b1 { background: #93c5fd; } .hm-c.b2 { background: #3b82f6; }
-.hm-c.b3 { background: #2563eb; }
-.hm-c.r1 { background: #fca5a5; } .hm-c.r0 { background: #ef4444; }
+.bodymap {
+    display: flex;
+    align-items: stretch;
+    justify-content: center;
+    gap: .35rem;
+    width: 100%;
+}
 
+.bodymap .bm-v {
+    display: block;
+    height: auto;
+    min-width: 0;
+    max-height: 380px;
+    flex: 1 1 50%;
+}
 
-/* Phase 5: opt-in tenant brand themes. Only apply these attributes from trusted tenant configuration. */
-[data-brand="ocean"] { --primary: #2c7a86; --primary-foreground: #ffffff; --ring: #2c7a86; --brand-action: #2c7a86; }
-[data-brand="forest"] { --primary: #477a54; --primary-foreground: #ffffff; --ring: #477a54; --brand-action: #477a54; }
-[data-brand="sunset"] { --primary: #c46b36; --primary-foreground: #ffffff; --ring: #c46b36; --brand-action: #c46b36; }
-[data-brand] { --brand-focus: var(--ring); }
+.bm-ph {
+    display: block;
+    width: 78%;
+    margin: 0 auto;
+    aspect-ratio: 727 / 1280;
+    border-radius: 1rem;
+    background: color-mix(in srgb, var(--muted) 70%, transparent);
+}
+
+.bm-sil {
+    fill: color-mix(in srgb, var(--muted-foreground) 22%, transparent);
+}
+
+.bm-m {
+    transition: fill 240ms ease;
+}
+
+.bm-m.l0, .bodymap[data-palette="load"] .bm-m.l0 {
+    fill: color-mix(in srgb, var(--muted-foreground) 10%, transparent);
+}
+
+.bodymap[data-palette="load"] .bm-m.l1 {
+    fill: var(--primary);
+    opacity: .30;
+}
+
+.bodymap[data-palette="load"] .bm-m.l2 {
+    fill: var(--primary);
+    opacity: .55;
+}
+
+.bodymap[data-palette="load"] .bm-m.l3 {
+    fill: var(--primary);
+    opacity: .80;
+}
+
+.bodymap[data-palette="load"] .bm-m.l4 {
+    fill: var(--primary);
+    opacity: 1;
+}
+
+.bodymap[data-palette="recovery"] .bm-m.l4 {
+    fill: var(--info);
+    opacity: 1;
+}
+
+.bodymap[data-palette="recovery"] .bm-m.l3 {
+    fill: var(--info);
+    opacity: .75;
+}
+
+.bodymap[data-palette="recovery"] .bm-m.l2 {
+    fill: var(--info);
+    opacity: .45;
+}
+
+.bodymap[data-palette="recovery"] .bm-m.l1 {
+    fill: var(--destructive);
+    opacity: .50;
+}
+
+.bodymap[data-palette="recovery"] .bm-m.l0 {
+    fill: var(--destructive);
+    opacity: .95;
+}
+
+.bodymap .bm-m.sel {
+    stroke: var(--foreground);
+    stroke-width: 2.5px;
+}
+
+/* Legend swatches (same scale as above) */
+.hm-legend {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    font-size: .68rem;
+    color: var(--muted-foreground);
+}
+
+.hm-c {
+    display: inline-block;
+    width: .8rem;
+    height: .8rem;
+    border-radius: .2rem;
+}
+
+.hm-c.l0 {
+    background: color-mix(in srgb, var(--muted-foreground) 10%, transparent);
+}
+
+.hm-c.g1 {
+    background: color-mix(in srgb, var(--primary) 30%, transparent);
+}
+
+.hm-c.g2 {
+    background: color-mix(in srgb, var(--primary) 55%, transparent);
+}
+
+.hm-c.g3 {
+    background: color-mix(in srgb, var(--primary) 80%, transparent);
+}
+
+.hm-c.g4 {
+    background: var(--primary);
+}
+
+.hm-c.b1 {
+    background: color-mix(in srgb, var(--info) 45%, transparent);
+}
+
+.hm-c.b2 {
+    background: color-mix(in srgb, var(--info) 75%, transparent);
+}
+
+.hm-c.b3 {
+    background: var(--info);
+}
+
+.hm-c.r1 {
+    background: color-mix(in srgb, var(--destructive) 50%, transparent);
+}
+
+.hm-c.r0 {
+    background: var(--destructive);
+}
+
+/* Opt-in tenant brand themes. Apply data-brand only from trusted tenant configuration.
+   Each pair passes 4.5:1 (text on action) and keeps the platform's focus ring visible.
+   Dark values are separate because action colors must also work on the dark surfaces. */
+[data-brand="ocean"] {
+    --primary: #1E6B76;
+    --primary-foreground: #FFFFFF;
+    --ring: #1E6B76;
+    --brand-action: #1E6B76;
+}
+
+[data-brand="forest"] {
+    --primary: #3D6B49;
+    --primary-foreground: #FFFFFF;
+    --ring: #3D6B49;
+    --brand-action: #3D6B49;
+}
+
+[data-brand="sunset"] {
+    --primary: #A95A28;
+    --primary-foreground: #FFFFFF;
+    --ring: #A95A28;
+    --brand-action: #A95A28;
+}
+
+.dark[data-brand="ocean"], .dark [data-brand="ocean"] {
+    --primary: #5FB3C0;
+    --primary-foreground: #1B1A1B;
+    --ring: #5FB3C0;
+    --brand-action: #5FB3C0;
+}
+
+.dark[data-brand="forest"], .dark [data-brand="forest"] {
+    --primary: #7FBF8E;
+    --primary-foreground: #1B1A1B;
+    --ring: #7FBF8E;
+    --brand-action: #7FBF8E;
+}
+
+.dark[data-brand="sunset"], .dark [data-brand="sunset"] {
+    --primary: #F0A06A;
+    --primary-foreground: #1B1A1B;
+    --ring: #F0A06A;
+    --brand-action: #F0A06A;
+}
+
+[data-brand] {
+    --brand-focus: var(--ring);
+}

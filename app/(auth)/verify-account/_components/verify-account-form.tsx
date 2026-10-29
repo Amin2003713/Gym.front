@@ -44,26 +44,19 @@ const getTwoMinutesFromNow = (): Date => {
   return time
 }
 
-type TimerRef = {
-  restart: (t: Date) => void
-}
-
 export default function VerifyAccountForm() {
   const router = useRouter()
-  const paramsRef = useRef<URLSearchParams | null>(null)
-  if (!paramsRef.current) {
-    paramsRef.current = new URLSearchParams(window.location.search)
-  }
-  const params = paramsRef.current
+  const [params, setParams] = useState<URLSearchParams | null>(null)
+  useEffect(() => { setParams(new URLSearchParams(window.location.search)) }, [])
 
-  const phoneNumber = params.get('u') ?? ''
-  const domain = params.get('d') ?? ''
+  const phoneNumber = params?.get('u') ?? ''
+  const domain = params?.get('d') ?? ''
 
   const form = useForm<VerificationValues>({
     resolver: zodResolver(ThirdFormSchema),
     defaultValues: {
-      domain: domain,
-      phoneNumber: phoneNumber,
+      domain: domain || '',
+      phoneNumber: phoneNumber || '',
       code: '',
     },
   })

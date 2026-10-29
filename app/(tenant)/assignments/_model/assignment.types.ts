@@ -1,5 +1,20 @@
-export type PlanAssignmentStatus = 'Active' | 'Paused' | 'Completed' | 'Cancelled'
-export type PlanAssignmentSource = 'CoachAssigned' | 'SelfPicked' | 'SelfCreated'
+export enum PlanAssignmentStatus {
+  Active = 0,
+  Paused = 1,
+  Completed = 2,
+  Cancelled = 3,
+}
+
+export enum PlanAssignmentSource {
+  CoachAssigned = 0,
+  SelfPicked = 1,
+  SelfCreated = 2,
+}
+
+export enum PlanDurationType {
+  Sessions = 0,
+  Weeks = 1,
+}
 export interface AssignmentStatusResponse {
   id: string
   status: PlanAssignmentStatus
