@@ -4,13 +4,14 @@ import { Loader2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import { ReactNode, useEffect } from 'react'
-import { toast } from '@/lib/toast'
 
-import { UserRoleEnum } from '@/enums/user-role.enum'
+import { ApiUserRole } from '@/features/users/api/users-api'
+import { normalizeApiUserRole } from '@/constants/user-role'
+import { toast } from '@/lib/toast'
 
 interface ProtectedProps {
   children: ReactNode
-  requiredRoles?: UserRoleEnum[]
+  requiredRoles?: ApiUserRole[]
   fallbackPath?: string
   loadingComponent?: ReactNode
   unauthorizedComponent?: ReactNode
@@ -29,7 +30,16 @@ export function Protected({
 }: ProtectedProps) {
   const { data: session, status } = useSession()
   const router = useRouter()
-  const userRoles = session?.user?.role ?? []
+  // The backend sends integer role values (C# Roles enum); older payloads may
+  // still carry enum names. Normalize both before the access check.
+  const rawRoles = Array.isArray(session?.user?.role)
+    ? session.user.role
+    : session?.user?.role
+      ? [session.user.role]
+      : []
+  const userRoles = rawRoles
+    .map((role) => normalizeApiUserRole(role as string | number | null | undefined))
+    .filter((role): role is ApiUserRole => role !== null)
   const hasAccess =
     requiredRoles.length === 0 ||
     requiredRoles.some((role) => userRoles.includes(role))

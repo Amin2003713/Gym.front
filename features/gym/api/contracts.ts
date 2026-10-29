@@ -4,7 +4,6 @@ import type {
   CreateRoutineRequest,
   Exercise,
   ExerciseFilter,
-  GymBranch,
   GymGroupSummary,
   GymPreferences,
   GymUser,
@@ -27,8 +26,7 @@ import type {
  */
 export interface GymApi {
   getGroupSummary(): Promise<GymGroupSummary>
-  listBranches(): Promise<GymBranch[]>
-  listMembers(query?: { branchId?: Id; role?: GymUser['role']; search?: string; page?: number; pageSize?: number }): Promise<PageResult<GymUser>>
+  listMembers(query?: { role?: GymUser['role']; search?: string; page?: number; pageSize?: number }): Promise<PageResult<GymUser>>
   inviteMember(request: InviteGymMemberRequest): Promise<{ invitationId: Id; expiresAt: string }>
   listTrainerAssignments(query?: { trainerId?: Id; memberId?: Id }): Promise<TrainerAssignment[]>
   listExercises(filter: ExerciseFilter): Promise<PageResult<Exercise>>
@@ -43,7 +41,7 @@ export interface GymApi {
   archiveRoutine(id: Id): Promise<void>
   startWorkout(request: StartWorkoutRequest): Promise<WorkoutSession>
   getWorkout(id: Id): Promise<WorkoutSession>
-  listWorkoutHistory(query?: { memberId?: Id; branchId?: Id; from?: string; to?: string; page?: number; pageSize?: number }): Promise<PageResult<WorkoutSession>>
+  listWorkoutHistory(query?: { memberId?: Id; from?: string; to?: string; page?: number; pageSize?: number }): Promise<PageResult<WorkoutSession>>
   completeWorkout(id: Id, request: CompleteWorkoutRequest): Promise<WorkoutSession>
   listBodyMeasurements(query?: { userId?: Id; from?: string; to?: string }): Promise<BodyMeasurement[]>
   upsertBodyMeasurement(request: UpsertBodyMeasurementRequest): Promise<BodyMeasurement>

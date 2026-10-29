@@ -1,8 +1,9 @@
 'use client'
 
-import {useMemo, useState, type ReactNode} from 'react'
 import {Activity, Award, CalendarDays, Dumbbell, Flame, Info, Target, TrendingUp, Weight} from 'lucide-react'
+import {useMemo, useState, type ReactNode} from 'react'
 import {Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis} from 'recharts'
+
 import {MuscleExplorer} from './muscle-explorer'
 
 const fa = (n: number) => n.toLocaleString('fa-IR')
@@ -112,18 +113,18 @@ function Metric({title, value, detail, icon: Icon, positive = false}: {
                     <p className="text-sm text-muted-foreground">{title}</p>
                     <p className="mt-2 text-2xl font-extrabold tracking-tight">{value}</p>
                 </div>
-                <span className="flex size-10 items-center justify-center rounded-xl bg-primary/10 text-primary"><Icon
+                <span className="flex size-10 items-center justify-center rounded-lg bg-primary/10 text-primary-foreground"><Icon
                     className="size-5"/></span>
             </div>
-            <p className={`mt-3 text-xs ${positive ? 'text-emerald-600 dark:text-emerald-400' : 'text-muted-foreground'}`}>{detail}</p>
+            <p className={`mt-3 text-xs ${positive ? 'text-success' : 'text-muted-foreground'}`}>{detail}</p>
         </div>
     )
 }
 
 function ChartNotice() {
     return (
-        <p className="mt-3 flex items-start gap-2 rounded-xl bg-amber-500/10 p-3 text-xs leading-5 text-muted-foreground">
-            <Info className="mt-0.5 size-4 shrink-0 text-amber-600"/>
+        <p className="mt-3 flex items-start gap-2 rounded-lg bg-warning/10 p-3 text-xs leading-5 text-muted-foreground">
+            <Info className="mt-0.5 size-4 shrink-0 text-warning"/>
             این صفحه فعلاً از داده نمونه برای نمایش تجربه آمار استفاده می‌کند. اعداد، رکوردها و تاریخچه واقعی حساب
             نیستند.
         </p>
@@ -298,9 +299,9 @@ function Strength() {
             <Panel title="رکوردهای شخصی" description="بهترین عملکردهای ثبت‌شده در داده نمونه">
                 <div className="space-y-2">
                     {prs.map(pr => (
-                        <div key={pr.exercise} className="flex flex-wrap items-center gap-3 rounded-xl border p-3">
+                        <div key={pr.exercise} className="flex flex-wrap items-center gap-3 rounded-lg border p-3">
                             <span
-                                className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-amber-500/10 text-amber-600"><Award
+                                className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-warning/10 text-warning"><Award
                                 className="size-5"/></span>
                             <div className="min-w-0 flex-1">
                                 <p className="font-semibold">{pr.exercise}</p>
@@ -309,7 +310,7 @@ function Strength() {
                             </div>
                             <div className="text-left">
                                 <p className="font-extrabold">{pr.current}</p>
-                                <p className="mt-1 text-xs font-semibold text-emerald-600">{pr.change}</p>
+                                <p className="mt-1 text-xs font-semibold text-success">{pr.change}</p>
                             </div>
                         </div>
                     ))}
@@ -393,7 +394,7 @@ function BodyWeight() {
             <Panel title="ثبت‌های اخیر وزن" description="نمونه داده‌های وزن بدن">
                 <div className="space-y-2">
                     {weightSeries.slice().reverse().slice(0, 5).map(w => (
-                        <div key={w.date} className="flex items-center justify-between rounded-xl border px-4 py-3">
+                        <div key={w.date} className="flex items-center justify-between rounded-lg border px-4 py-3">
                             <span className="text-sm text-muted-foreground">{w.date}</span>
                             <strong>{w.weight.toFixed(1).replace('.', '٫')} kg</strong>
                         </div>
@@ -424,13 +425,13 @@ export function StatsPage() {
                         </p>
                     </div>
                     <span
-                        className="inline-flex items-center gap-2 self-start rounded-xl border bg-background/80 px-3 py-2 text-xs text-muted-foreground sm:self-auto">
-            <span className="size-2 rounded-full bg-amber-500"/> داده‌های نمایشی
+                        className="inline-flex items-center gap-2 self-start rounded-lg border bg-background/80 px-3 py-2 text-xs text-muted-foreground sm:self-auto">
+            <span className="size-2 rounded-full bg-warning"/> داده‌های نمایشی
           </span>
                 </div>
             </header>
 
-            <div className="flex gap-2 overflow-x-auto rounded-xl border bg-card p-2">
+            <div className="flex gap-2 overflow-x-auto rounded-lg border bg-card p-2">
                 {tabs.map(tab => {
                     const Icon = tab.icon
                     return (
@@ -449,7 +450,7 @@ export function StatsPage() {
                 <Muscles/> : <BodyWeight/>}
 
             <footer
-                className="flex flex-wrap items-start gap-2 rounded-xl border border-dashed px-4 py-3 text-xs leading-5 text-muted-foreground">
+                className="flex flex-wrap items-start gap-2 rounded-lg border border-dashed px-4 py-3 text-xs leading-5 text-muted-foreground">
                 <Info className="mt-0.5 size-4 shrink-0"/>
                 <span>
           این رابط از الگوی آمار openGym الهام گرفته است. آمار تمرین و رکوردها در حال حاضر داده نمونه‌اند؛ بخش کاوش عضلات از API فعلی کتابخانه حرکات استفاده می‌کند و در صورت در دسترس نبودن API، نتیجه ساختگی نشان نمی‌دهد.

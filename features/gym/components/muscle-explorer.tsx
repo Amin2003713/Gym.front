@@ -1,12 +1,16 @@
 'use client'
 
-import {useEffect, useMemo, useState} from 'react'
-import {useSession} from 'next-auth/react'
-import {usersApi} from '@/features/users/api/users-api'
 import {Activity, Dumbbell, Search, X} from 'lucide-react'
+import {useSession} from 'next-auth/react'
+import {useEffect, useMemo, useState} from 'react'
+
+import {exerciseApi, exerciseCoverUrl} from '@/app/(tenant)/exercises/_api/exercise-api'
+import type {ExerciseListItem} from '@/app/(tenant)/exercises/_model/exercise.types'
+import {usersApi} from '@/features/users/api/users-api'
+
+
 import BodyMap, {BodyMapLegend} from './body-map'
-import {exerciseApi, exerciseCoverUrl} from '@/app/tenants/[tenant]/exercises/_api/exercise-api'
-import type {ExerciseListItem} from '@/app/tenants/[tenant]/exercises/_model/exercise.types'
+
 
 const muscles = [
     {id: 'trapezius', name: 'ذوزنقه‌ای', bodyPart: ['trapezius', 'traps', 'ذوزنقه']},
@@ -29,7 +33,7 @@ const muscles = [
     {id: 'tibialis', name: 'جلوی ساق', bodyPart: ['tibialis', 'shins', 'جلوی ساق']},
 ]
 
-const field = 'h-10 w-full rounded-xl border bg-background px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring'
+const field = 'h-10 w-full rounded-lg border bg-background px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring'
 const fa = (n: number) => n.toLocaleString('fa-IR')
 const contains = (value: string | null | undefined, query: string) =>
     String(value ?? '').toLocaleLowerCase().includes(query.toLocaleLowerCase())
@@ -255,7 +259,7 @@ export function MuscleExplorer() {
                                 <button
                                     key={ex.id}
                                     onClick={() => setSelectedExercise(ex)}
-                                    className="flex w-full items-center gap-3 rounded-xl border p-3 text-right transition hover:border-primary/40 hover:bg-primary/5"
+                                    className="flex w-full items-center gap-3 rounded-lg border p-3 text-right transition hover:border-primary/40 hover:bg-primary/5"
                                 >
                                     <div
                                         className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-muted">
@@ -274,7 +278,7 @@ export function MuscleExplorer() {
                                 </button>
                             ))
                         ) : (
-                            <div className="rounded-xl border border-dashed px-4 py-10 text-center">
+                            <div className="rounded-lg border border-dashed px-4 py-10 text-center">
                                 <Dumbbell className="mx-auto size-7 text-muted-foreground"/>
                                 <p className="mt-2 font-semibold">حرکتی پیدا نشد</p>
                                 <p className="mt-1 text-xs leading-5 text-muted-foreground">عضله یا فیلتر دیگری را
@@ -283,7 +287,7 @@ export function MuscleExplorer() {
                         )}
 
                         {apiError && (
-                            <p className="rounded-lg bg-amber-500/10 p-3 text-xs leading-5 text-muted-foreground">
+                            <p className="rounded-lg bg-warning/10 p-3 text-xs leading-5 text-muted-foreground">
                                 کتابخانه از API در دسترس نیست؛ این بخش از داده ساختگی استفاده نمی‌کند. پس از اتصال سرویس
                                 حرکات، نتایج اینجا نمایش داده می‌شوند.
                             </p>
@@ -318,7 +322,7 @@ export function MuscleExplorer() {
                             <p className="mt-4 text-sm leading-7">{selectedExercise.description}</p>}
                         <div className="mt-5 flex justify-end">
                             <button onClick={() => setSelectedExercise(null)}
-                                    className="rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground">بستن
+                                    className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground">بستن
                             </button>
                         </div>
                     </section>

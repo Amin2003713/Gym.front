@@ -8,7 +8,7 @@ export type Id = string
 export type IsoDateTime = string
 export type IsoDate = string
 
-export type GymRole = 'Owner' | 'GroupAdmin' | 'BranchManager' | 'Trainer' | 'Member'
+export type GymRole = 'Owner' | 'GroupAdmin' | 'Trainer' | 'Member'
 export type ExerciseCategory = 'Strength' | 'Cardio' | 'Mobility' | 'Warmup' | 'Other'
 export type ExerciseEquipment =
   | 'Barbell'
@@ -43,26 +43,12 @@ export interface GymGroupSummary {
   slug: string
   timezone: string
   defaultLanguage: string
-  branchCount: number
   memberCount: number
-}
-
-export interface GymBranch {
-  id: Id
-  groupId: Id
-  name: string
-  code?: string
-  address?: string
-  phone?: string
-  isHeadquarters: boolean
-  isActive: boolean
-  createdAt: IsoDateTime
 }
 
 export interface GymUser {
   id: Id
   tenantId: Id
-  branchIds: Id[]
   displayName: string
   email?: string
   phone?: string
@@ -75,7 +61,6 @@ export interface GymUser {
 export interface TrainerAssignment {
   id: Id
   tenantId: Id
-  branchId: Id
   trainerId: Id
   memberId: Id
   startsAt: IsoDate
@@ -194,7 +179,6 @@ export interface WorkoutSession {
   id: Id
   tenantId: Id
   memberId: Id
-  branchId?: Id
   routineId?: Id
   routineDayId?: Id
   title: string
@@ -272,7 +256,6 @@ export interface InviteGymMemberRequest {
   email?: string
   phone?: string
   role: Exclude<GymRole, 'Owner' | 'GroupAdmin'>
-  branchIds: Id[]
   trainerId?: Id
 }
 

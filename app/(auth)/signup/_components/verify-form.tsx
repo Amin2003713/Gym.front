@@ -9,7 +9,7 @@ import React, {
   useTransition,
 } from 'react'
 import { useForm } from 'react-hook-form'
-import { toast } from '@/lib/toast'
+
 
 import { sendActivationCodeAction, verifyPhoneNumber } from '@/actions/auth'
 import { ThirdFormSchema } from '@/app/(auth)/signup/_types/signup-schema'
@@ -30,6 +30,8 @@ import {
 } from '@/components/ui/input-otp'
 import { Timer } from '@/components/ui/timer'
 import { BASE_DOMAIN } from '@/configs/global'
+import { toast } from '@/lib/toast'
+
 import { StepperFormActions } from './stepper-form-actions'
 
 const getTwoMinutesFromNow = (): Date => {
@@ -122,9 +124,9 @@ function VerifyForm({ domain, phoneNumber }: VerifyFormType) {
       <Form {...validationForm}>
         <form
           onSubmit={validationForm.handleSubmit(onSubmit)}
-          className="space-y-4 rounded-2xl border border-border bg-card p-4 text-card-foreground shadow-sm shadow-black/5 sm:p-6 dark:shadow-black/20"
+          className="space-y-4 rounded-lg border border-border bg-card p-4 text-card-foreground shadow-sm shadow-black/5 sm:p-6 dark:shadow-black/20"
         >
-          <div className="mb-2 border-r-4 border-[#fb9a3c] pr-3"><h3 className="font-black text-foreground">فعال‌سازی حساب</h3><p className="mt-1 text-xs leading-6 text-muted-foreground">کد ارسال‌شده را وارد کن تا گروه ورزشی فعال شود.</p></div>
+          <div className="mb-2 border-s-4 border-primary ps-3"><h3 className="font-extrabold text-foreground">فعال‌سازی حساب</h3><p className="mt-1 text-xs leading-6 text-muted-foreground">کد ارسال‌شده را وارد کن تا گروه ورزشی فعال شود.</p></div>
           <FormField
             control={validationForm.control}
             name="code"

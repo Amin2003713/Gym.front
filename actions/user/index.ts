@@ -5,7 +5,7 @@ import {
   AddUserModel,
   UpdateUserModel,
   UpdateUserSimSerialModel,
-} from '@/app/tenants/[tenant]/users/_model/user.types'
+} from '@/app/(tenant)/users/_model/user.types'
 import { createData, updateData } from '@/core/http-service'
 import { OperationResult } from '@/types/operation-result'
 import { objectToFormData } from '@/utils/object-to-form-data'

@@ -18,8 +18,8 @@ const Toaster = () => {
       options={{
         fill: 'var(--card)',
         styles: {
-          title: 'font-iranSans text-foreground',
-          description: 'font-iranSans text-muted-foreground',
+          title: 'font-vazirmatn text-foreground',
+          description: 'font-vazirmatn text-muted-foreground',
         },
       }}
     />

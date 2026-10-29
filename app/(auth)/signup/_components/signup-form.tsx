@@ -58,7 +58,7 @@ export const SignupForm = () => {
                 <HamOwjBrand />
               </div>
 
-              <h1 className="text-2xl font-black tracking-tight sm:text-3xl">
+              <h1 className="text-2xl font-extrabold tracking-tight sm:text-3xl">
                 گروه ورزشی خود را بسازید
               </h1>
             </div>
@@ -67,8 +67,8 @@ export const SignupForm = () => {
           </div>
 
           <p className="text-muted-foreground mt-3 max-w-lg text-sm leading-7">
-            در چند مرحله کوتاه، باشگاهتان را ثبت کنید و مسیر مدیریت اعضا، مربیان
-            و شعبه‌ها را شروع کنید.
+            در چند مرحله کوتاه، باشگاهتان را ثبت کنید و مسیر مدیریت اعضا و
+            مربیان را شروع کنید.
           </p>
         </header>
 

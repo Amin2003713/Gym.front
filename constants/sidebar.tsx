@@ -5,7 +5,6 @@ import {
   ChartNoAxesCombined,
   Dumbbell,
   FileUp,
-  GitBranch,
   History,
   Settings2,
   ShieldCheck,
@@ -14,7 +13,7 @@ import {
 import * as React from 'react'
 
 import { SidebarItem } from '@/components/ui/sidebar'
-import { UserRoleEnum } from '@/enums/user-role.enum'
+import { ApiUserRole } from '@/features/users/api/users-api'
 
 const SIDEBAR_OPTIONS: { tree: SidebarItem[] } = {
   tree: [
@@ -43,12 +42,11 @@ const SIDEBAR_OPTIONS: { tree: SidebarItem[] } = {
       name: 'مدیریت گروه',
       icon: <Users className="size-4" />,
       colorClass: 'text-[#788584]',
-      role: [UserRoleEnum.Owner, UserRoleEnum.Trainer],
+      role: [ApiUserRole.Admin, ApiUserRole.Trainer],
       children: [
-        { name: 'شعبه‌ها', path: '/branches', icon: <GitBranch className="size-4" />, colorClass: 'text-[#788584]' },
-        { name: 'اعضای باشگاه', path: '/members', icon: <Users className="size-4" />, colorClass: 'text-[#788584]' },
-        { name: 'مربی‌ها و شاگردها', path: '/trainers', icon: <ShieldCheck className="size-4" />, colorClass: 'text-[#788584]' },
-        { name: 'مدیریت کاربران و دسترسی‌ها', path: '/users', icon: <ShieldCheck className="size-4" />, colorClass: 'text-[#788584]' },
+        { name: 'اعضای باشگاه', path: '/members', icon: <Users className="size-4" />, colorClass: 'text-[#788584]', role: [ApiUserRole.Admin, ApiUserRole.Trainer] },
+        { name: 'مربی‌ها و شاگردها', path: '/trainers', icon: <ShieldCheck className="size-4" />, colorClass: 'text-[#788584]', role: [ApiUserRole.Admin, ApiUserRole.Trainer] },
+        { name: 'مدیریت کاربران', path: '/users', icon: <ShieldCheck className="size-4" />, colorClass: 'text-[#788584]', role: [ApiUserRole.Admin] },
       ],
     },
     {

@@ -1,5 +1,5 @@
 import { GenderEnum } from '@/enums/gender.enum'
-import { UserRoleEnum } from '@/enums/user-role.enum'
+import { ApiUserRole } from '@/features/users/api/users-api'
 
 export interface SignedInUser {
   token: string
@@ -14,7 +14,7 @@ export interface User {
   imageUrl: string | null
   gender: GenderEnum | null
   imageUrlCompress: string | null
-  role: UserRoleEnum[]
+  role: ApiUserRole[]
   username: string
 }
 
@@ -24,8 +24,6 @@ type SafeUser = Omit<User, 'accessToken'>
 export interface PublicUser extends SafeUser {
   name: string
   address?: string | null
-  branchId?: string | null
-  branchName?: string | null
   isActive?: boolean
   gender: GenderEnum | null
   trainerId?: string | null

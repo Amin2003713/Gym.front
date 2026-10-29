@@ -8,10 +8,10 @@ const GYM_ROUTES = [
     {segment: 'progress', title: 'پیشرفت و رکوردها'},
     {segment: 'measurements', title: 'اندازه‌گیری بدن'},
     {segment: 'imports', title: 'ورود و خروجی اطلاعات'},
-    {segment: 'branches', title: 'شعبه‌های گروه'},
     {segment: 'members', title: 'اعضای باشگاه'},
     {segment: 'trainers', title: 'مربی‌ها و شاگردها'},
     {segment: 'users', title: 'مدیریت کاربران و دسترسی‌ها'},
+    {segment: 'new', title: 'افزودن کاربر'},
     {segment: 'settings', title: 'تنظیمات'},
 ]
 

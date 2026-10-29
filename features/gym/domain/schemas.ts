@@ -1,26 +1,13 @@
 import { z } from 'zod'
 
-export const gymRoleSchema = z.enum(['Owner', 'GroupAdmin', 'BranchManager', 'Trainer', 'Member'])
+export const gymRoleSchema = z.enum(['Owner', 'GroupAdmin', 'Trainer', 'Member'])
 export const mediaKindSchema = z.enum(['Image', 'Gif', 'AnimatedSvg', 'Video'])
 export const idSchema = z.string().min(1)
 export const isoDateTimeSchema = z.string().datetime({ offset: true })
 
-export const gymBranchSchema = z.object({
-  id: idSchema,
-  groupId: idSchema,
-  name: z.string().min(1).max(120),
-  code: z.string().max(32).optional(),
-  address: z.string().max(500).optional(),
-  phone: z.string().max(40).optional(),
-  isHeadquarters: z.boolean(),
-  isActive: z.boolean(),
-  createdAt: isoDateTimeSchema,
-})
-
 export const gymUserSchema = z.object({
   id: idSchema,
   tenantId: idSchema,
-  branchIds: z.array(idSchema),
   displayName: z.string().min(1).max(120),
   email: z.string().email().optional(),
   phone: z.string().max(40).optional(),
@@ -130,7 +117,6 @@ export const inviteGymMemberSchema = z.object({
   displayName: z.string().min(1).max(120),
   email: z.string().email().optional().or(z.literal('')),
   phone: z.string().max(40).optional(),
-  role: z.enum(['BranchManager', 'Trainer', 'Member']),
-  branchIds: z.array(idSchema).min(1),
+  role: z.enum(['Trainer', 'Member']),
   trainerId: idSchema.optional(),
 })

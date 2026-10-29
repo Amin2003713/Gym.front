@@ -1,31 +1,34 @@
 import { useSession } from 'next-auth/react'
 
-import { UserRoleEnum } from '@/enums/user-role.enum'
+import { normalizeApiUserRole } from '@/constants/user-role'
+import { ApiUserRole } from '@/features/users/api/users-api'
 
-export type PrimaryRole = UserRoleEnum.Owner | UserRoleEnum.Trainer | UserRoleEnum.Member
+export type PrimaryRole = ApiUserRole.Admin | ApiUserRole.Trainer | ApiUserRole.Trainee
 
 /**
- * Normalizes role values returned by the API/session:
- * enum names (Admin/Trainer/Trainee) or UI slugs (owner/trainer/member).
+ * Normalizes role values returned by the API/session. The backend sends
+ * integer role values (C# Roles enum), with older string roles still mapped.
  */
-export function normalizeRole(value: string): PrimaryRole | null {
-  const normalized = value.toLowerCase().replace(/[ _-]/g, '')
-  if (normalized === 'owner' || normalized === 'admin') return UserRoleEnum.Owner
-  if (normalized === 'trainer') return UserRoleEnum.Trainer
-  if (normalized === 'trainee' || normalized === 'member') return UserRoleEnum.Member
-  return null
+export function normalizeRole(
+  value: string | number | null | undefined,
+): PrimaryRole | null {
+  return normalizeApiUserRole(value)
 }
 
 export function useUserRoles() {
   const { data: session } = useSession()
   const sessionRoles = session?.user?.role ?? []
-  const rawRoles = (Array.isArray(sessionRoles) ? sessionRoles : [sessionRoles]).map(String)
+  const rawRoles = (
+    Array.isArray(sessionRoles) ? sessionRoles : [sessionRoles]
+  ).map(String)
 
-  const roles = rawRoles.map(normalizeRole).filter((role): role is PrimaryRole => role !== null)
+  const roles = rawRoles
+    .map(normalizeApiUserRole)
+    .filter((role): role is PrimaryRole => role !== null)
 
-  const isAdmin = roles.includes(UserRoleEnum.Owner)
-  const isTrainer = roles.includes(UserRoleEnum.Trainer)
-  const isTrainee = roles.includes(UserRoleEnum.Member)
+  const isAdmin = roles.includes(ApiUserRole.Admin)
+  const isTrainer = roles.includes(ApiUserRole.Trainer)
+  const isTrainee = roles.includes(ApiUserRole.Trainee)
 
   /** Admin (Owner) and Trainer may manage/assign content. */
   const canManage = !isTrainee || isAdmin || isTrainer

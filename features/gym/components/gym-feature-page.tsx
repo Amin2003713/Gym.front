@@ -8,7 +8,6 @@ import {
   ChartNoAxesCombined,
   Dumbbell,
   FileUp,
-  GitBranch,
   History,
   Settings2,
   ShieldCheck,
@@ -16,7 +15,7 @@ import {
   type LucideIcon,
 } from 'lucide-react'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+
 import { OpenGymWorkspace } from './open-gym-workspace'
 
 export type GymFeatureKey =
@@ -28,7 +27,6 @@ export type GymFeatureKey =
   | 'progress'
   | 'measurements'
   | 'imports'
-  | 'branches'
   | 'members'
   | 'trainers'
   | 'settings'
@@ -71,15 +69,11 @@ const features: Record<GymFeatureKey, {
   },
   imports: {
     title: 'ورود و خروجی اطلاعات', eyebrow: 'ابزارها', description: 'آماده‌سازی رابط واردکردن سابقه تمرین و خروجی‌گرفتن از اطلاعات.', icon: FileUp,
-    bullets: ['ورود سابقه از فایل', 'نمایش خطاهای ردیف‌های نامعتبر', 'خروجی اطلاعات کاربر'], apiMethods: ['importWorkoutHistory', 'exportMyData'],
-  },
-  branches: {
-    title: 'شعبه‌های گروه', eyebrow: 'مدیریت گروه', description: 'مدیریت شعبه‌ها و تنظیمات پایه هر محل باشگاه.', icon: GitBranch,
-    bullets: ['اطلاعات شعبه', 'شعبه مرکزی', 'وضعیت فعال یا غیرفعال'], apiMethods: ['listBranches', 'getGroupSummary'],
+    bullets: ['ورود سابقه از فایل', 'نمایش خطاهای ردیف‌های نامعتبر', 'خروجی اطلاعات کاربر'],    apiMethods: ['importWorkoutHistory', 'exportMyData'],
   },
   members: {
-    title: 'اعضای باشگاه', eyebrow: 'مدیریت گروه', description: 'مدیریت اعضا و دعوت‌نامه‌ها در محدوده گروه و شعبه انتخاب‌شده.', icon: Users,
-    bullets: ['فهرست اعضا و نقش‌ها', 'دعوت عضو جدید', 'انتساب عضو به شعبه'], apiMethods: ['listMembers', 'inviteMember', 'listBranches'],
+    title: 'اعضای باشگاه', eyebrow: 'مدیریت گروه', description: 'مدیریت اعضا و دعوت‌نامه‌ها در محدوده گروه.', icon: Users,
+    bullets: ['فهرست اعضا و نقش‌ها', 'دعوت عضو جدید', 'وضعیت عضویت'], apiMethods: ['listMembers', 'inviteMember'],
   },
   trainers: {
     title: 'مربی‌ها و شاگردها', eyebrow: 'مدیریت گروه', description: 'مدیریت ارتباط مربی و شاگرد و آماده‌سازی دسترسی به پیشرفت شاگردان اختصاص‌یافته.', icon: ShieldCheck,
@@ -96,8 +90,6 @@ function WorkspacePreview({ feature }: { feature: GymFeatureKey }) {
 }
 
 export function GymFeaturePage({ feature }: { feature: GymFeatureKey }) {
-  const pathname = usePathname()
-  const tenantBase = `/tenants/${pathname.split('/').filter(Boolean)[1] ?? ''}`
   const item = features[feature]
   const Icon = item.icon
 
@@ -114,8 +106,8 @@ export function GymFeaturePage({ feature }: { feature: GymFeatureKey }) {
             <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">{item.title}</h1>
             <p className="max-w-2xl text-sm leading-7 text-muted-foreground">{item.description}</p>
           </div>
-          <div className="flex items-center gap-2 self-start rounded-xl border bg-card px-3 py-2 text-xs text-muted-foreground sm:self-auto">
-            <span className={`size-2 rounded-full ${feature === 'exercises' ? 'bg-emerald-500' : 'bg-amber-500'}`} />
+          <div className="flex items-center gap-2 self-start rounded-lg border bg-card px-3 py-2 text-xs text-muted-foreground sm:self-auto">
+            <span className={`size-2 rounded-full ${feature === 'exercises' ? 'bg-success' : 'bg-warning'}`} />
             {feature === 'exercises' ? 'اتصال API حرکات پیاده‌سازی شده' : 'رابط تعاملی · اتصال داده در انتظار API'}
           </div>
         </div>
@@ -129,9 +121,9 @@ export function GymFeaturePage({ feature }: { feature: GymFeatureKey }) {
         <WorkspacePreview feature={feature} />
       )}
 
-      <footer className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-dashed p-4 text-sm text-muted-foreground">
+      <footer className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
         <span>رسانه تمرین: فقط URL ارائه‌شده از سمت API؛ در نبود رسانه، جای‌نگهدار خالی نمایش داده می‌شود.</span>
-        <Link href={tenantBase} className="inline-flex items-center gap-2 font-medium text-primary hover:underline">
+        <Link href="/" className="inline-flex items-center gap-2 font-medium text-primary hover:underline">
           بازگشت به داشبورد <ArrowUpLeft className="size-4" />
         </Link>
       </footer>

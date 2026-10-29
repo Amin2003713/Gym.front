@@ -113,6 +113,48 @@ export async function signinAction(
   }
 }
 
+/**
+ * Establishes the NextAuth session from a token returned by `user/verify`
+ * (or any other flow that yields an access token without a login round-trip).
+ */
+export async function signinWithTokenAction(
+  accessToken: string,
+): Promise<OperationResult<void>> {
+  try {
+    if (!accessToken) {
+      return {
+        isSuccess: false,
+        error: {
+          title: '',
+          detail: 'توکن نامعتبر است',
+          status: 0,
+        },
+      }
+    }
+
+    await signIn('credentials', { accessToken, redirect: false })
+    return { isSuccess: true }
+  } catch (error) {
+    if (isRedirectError(error)) throw error
+
+    if (error instanceof CredentialsSignin) {
+      return {
+        isSuccess: false,
+        error: {
+          detail: 'ایجاد نشست کاربری ناموفق بود',
+          title: '',
+          status: 0,
+        },
+      }
+    }
+
+    return {
+      isSuccess: false,
+      error: normalizeProblem(error, 'خطا در ایجاد نشست کاربری'),
+    }
+  }
+}
+
 export const signOutAction = async (): Promise<OperationResult<void>> => {
   try {
     await signOut({ redirect: false })

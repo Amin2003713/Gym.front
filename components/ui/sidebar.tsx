@@ -23,7 +23,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
-import { UserRoleEnum } from '@/enums/user-role.enum'
+import { ApiUserRole } from '@/features/users/api/users-api'
 import { useIsMobile } from '@/hooks/use-mobile'
 import { cn } from '@/lib/utils'
 
@@ -40,7 +40,7 @@ export interface SidebarItem {
   icon: ReactNode
   colorClass?: string
   children?: SidebarItem[]
-  role?: Array<UserRoleEnum>
+  role?: Array<ApiUserRole>
 }
 
 type SidebarContext = {

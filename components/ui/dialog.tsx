@@ -57,11 +57,19 @@ function DialogContent({
       <DialogPrimitive.Content
         data-slot="dialog-content"
         className={cn(
+          // Mobile: a bottom sheet pinned to the viewport bottom;
+          // sm and up: the classic centered dialog.
           'bg-background data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 fixed top-[50%] left-[50%] z-50 grid h-svh w-full max-w-full translate-x-[-50%] translate-y-[-50%] gap-2 overflow-y-auto rounded-lg border p-3 shadow-lg duration-200 sm:h-auto sm:max-h-[90svh] sm:max-w-6xl sm:gap-4 sm:p-6',
+          'max-sm:data-[state=closed]:slide-out-to-bottom max-sm:data-[state=open]:slide-in-from-bottom max-sm:bottom-0 max-sm:left-0 max-sm:top-auto max-sm:h-auto max-sm:max-h-[88svh] max-sm:max-w-full max-sm:-translate-x-0 max-sm:translate-y-0 max-sm:rounded-t-2xl max-sm:rounded-b-none max-sm:border-x-0 max-sm:border-b-0',
           className,
         )}
         {...props}
       >
+        {/* Bottom-sheet drag handle (mobile only) */}
+        <div
+          aria-hidden
+          className="bg-muted mx-auto h-1 w-10 shrink-0 rounded-full sm:hidden"
+        />
         {children}
         <DialogPrimitive.Close className="ring-offset-background focus:ring-ring data-[state=open]:bg-accent data-[state=open]:text-muted-foreground absolute top-4 left-4 rounded-xs opacity-70 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4">
           <XIcon />

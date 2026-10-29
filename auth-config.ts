@@ -15,15 +15,18 @@ export const authConfig = {
       const hostParts = host.split('.')
       const subdomain = hostParts[0]
       const isAuthenticated = !!auth?.user
-      const publicPages = ['/signin', '/forget-password', '/not-found']
+      const publicPages = [
+        '/signin',
+        '/forget-password',
+        '/not-found',
+        '/verify-account',
+      ]
       const validSubdomain = subdomain !== 'www' && hostParts.length > 1
     
 
-      // میخواهم زمانیکه زیر دامنه وجود داشت و احراز هویت شده بود و معتبر بود به صفحه های داشبورد دسترسی داشته باشد
-      // میخواهم زمانیکه زیر دامنه وجود داشت و معتبر بود ولی احراز هویت نشده بود، به صفحه ی لاگین هدایت شود
-      // نباید بدون زیردامنه بتواند به صفحه ی لاگین برود
-      // نباید زمانیکه زیردامنه وجود دارد و معتبر است و احرازهویت شده، بتواند به لاگین برود
-      // شرایط: زیردامنه وجود دارد، معتبر است و کاربر احراز هویت شده است
+      // Tenant identity comes from the subdomain (validated above) and the
+      // session JWT; dashboard routes live at root paths, so no rewrite —
+      // and no tenant key in the URL — is needed.
 
       if (!validSubdomain && request.nextUrl.pathname === '/') {
         return NextResponse.redirect(new URL('/signup', request.url))
@@ -34,13 +37,7 @@ export const authConfig = {
 
         if (isExist) {
           if (isAuthenticated) {
-            // هدایت به داشبورد
-            return NextResponse.rewrite(
-              new URL(
-                `/tenants/${subdomain}${url.pathname}${url.search}${url.hash}`,
-                request.url,
-              ),
-            )
+            return NextResponse.next()
           } else {
             return NextResponse.redirect(new URL(`/signin`, request.url))
           }
@@ -56,7 +53,7 @@ export const authConfig = {
 
       if (
         !validSubdomain &&
-        ['/signin', '/forget-password', '/tenants'].some((path) =>
+        ['/signin', '/forget-password', '/verify-account'].some((path) =>
           request.nextUrl.pathname.includes(path),
         )
       ) {

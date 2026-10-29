@@ -2,30 +2,47 @@
 
 import { ArrowLeft } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import { useActionState, useEffect, useTransition } from 'react'
+import { useActionState, useEffect, useRef, useTransition } from 'react'
+import * as React from 'react'
 
-import { signinAction } from '@/actions/auth'
+import { sendActivationCodeAction, signinAction } from '@/actions/auth'
 import { PasskeySigninButton } from '@/app/(auth)/signin/_components/passkey-signin-button'
 import { HamOwjBrand } from '@/components/branding/hamowj-mark'
 import { FormWrapper } from '@/components/forms/form-wrapper'
+import { ModeToggle } from '@/components/mode-toggle'
 import { Button } from '@/components/ui/button'
 import { CustomFormField } from '@/components/ui/custom-form-field'
 import { toast } from '@/lib/toast'
 
 import { signinSchema } from '../_types/signin-schema'
 import { SigninUserModel } from '../_types/signin-user-model.type'
-import { ModeToggle } from '@/components/mode-toggle'
-import * as React from 'react'
 
 export function SigninForm() {
   const router = useRouter()
 
   const [loginState, action] = useActionState(signinAction, undefined)
   const [isPending, startTransition] = useTransition()
+  const lastAttemptedUserName = useRef('')
 
   useEffect(() => {
     if (loginState && !loginState.isSuccess && loginState.error) {
-      toast.error('خطا ! ', {
+      // 403 = account not verified by admins yet → activate it via SMS code.
+      if (
+        loginState.error.status === 403 ||
+        loginState.error.title === 'FORBIDDEN'
+      ) {
+        toast.error('حساب شما تأیید نشده است!', {
+          description:
+            'برای فعال‌سازی حساب، کد تأیید برای شما ارسال می‌شود.',
+        })
+        const userName = lastAttemptedUserName.current
+        startTransition(async () => {
+          await sendActivationCodeAction(undefined, { phoneNumber: userName })
+          router.push(`/verify-account?u=${encodeURIComponent(userName)}`)
+        })
+        return
+      }
+      toast.error('خطا!', {
         description: loginState.error.detail!,
       })
     } else if (loginState && loginState.isSuccess) {
@@ -35,6 +52,7 @@ export function SigninForm() {
   }, [loginState, router, toast])
 
   const onSubmit = (data: SigninUserModel) => {
+    lastAttemptedUserName.current = data.userName || ''
     startTransition(() => action(data))
   }
 
@@ -52,11 +70,11 @@ export function SigninForm() {
         <div className="flex flex-col gap-6">
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-3 text-start">
-              <span className="bg-foreground text-background flex size-12 items-center justify-center rounded-2xl">
+              <span className="bg-foreground text-background flex size-12 items-center justify-center rounded-lg">
                 <HamOwjBrand className="size-8" />
               </span>
               <div className="flex flex-col gap-1">
-                <h1 className="text-xl font-black sm:text-2xl">
+                <h1 className="text-2xl leading-9 font-extrabold sm:text-[2rem] sm:leading-11">
                   ورود به هم‌اوج
                 </h1>
 
@@ -83,7 +101,7 @@ export function SigninForm() {
               label="رمزعبور"
             />
           </div>
-          <div className="text-center text-xs sm:text-sm md:text-right">
+          <div className="text-center text-xs sm:text-sm md:text-start">
             رمز عبور را فراموش کرده‌اید؟
             <a href="/forget-password" className="underline underline-offset-4">
               بازیابی رمز عبور
@@ -94,7 +112,7 @@ export function SigninForm() {
             className="bg-primary text-primary-foreground hover:bg-primary/90 w-full font-bold"
             isLoading={isPending}
           >
-            ورود به پنل <ArrowLeft className="mr-2 size-4" />
+            ورود به پنل <ArrowLeft className="ms-2 size-4" />
           </Button>
 
           <div className="text-muted-foreground relative py-1 text-center text-xs">
@@ -108,7 +126,7 @@ export function SigninForm() {
             </p>
             <a
               href="/signup"
-              className="font-bold text-[var(--brand-bronze)] underline underline-offset-4"
+              className="font-bold text-foreground underline underline-offset-4"
             >
               ثبت گروه ورزشی جدید
             </a>

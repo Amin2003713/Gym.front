@@ -40,14 +40,16 @@
     --color-popover: var(--popover);
     --color-card-foreground: var(--card-foreground);
     --color-card: var(--card);
-    --radius-sm: calc(var(--radius) - 4px);
+    --radius-xs: calc(var(--radius) - 8px); /* 6px — badges/small items */
+    --radius-sm: calc(var(--radius) - 4px); /* 10px — controls per guide */
     --radius-md: calc(var(--radius) - 2px);
-    --radius-lg: var(--radius);
+    --radius-lg: var(--radius);            /* 14px — cards per guide */
     --radius-xl: calc(var(--radius) + 4px);
     --color-success: var(--success);
     --color-success-foreground: var(--success-foreground);
     --color-warning: var(--warning);
     --color-warning-foreground: var(--warning-foreground);
+    --color-disabled: var(--disabled);
     --color-info: var(--info);
     --color-info-foreground: var(--info-foreground);
 }
@@ -187,7 +189,7 @@
 /* HamOwj brand tokens: warm ivory, orange, muted slate, bronze, stone and ink. */
 :root {
     color-scheme: light;
-    --radius: 0.75rem;
+    --radius: 0.875rem; /* 14px per guide: controls -> rounded-sm (10px), cards -> rounded-lg (14px), pills -> 999px */
     --brand-ivory: #f6f3ed;
     --brand-orange: #fb9a3c;
     --brand-slate: #788584;
@@ -200,68 +202,72 @@
     --brand-action: var(--brand-orange);
     --brand-logo-secondary: #352820;
 
-    --background: #f6f3ed;
-    --foreground: #463f41;
-    --card: #fffdf9;
-    --card-foreground: #463f41;
-    --popover: #fffdf9;
-    --popover-foreground: #463f41;
-    --primary: #fb9a3c;
-    --primary-foreground: #1b1a1b;
+    /* HamOwj semantic tokens — exact values from the visual guide (light). */
+    --background: #f6f3ed;               /* Decorator White  */
+    --foreground: #1b1a1b;               /* Eerie Black — DOM text */
+    --card: #fbf9f5;                     /* surface (mixed)  */
+    --card-foreground: #1b1a1b;
+    --popover: #fbf9f5;
+    --popover-foreground: #1b1a1b;
+    --primary: #fb9a3c;                  /* Chat Orange — action */
+    --primary-foreground: #1b1a1b;       /* on-action */
     --secondary: #e9e6df;
-    --secondary-foreground: #463f41;
+    --secondary-foreground: #1b1a1b;
     --muted: #eeece6;
-    --muted-foreground: #788584;
+    --muted-foreground: #463f41;         /* Ewa — muted text */
     --accent: #f8e4cf;
-    --accent-foreground: #463f41;
-    --destructive: #b93832;
-    --destructive-foreground: #fff8f5;
-    --border: #ded8cf;
-    --input: #d6d0c7;
-    --ring: #fb9a3c;
+    --accent-foreground: #1b1a1b;
+    --destructive: #b3392f;              /* error */
+    --destructive-foreground: #f6f3ed;
+    --border: #ddd7cb;
+    --input: #788584;                    /* control-border (Portsmouth) */
+    --ring: #1b1a1b;                     /* focus */
+    --disabled: #b9b5ad;                 /* disabled text/icon */
     --chart-1: #fb9a3c;
     --chart-2: #788584;
     --chart-3: #a96d20;
     --chart-4: #463f41;
     --chart-5: #c76f24;
     --sidebar: #fbf9f4;
-    --sidebar-foreground: #463f41;
+    --sidebar-foreground: #1b1a1b;
     --sidebar-primary: #fb9a3c;
     --sidebar-primary-foreground: #1b1a1b;
     --sidebar-accent: #f8e4cf;
-    --sidebar-accent-foreground: #463f41;
-    --sidebar-border: #ded8cf;
-    --sidebar-ring: #fb9a3c;
-    --success: #d8e8df;
-    --success-foreground: #285c43;
-    --info: #dce7e8;
-    --info-foreground: #38585a;
-    --warning: #f3dfc4;
-    --warning-foreground: #744719;
+    --sidebar-accent-foreground: #1b1a1b;
+    --sidebar-border: #ddd7cb;
+    --sidebar-ring: #1b1a1b;
+    --success: #2e7d4f;                  /* success (solid, ivory text) */
+    --success-foreground: #f6f3ed;
+    --info: #3a6b8c;                     /* info (solid, ivory text) */
+    --info-foreground: #f6f3ed;
+    --warning: #8a5a00;                  /* warning (solid, ivory text) */
+    --warning-foreground: #f6f3ed;
 }
 
+/* HamOwj semantic tokens — exact values from the visual guide (dark). */
 .dark {
   --brand-logo-secondary: #f6f3ed;
     color-scheme: dark;
-    --background: #1b1a1b;
-    --foreground: #f6f3ed;
-    --card: #252324;
+    --background: #1b1a1b;               /* Eerie Black */
+    --foreground: #f6f3ed;               /* Decorator White — DOM text */
+    --card: #252324;                     /* surface (mixed) */
     --card-foreground: #f6f3ed;
     --popover: #252324;
     --popover-foreground: #f6f3ed;
-    --primary: #fb9a3c;
-    --primary-foreground: #1b1a1b;
+    --primary: #fb9a3c;                  /* Chat Orange — action */
+    --primary-foreground: #1b1a1b;       /* on-action */
     --secondary: #343031;
     --secondary-foreground: #f6f3ed;
     --muted: #302d2e;
-    --muted-foreground: #a9b1af;
+    --muted-foreground: #9fa9a8;         /* muted text — never Portsmouth */
     --accent: #453327;
-    --accent-foreground: #ffd0a0;
-    --destructive: #f07870;
-    --destructive-foreground: #321615;
-    --border: #403b3d;
-    --input: #484244;
-    --ring: #fb9a3c;
+    --accent-foreground: #f6f3ed;
+    --destructive: #f08a80;              /* error */
+    --destructive-foreground: #1b1a1b;
+    --border: #3a3638;
+    --input: #788584;                    /* control-border (Portsmouth) */
+    --ring: #f6f3ed;                     /* focus */
+    --disabled: #5a5557;                 /* disabled text/icon */
     --chart-1: #fb9a3c;
     --chart-2: #9aa8a5;
     --chart-3: #c88b42;
@@ -273,30 +279,29 @@
     --sidebar-primary-foreground: #1b1a1b;
     --sidebar-accent: #343031;
     --sidebar-accent-foreground: #f6f3ed;
-    --sidebar-border: #403b3d;
-    --sidebar-ring: #fb9a3c;
-    --success: #203b2e;
-    --success-foreground: #a7e0bd;
-    --info: #23383b;
-    --info-foreground: #b5dfe2;
-    --warning: #49351f;
-    --warning-foreground: #ffd39a;
+    --sidebar-border: #3a3638;
+    --sidebar-ring: #f6f3ed;
+    --success: #6fc08f;                  /* success (solid, ink text) */
+    --success-foreground: #1b1a1b;
+    --info: #8db8d6;                     /* info (solid, ink text) */
+    --info-foreground: #1b1a1b;
+    --warning: #e0b04f;                  /* warning (solid, ink text) */
+    --warning-foreground: #1b1a1b;
 }
 
 @layer base {
-    * {
+    *, ::before, ::after {
+        --tw-ring-offset-color: var(--background);
         @apply border-border outline-ring/50;
     }
 
+    /* Vazirmatn for Persian UI, Inter for Latin text — fallback chain per guide. */
     html {
-        font-family: var(--font-iranSans);
-        -moz-font-feature-settings: "ss01";
-        -webkit-font-feature-settings: "ss01";
-        font-feature-settings: "ss01";
+        font-family: var(--font-vazirmatn), var(--font-inter), system-ui, sans-serif;
     }
 
     :lang(en) {
-        font-family: var(--font-figtree);
+        font-family: var(--font-inter), system-ui, sans-serif;
     }
 
     ::-webkit-scrollbar {
@@ -339,7 +344,7 @@
 
 /* HamOwj Phase 2 design-system primitives + Phase 3 application surfaces. */
 :root {
-  --brand-focus: #a96d20;
+  --brand-focus: var(--ring);
   --brand-divider: color-mix(in srgb, var(--foreground) 12%, transparent);
   --surface-raised: var(--card);
   --surface-subtle: color-mix(in srgb, var(--background) 72%, var(--foreground) 4%);
@@ -362,12 +367,12 @@
 }
 
 @layer utilities {
-  .brand-card { border: 1px solid var(--brand-divider); border-radius: 1rem; background: var(--surface-raised); box-shadow: var(--shadow-card); }
+  .brand-card { border: 1px solid var(--brand-divider); border-radius: var(--radius); background: var(--surface-raised); box-shadow: var(--shadow-card); }
   .brand-card-interactive { transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease; }
   .brand-card-interactive:hover { border-color: color-mix(in srgb, var(--primary) 45%, var(--border)); box-shadow: var(--shadow-elevated); }
   .brand-eyebrow { color: var(--muted-foreground); font-size: .72rem; font-weight: 700; letter-spacing: .025em; }
   .brand-divider { border-color: var(--brand-divider); }
-  .brand-focus-ring:focus-visible { outline: 2px solid var(--ring); outline-offset: 3px; }
+  .brand-focus-ring:focus-visible { outline: 3px solid var(--brand-focus); outline-offset: 2px; }
   .text-balance { text-wrap: balance; }
 }
 
