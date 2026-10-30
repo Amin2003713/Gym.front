@@ -81,9 +81,12 @@ export function MuscleExplorer() {
         accessToken?: string;
         id?: string
     } | undefined
-    const [figureGender, setFigureGender] = useState<FigureGender>(
-        () => genderFromToken(sessionUser?.accessToken) ?? normalizeGender(sessionUser?.gender) ?? 'male'
-    )
+  const [figureGender, setFigureGender] = useState<FigureGender>(
+    () =>
+      genderFromToken(sessionUser?.accessToken) ??
+      normalizeGender(sessionUser?.gender) ??
+      'male',
+  )
     const [items, setItems] = useState<ExerciseListItem[]>([])
     const [loading, setLoading] = useState(true)
     const [apiError, setApiError] = useState(false)
@@ -93,7 +96,7 @@ export function MuscleExplorer() {
     const [equipment, setEquipment] = useState('')
     const [selectedExercise, setSelectedExercise] = useState<ExerciseListItem | null>(null)
 
-    useEffect(() => {
+    useEffect(() => {s
         let alive = true
         const tokenGender = genderFromToken(sessionUser?.accessToken)
         const sessionGender = normalizeGender(sessionUser?.gender)

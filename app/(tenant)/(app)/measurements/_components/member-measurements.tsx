@@ -31,7 +31,10 @@ const fa = (value: number) => value.toLocaleString('fa-IR')
 
 const todayIso = () => new Date().toISOString().slice(0, 10)
 
-const GROUPS: Array<{ key: 'composition' | 'circumference' | 'vitals'; label: string }> = [
+const GROUPS: Array<{
+  key: 'composition' | 'circumference' | 'vitals'
+  label: string
+}> = [
   { key: 'composition', label: 'ترکیب بدن' },
   { key: 'circumference', label: 'دورها (سانتی‌متر)' },
   { key: 'vitals', label: 'ریکاوری' },
@@ -107,7 +110,8 @@ export function MemberMeasurements() {
 
     MEASUREMENT_FIELDS.forEach((field) => {
       const value = source?.[field.key as keyof BodyMeasurement]
-      next[field.key] = value === null || value === undefined ? '' : String(value)
+      next[field.key] =
+        value === null || value === undefined ? '' : String(value)
     })
 
     setValues(next)
@@ -126,7 +130,9 @@ export function MemberMeasurements() {
 
     payload.note = note.trim() || null
 
-    const hasValue = MEASUREMENT_FIELDS.some((field) => payload[field.key] !== null)
+    const hasValue = MEASUREMENT_FIELDS.some(
+      (field) => payload[field.key] !== null,
+    )
 
     if (!hasValue) {
       toast.error('حداقل یک مقدار را وارد کن')
@@ -172,15 +178,21 @@ export function MemberMeasurements() {
   )
 
   const trend = summary?.[TREND_FOR_METRIC[metric]]
-  const dateFmt = new Intl.DateTimeFormat('fa-IR', { month: 'short', day: 'numeric' })
+  const dateFmt = new Intl.DateTimeFormat('fa-IR', {
+    month: 'short',
+    day: 'numeric',
+  })
 
   return (
     <div className="space-y-4">
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div className="space-y-1">
-          <h1 className="text-2xl font-extrabold tracking-tight">اندازه‌گیری</h1>
+          <h1 className="text-2xl font-extrabold tracking-tight">
+            اندازه‌گیری
+          </h1>
           <p className="text-muted-foreground text-sm leading-6">
-            وزن، دورها و ریکاوری؛ همان عددهایی که مربی برای نوشتن برنامه بعدی می‌خواند.
+            وزن، دورها و ریکاوری؛ همان عددهایی که مربی برای نوشتن برنامه بعدی
+            می‌خواند.
           </p>
         </div>
         <Button onClick={() => openForm()} size="sm">
@@ -205,11 +217,17 @@ export function MemberMeasurements() {
 
           {GROUPS.map((group) => (
             <fieldset key={group.key} className="space-y-2">
-              <legend className="text-muted-foreground text-xs font-semibold">{group.label}</legend>
+              <legend className="text-muted-foreground text-xs font-semibold">
+                {group.label}
+              </legend>
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-                {MEASUREMENT_FIELDS.filter((field) => field.group === group.key).map((field) => (
+                {MEASUREMENT_FIELDS.filter(
+                  (field) => field.group === group.key,
+                ).map((field) => (
                   <label key={field.key} className="block">
-                    <span className="text-muted-foreground text-[11px]">{field.label}</span>
+                    <span className="text-muted-foreground text-[11px]">
+                      {field.label}
+                    </span>
                     <div className="mt-1 flex items-center gap-1">
                       <input
                         inputMode="decimal"
@@ -218,7 +236,10 @@ export function MemberMeasurements() {
                         max={field.max}
                         step={field.step ?? 0.1}
                         onChange={(event) =>
-                          setValues((current) => ({ ...current, [field.key]: event.target.value }))
+                          setValues((current) => ({
+                            ...current,
+                            [field.key]: event.target.value,
+                          }))
                         }
                         placeholder="—"
                         className="border-input bg-background h-9 w-full rounded-lg border px-2 text-sm tabular-nums"
@@ -277,17 +298,28 @@ export function MemberMeasurements() {
           </select>
         </div>
 
-        {trend?.first !== null && trend?.change !== null && trend?.change !== undefined && (
-          <p className="text-muted-foreground mt-2 text-xs">
-            از {trend.first !== null ? fa(Number(trend.first)) : '—'} تا{' '}
-            {trend.latest !== null ? fa(Number(trend.latest)) : '—'} {metricMeta.unit}
-            {' · '}
-            <span className={trend.change === 0 ? '' : trend.change > 0 ? 'text-primary font-semibold' : 'text-emerald-600 font-semibold'}>
-              {trend.change > 0 ? '+' : ''}
-              {fa(Number(trend.change))} {metricMeta.unit}
-            </span>
-          </p>
-        )}
+        {trend?.first !== null &&
+          trend?.change !== null &&
+          trend?.change !== undefined && (
+            <p className="text-muted-foreground mt-2 text-xs">
+              از {fa(Number(trend.first))}
+              {trend.latest !== null ? fa(Number(trend.latest)) : '—'}{' '}
+              {metricMeta.unit}
+              {' · '}
+              <span
+                className={
+                  trend.change === 0
+                    ? ''
+                    : trend.change > 0
+                      ? 'text-primary font-semibold'
+                      : 'font-semibold text-emerald-600'
+                }
+              >
+                {trend.change > 0 ? '+' : ''}
+                {fa(Number(trend.change))} {metricMeta.unit}
+              </span>
+            </p>
+          )}
 
         <div className="mt-3 h-48">
           {loading ? (
@@ -300,21 +332,38 @@ export function MemberMeasurements() {
             </div>
           ) : (
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={chartData} margin={{ top: 8, right: 8, left: -18, bottom: 0 }}>
+              <AreaChart
+                data={chartData}
+                margin={{ top: 8, right: 8, left: -18, bottom: 0 }}
+              >
                 <defs>
                   <linearGradient id="measureFill" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="var(--chart-1)" stopOpacity={0.3} />
-                    <stop offset="100%" stopColor="var(--chart-1)" stopOpacity={0} />
+                    <stop
+                      offset="0%"
+                      stopColor="var(--chart-1)"
+                      stopOpacity={0.3}
+                    />
+                    <stop
+                      offset="100%"
+                      stopColor="var(--chart-1)"
+                      stopOpacity={0}
+                    />
                   </linearGradient>
                 </defs>
-                <CartesianGrid stroke="var(--border)" strokeDasharray="4 5" vertical={false} />
+                <CartesianGrid
+                  stroke="var(--border)"
+                  strokeDasharray="4 5"
+                  vertical={false}
+                />
                 <XAxis
                   dataKey="date"
                   tickLine={false}
                   axisLine={false}
                   tick={{ fontSize: 10, fill: 'var(--muted-foreground)' }}
                   tickMargin={8}
-                  tickFormatter={(value: string) => (value ? dateFmt.format(new Date(`${value}T12:00:00`)) : '')}
+                  tickFormatter={(value: string) =>
+                    value ? dateFmt.format(new Date(`${value}T12:00:00`)) : ''
+                  }
                 />
                 <YAxis
                   domain={['auto', 'auto']}
@@ -331,7 +380,10 @@ export function MemberMeasurements() {
                     color: 'var(--popover-foreground)',
                     fontSize: 12,
                   }}
-                  formatter={(value: number) => [`${fa(value)} ${metricMeta.unit}`, metricMeta.label]}
+                  formatter={(value: number) => [
+                    `${fa(value)} ${metricMeta.unit}`,
+                    metricMeta.label,
+                  ]}
                 />
                 <Area
                   type="monotone"
@@ -349,12 +401,17 @@ export function MemberMeasurements() {
       <section className="bg-card rounded-2xl border shadow-sm">
         <div className="flex items-center justify-between border-b p-4">
           <h2 className="font-bold">تاریخچه</h2>
-          <span className="text-muted-foreground text-xs">{fa(history.length)} ثبت</span>
+          <span className="text-muted-foreground text-xs">
+            {fa(history.length)} ثبت
+          </span>
         </div>
 
         <ul className="divide-y">
           {history.map((entry) => (
-            <li key={entry.id} className="flex items-center justify-between gap-2 px-4 py-3">
+            <li
+              key={entry.id}
+              className="flex items-center justify-between gap-2 px-4 py-3"
+            >
               <button
                 type="button"
                 onClick={() => openForm(entry)}
@@ -365,10 +422,18 @@ export function MemberMeasurements() {
                 </p>
                 <p className="text-muted-foreground mt-0.5 text-[11px]">
                   {[
-                    entry.weightKg !== null ? `${fa(Number(entry.weightKg))} kg` : null,
-                    entry.bodyFatPercent !== null ? `${fa(Number(entry.bodyFatPercent))}٪ چربی` : null,
-                    entry.waistCm !== null ? `کمر ${fa(Number(entry.waistCm))}` : null,
-                    entry.restingHeartRateBpm !== null ? `${fa(entry.restingHeartRateBpm)} bpm` : null,
+                    entry.weightKg !== null
+                      ? `${fa(Number(entry.weightKg))} kg`
+                      : null,
+                    entry.bodyFatPercent !== null
+                      ? `${fa(Number(entry.bodyFatPercent))}٪ چربی`
+                      : null,
+                    entry.waistCm !== null
+                      ? `کمر ${fa(Number(entry.waistCm))}`
+                      : null,
+                    entry.restingHeartRateBpm !== null
+                      ? `${fa(entry.restingHeartRateBpm)} bpm`
+                      : null,
                   ]
                     .filter(Boolean)
                     .join(' · ') || '—'}
@@ -387,7 +452,8 @@ export function MemberMeasurements() {
 
           {!history.length && !loading && (
             <li className="text-muted-foreground p-6 text-center text-xs leading-6">
-              هنوز اندازه‌گیری‌ای ثبت نکرده‌ای. با «ثبت امروز» شروع کن؛ حتی وزن تنها هم کافی است.
+              هنوز اندازه‌گیری‌ای ثبت نکرده‌ای. با «ثبت امروز» شروع کن؛ حتی وزن
+              تنها هم کافی است.
             </li>
           )}
         </ul>
