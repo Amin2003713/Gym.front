@@ -35,6 +35,12 @@ export const exerciseApi = {
   update: (id: string, input: ExerciseInput) =>
     updateData<ExerciseInput & { id: string }, void>(route, { id, ...input }),
   delete: (id: string) => deleteData<{ id: string }>(route, undefined, { id }),
+  /** Shares (or withdraws) the exercise in the library; a re-publish needs a new platform review. */
+  publish: (id: string, published: boolean) =>
+    createData<null, void>(
+      `${route}/publish?id=${encodeURIComponent(id)}&published=${published}`,
+      null,
+    ),
 }
 
 /** URL of the small thumbnail variant — used for card covers to keep list responses light. */

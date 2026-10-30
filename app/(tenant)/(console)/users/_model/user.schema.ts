@@ -7,8 +7,11 @@ export const userSchema = z.object({
   firstName: z.string().trim().min(1, 'نام الزامی است.'),
   lastName: z.string().trim().min(1, 'نام خانوادگی الزامی است.'),
   email: z.email('ایمیل معتبر وارد کنید.'),
-  phoneNumber: z.string().trim().optional().nullable(),
-  phoneCountryCode: z.string().trim().default('+49'),
+  /** Phone number doubles as the login username; no country-code prefix. */
+  phoneNumber: z
+    .string()
+    .trim()
+    .regex(/^0\d{10}$/, 'شماره همراه باید ۱۱ رقم و با ۰ شروع شود.'),
   avatar: z.string().trim().optional().nullable(),
   gender: z.union([z.number().int().min(0).max(1), z.null()]).optional(),
   // Backend expects integer role values (C# Roles enum).

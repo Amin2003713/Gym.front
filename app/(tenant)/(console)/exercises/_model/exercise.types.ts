@@ -56,6 +56,12 @@ export interface ExerciseDetail {
   muscles: Array<{ muscleId: string; code: string; name: string; role: ExerciseMuscleRole }>
   instructions: Array<{ stepNumber: number; text: string }>
   media: ExerciseMedia[]
+  /** True when the signed-in tenant authored the row (may edit / publish / delete it). */
+  isOwned?: boolean
+  /** Author asked for the exercise to appear in the shared library. */
+  isPublished?: boolean
+  /** Platform review done; published + verified rows are visible to every tenant. */
+  isVerified?: boolean
   createdAtUtc: string
   updatedAtUtc: string
 }
@@ -90,6 +96,8 @@ export interface ExerciseInput {
   muscles: Array<{ muscleId: string; role: ExerciseMuscleRole }>
   instructions: string[]
   media: Array<{ assetId: string; role: number; order: number; isPrimary: boolean }>
+  /** Only for create; existing rows toggle this through exerciseApi.publish. */
+  publishToLibrary?: boolean
 }
 
 export type ListExercisesFilter = {

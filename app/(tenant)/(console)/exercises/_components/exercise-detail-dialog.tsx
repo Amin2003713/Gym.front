@@ -138,48 +138,55 @@ export default function ExerciseDetailDialog({
               )}
             </div>
 
-            {assets.length > 0 ? (
-              <ExerciseAssetGallery assets={assets} />
-            ) : (
-              <div className="flex min-h-40 flex-col items-center justify-center gap-2 rounded-lg border border-dashed bg-muted/30 text-center">
-                <Dumbbell className="size-8 text-muted-foreground opacity-60" />
-                <p className="text-sm text-muted-foreground">
-                  رسانه‌ای برای این حرکت ثبت نشده است.
-                </p>
-              </div>
-            )}
-
-            {detail.muscles.length > 0 && (
-              <div>
-                <h4 className="font-semibold">عضلات</h4>
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {detail.muscles.map((muscle, index) => (
-                    <span
-                      key={`${muscle.muscleId}-${muscle.role}-${index}`}
-                      className="rounded-lg bg-secondary px-3 py-1.5 text-sm"
-                    >
-                      {muscle.name} · {muscle.role === 1 ? 'اصلی' : 'کمکی'}
-                    </span>
-                  ))}
+            {/* Demo on the left, instructions on the right (RTL: instructions render first). */}
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-4">
+                <div>
+                  <h4 className="font-semibold">دستورالعمل اجرا</h4>
+                  {detail.instructions.length ? (
+                    <ol className="text-muted-foreground mt-2 list-decimal space-y-2 pe-5 text-sm leading-6">
+                      {[...detail.instructions]
+                        .sort((a, b) => a.stepNumber - b.stepNumber)
+                        .map((step) => (
+                          <li key={step.stepNumber}>{step.text}</li>
+                        ))}
+                    </ol>
+                  ) : (
+                    <p className="text-muted-foreground mt-2 text-sm">
+                      دستورالعملی ثبت نشده است.
+                    </p>
+                  )}
                 </div>
-              </div>
-            )}
 
-            <div>
-              <h4 className="font-semibold">دستورالعمل اجرا</h4>
-              {detail.instructions.length ? (
-                <ol className="mt-2 list-decimal space-y-2 pr-5 text-sm leading-6 text-muted-foreground">
-                  {[...detail.instructions]
-                    .sort((a, b) => a.stepNumber - b.stepNumber)
-                    .map((step) => (
-                      <li key={step.stepNumber}>{step.text}</li>
-                    ))}
-                </ol>
-              ) : (
-                <p className="mt-2 text-sm text-muted-foreground">
-                  دستورالعملی ثبت نشده است.
-                </p>
-              )}
+                {detail.muscles.length > 0 && (
+                  <div>
+                    <h4 className="font-semibold">عضلات درگیر</h4>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {detail.muscles.map((muscle, index) => (
+                        <span
+                          key={`${muscle.muscleId}-${muscle.role}-${index}`}
+                          className="bg-secondary rounded-lg px-3 py-1.5 text-sm"
+                        >
+                          {muscle.name} · {muscle.role === 1 ? 'اصلی' : 'کمکی'}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div>
+                {assets.length > 0 ? (
+                  <ExerciseAssetGallery assets={assets} />
+                ) : (
+                  <div className="bg-muted/30 flex min-h-40 flex-col items-center justify-center gap-2 rounded-lg border border-dashed text-center">
+                    <Dumbbell className="text-muted-foreground size-8 opacity-60" />
+                    <p className="text-muted-foreground text-sm">
+                      رسانه‌ای برای این حرکت ثبت نشده است.
+                    </p>
+                  </div>
+                )}
+              </div>
             </div>
 
             {onEdit && (

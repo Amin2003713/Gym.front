@@ -2,13 +2,16 @@ import {
   BookOpen,
   CalendarDays,
   ChartNoAxesColumn,
+  CreditCard,
   Dumbbell,
   House,
+  LockKeyhole,
   MessagesSquare,
   PersonStanding,
   Ruler,
   Scale,
   Settings,
+  UserRoundPen,
   type LucideIcon,
 } from 'lucide-react'
 
@@ -28,6 +31,9 @@ export const MEMBER_NAV: MemberNavItem[] = [
 
 /** Secondary destinations - too many for the tab bar, so they live in the account menu. */
 export const MEMBER_MORE: MemberNavItem[] = [
+  { href: '/profile', label: 'پروفایل من', icon: UserRoundPen },
+  { href: '/locker', label: 'کمد من', icon: LockKeyhole },
+  { href: '/membership', label: 'اشتراک', icon: CreditCard },
   { href: '/muscles', label: 'عضلات', icon: PersonStanding },
   { href: '/stats', label: 'آمار', icon: ChartNoAxesColumn },
   { href: '/structural-balance', label: 'تعادل ساختاری', icon: Scale },

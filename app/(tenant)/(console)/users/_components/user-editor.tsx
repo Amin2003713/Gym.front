@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import type { FormEvent } from 'react'
 import { useState } from 'react'
 
+import AvatarUploader from '@/components/ui/avatar-uploader'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { USER_ROLES, normalizeApiUserRole } from '@/constants/user-role'
@@ -33,7 +34,6 @@ type EditorForm = {
   lastName: string
   email: string
   role: ApiUserRole
-  phoneCountryCode: string
   phoneNumber: string
   gender: string
   avatar: string
@@ -49,7 +49,6 @@ function formFromUser(user?: ApiUser): EditorForm {
     lastName: user?.lastName ?? '',
     email: user?.email ?? '',
     role: role ?? ApiUserRole.Trainee,
-    phoneCountryCode: user?.phoneCountryCode ?? '+49',
     phoneNumber: user?.phoneNumber ?? '',
     gender: user?.gender == null ? '' : String(user.gender),
     avatar: user?.avatar ?? '',
@@ -87,8 +86,7 @@ export default function UserEditor({ mode, user }: UserEditorProps) {
       lastName: form.lastName,
       email: form.email,
       role: form.role,
-      phoneNumber: form.phoneNumber.trim() || null,
-      phoneCountryCode: form.phoneCountryCode.trim() || '+49',
+      phoneNumber: form.phoneNumber.trim(),
       avatar: form.avatar.trim() || null,
       gender: form.gender === '' ? null : Number(form.gender),
       password: form.password || null,
@@ -178,7 +176,20 @@ export default function UserEditor({ mode, user }: UserEditorProps) {
               required
             />
           </Field>
-          <Field label="ایمیل / نام کاربری *">
+          <Field label="شماره همراه (نام کاربری) *">
+            <Input
+              dir="ltr"
+              inputMode="tel"
+              maxLength={11}
+              placeholder="09xxxxxxxxx"
+              value={form.phoneNumber}
+              onChange={(e) =>
+                setField('phoneNumber', e.target.value.replace(/\D/g, ''))
+              }
+              required
+            />
+          </Field>
+          <Field label="ایمیل *">
             <Input
               type="email"
               dir="ltr"
@@ -202,20 +213,6 @@ export default function UserEditor({ mode, user }: UserEditorProps) {
               ))}
             </select>
           </Field>
-          <Field label="کد کشور">
-            <Input
-              dir="ltr"
-              value={form.phoneCountryCode}
-              onChange={(e) => setField('phoneCountryCode', e.target.value)}
-            />
-          </Field>
-          <Field label="شماره تماس">
-            <Input
-              dir="ltr"
-              value={form.phoneNumber}
-              onChange={(e) => setField('phoneNumber', e.target.value)}
-            />
-          </Field>
           <Field label="جنسیت">
             <select
               className="border-input bg-background h-10 w-full rounded-lg border px-3 outline-none focus-visible:ring-[3px]"
@@ -227,14 +224,7 @@ export default function UserEditor({ mode, user }: UserEditorProps) {
               <option value="1">زن</option>
             </select>
           </Field>
-          <Field label="آدرس تصویر پروفایل (اختیاری)">
-            <Input
-              dir="ltr"
-              placeholder="https://…"
-              value={form.avatar}
-              onChange={(e) => setField('avatar', e.target.value)}
-            />
-          </Field>
+
           {mode === 'create' && (
             <>
               <Field label="رمز عبور اولیه *">
@@ -258,6 +248,12 @@ export default function UserEditor({ mode, user }: UserEditorProps) {
             </>
           )}
         </div>
+
+        <AvatarUploader
+          value={form.avatar}
+          onChange={(url) => setField('avatar', url)}
+          disabled={saving}
+        />
 
         <p className="text-muted-foreground leading-6 text-xs">
           نقش‌ها مطابق سرویس کاربران: Admin (مدیر باشگاه)، Trainer (مربی)، Trainee

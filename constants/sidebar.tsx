@@ -6,10 +6,12 @@ import {
   Dumbbell,
   FileUp,
   History,
+  LockKeyhole,
   MessagesSquare,
   Settings2,
   ShieldCheck,
   Users,
+  Wallet,
 } from 'lucide-react'
 import * as React from 'react'
 
@@ -35,7 +37,7 @@ const SIDEBAR_OPTIONS: { tree: SidebarItem[] } = {
         { name: 'تمرین امروز', path: '/workouts', icon: <CalendarCheck className="size-4" />, colorClass: 'text-primary' },
         { name: 'تاریخچه تمرین', path: '/history', icon: <History className="size-4" />, colorClass: 'text-primary' },
         { name: 'پیشرفت و رکوردها', path: '/progress', icon: <ChartNoAxesCombined className="size-4" />, colorClass: 'text-primary' },
-        { name: 'اندازه‌گیری بدن', path: '/measurements', icon: <Activity className="size-4" />, colorClass: 'text-primary' },
+        { name: 'اندازه‌گیری بدن', path: '/console/measurements', icon: <Activity className="size-4" />, colorClass: 'text-primary' },
         { name: 'ورود و خروجی اطلاعات', path: '/imports', icon: <FileUp className="size-4" />, colorClass: 'text-primary' },
       ],
     },
@@ -45,15 +47,25 @@ const SIDEBAR_OPTIONS: { tree: SidebarItem[] } = {
       colorClass: 'text-[#788584]',
       role: [ApiUserRole.Admin, ApiUserRole.Trainer],
       children: [
-        { name: 'صف مربی', path: '/coach', icon: <MessagesSquare className="size-4" />, colorClass: 'text-[#788584]', role: [ApiUserRole.Admin, ApiUserRole.Trainer] },
+        { name: 'صف مربی', path: '/console/coach', icon: <MessagesSquare className="size-4" />, colorClass: 'text-[#788584]', role: [ApiUserRole.Admin, ApiUserRole.Trainer] },
         { name: 'اعضای باشگاه', path: '/members', icon: <Users className="size-4" />, colorClass: 'text-[#788584]', role: [ApiUserRole.Admin, ApiUserRole.Trainer] },
         { name: 'مربی‌ها و شاگردها', path: '/trainers', icon: <ShieldCheck className="size-4" />, colorClass: 'text-[#788584]', role: [ApiUserRole.Admin, ApiUserRole.Trainer] },
         { name: 'مدیریت کاربران', path: '/users', icon: <ShieldCheck className="size-4" />, colorClass: 'text-[#788584]', role: [ApiUserRole.Admin] },
       ],
     },
     {
+      name: 'کسب‌وکار باشگاه',
+      icon: <Wallet className="size-4" />,
+      colorClass: 'text-[#788584]',
+      role: [ApiUserRole.Admin, ApiUserRole.Trainer],
+      children: [
+        { name: 'مالی و اشتراک', path: '/billing', icon: <Wallet className="size-4" />, colorClass: 'text-[#788584]', role: [ApiUserRole.Admin, ApiUserRole.Trainer] },
+        { name: 'کمدهای هوشمند', path: '/lockers', icon: <LockKeyhole className="size-4" />, colorClass: 'text-[#788584]', role: [ApiUserRole.Admin, ApiUserRole.Trainer] },
+      ],
+    },
+    {
       name: 'تنظیمات',
-      path: '/settings',
+      path: '/console/settings',
       icon: <Settings2 className="size-4" />,
       colorClass: 'text-muted-foreground',
     },
