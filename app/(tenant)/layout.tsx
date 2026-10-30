@@ -1,47 +1,33 @@
-import { MainSidebar } from '@/app/(tenant)/_components/sidebar'
-import { ScrollArea } from '@/components/ui/scroll-area'
-import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar'
+import { OnboardingTour } from '@/app/(tenant)/_components/onboarding/onboarding-tour'
 import { readData } from '@/core/http-service'
 import { AuthProvider } from '@/providers/auth-provider'
 import { Problem } from '@/types/http-errors.interface'
 import { PublicUser } from '@/types/user.interface'
 
-import Header from './_components/header'
+export type TenantShellUser = {
+  data: PublicUser | null
+  error: Problem | null
+}
 
-const getUserInfo = async () =>
+/**
+ * The one place the tenant area learns who is signed in. Both role shells (console and member
+ * app) receive this, so neither has to repeat the request or the error handling.
+ */
+export const getUserInfo = async (): Promise<TenantShellUser> =>
   readData<PublicUser>('user/user-info')
     .then((data) => ({ data, error: null }))
-    .catch((err: unknown) => {
-      const problem = err as Problem
-      return {
-        data: null,
-        error: problem,
-      }
-    })
+    .catch((err: unknown) => ({ data: null, error: err as Problem }))
 
-export default async function DashboardLayout({
+export default async function TenantLayout({
   children,
 }: Readonly<{
   children: React.ReactNode
 }>) {
-  const { data: user, error } = await getUserInfo()
-
   return (
     <AuthProvider>
-      <div className="[--header-height:calc(theme(spacing.14))]">
-        <SidebarProvider className="flex flex-col">
-          <Header data={user} error={error} />
-          <div className="flex flex-1">
-            <MainSidebar data={user} error={error} />
-            <SidebarInset className="@container/main overflow-hidden [--full-h:calc(100svh-0.8px-var(--header-height))]">
-              {/* اگر scrollArea مشکلی ایجاد کرد فقط کلاس ها با SidebarInset جایگزین بشوند تا از scroll پیش فرض مرورگر استفاده بشه */}
-              <ScrollArea className="h-[calc(100svh-0.8px-var(--header-height))] gap-4 p-2 sm:p-3 lg:p-4">
-                {children}
-              </ScrollArea>
-            </SidebarInset>
-          </div>
-        </SidebarProvider>
-      </div>
+      {/* Mounted once for both role shells; renders only while the tour is unfinished. */}
+      <OnboardingTour />
+      {children}
     </AuthProvider>
   )
 }

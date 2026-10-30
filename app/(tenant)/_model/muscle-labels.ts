@@ -1,0 +1,21 @@
+/** Persian display names for the body-map muscle slugs (keyed by lib/muscles slug). */
+export const MUSCLE_LABEL: Record<string, string> = {
+  trapezius: 'ذوزنقه‌ای',
+  deltoids: 'سرشانه',
+  chest: 'سینه',
+  'upper-back': 'پشت فوقانی',
+  serratus: 'دندانه‌ای',
+  biceps: 'جلو بازو',
+  triceps: 'پشت بازو',
+  forearm: 'ساعد',
+  abs: 'شکم',
+  obliques: 'مورب شکمی',
+  'lower-back': 'کمر',
+  gluteal: 'باسن',
+  quadriceps: 'چهارسر ران',
+  hamstring: 'همسترینگ',
+  adductors: 'داخل ران',
+  'hip-flexors': 'خم‌کننده لگن',
+  calves: 'ساق پا',
+  tibialis: 'جلوی ساق',
+}

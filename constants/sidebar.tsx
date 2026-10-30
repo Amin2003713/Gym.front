@@ -6,6 +6,7 @@ import {
   Dumbbell,
   FileUp,
   History,
+  MessagesSquare,
   Settings2,
   ShieldCheck,
   Users,
@@ -44,6 +45,7 @@ const SIDEBAR_OPTIONS: { tree: SidebarItem[] } = {
       colorClass: 'text-[#788584]',
       role: [ApiUserRole.Admin, ApiUserRole.Trainer],
       children: [
+        { name: 'صف مربی', path: '/coach', icon: <MessagesSquare className="size-4" />, colorClass: 'text-[#788584]', role: [ApiUserRole.Admin, ApiUserRole.Trainer] },
         { name: 'اعضای باشگاه', path: '/members', icon: <Users className="size-4" />, colorClass: 'text-[#788584]', role: [ApiUserRole.Admin, ApiUserRole.Trainer] },
         { name: 'مربی‌ها و شاگردها', path: '/trainers', icon: <ShieldCheck className="size-4" />, colorClass: 'text-[#788584]', role: [ApiUserRole.Admin, ApiUserRole.Trainer] },
         { name: 'مدیریت کاربران', path: '/users', icon: <ShieldCheck className="size-4" />, colorClass: 'text-[#788584]', role: [ApiUserRole.Admin] },

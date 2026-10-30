@@ -4,8 +4,8 @@ import {Activity, Dumbbell, Search, X} from 'lucide-react'
 import {useSession} from 'next-auth/react'
 import {useEffect, useMemo, useState} from 'react'
 
-import {exerciseApi, exerciseCoverUrl} from '@/app/(tenant)/exercises/_api/exercise-api'
-import type {ExerciseListItem} from '@/app/(tenant)/exercises/_model/exercise.types'
+import {exerciseApi, exerciseCoverUrl} from '@/app/(tenant)/(console)/exercises/_api/exercise-api'
+import type {ExerciseListItem} from '@/app/(tenant)/(console)/exercises/_model/exercise.types'
 import {usersApi} from '@/features/users/api/users-api'
 
 

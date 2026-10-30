@@ -3,8 +3,8 @@
 import { AlertCircle, Check, Dumbbell, LoaderCircle, Search, Timer, Trash2 } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
-import { exerciseApi, exerciseCoverUrl } from '@/app/(tenant)/exercises/_api/exercise-api'
-import type { ExerciseListItem } from '@/app/(tenant)/exercises/_model/exercise.types'
+import { exerciseApi, exerciseCoverUrl } from '@/app/(tenant)/(console)/exercises/_api/exercise-api'
+import type { ExerciseListItem } from '@/app/(tenant)/(console)/exercises/_model/exercise.types'
 import { toast } from '@/lib/toast'
 
 const field = 'h-11 w-full rounded-lg border border-input bg-background px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring'
