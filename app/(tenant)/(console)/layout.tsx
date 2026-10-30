@@ -13,7 +13,7 @@ export default async function ConsoleLayout({
   const { data: user, error } = await getUserInfo()
 
   return (
-    <div className="[--header-height:calc(theme(spacing.14))]">
+    <div data-slot="console-layout" className="[--header-height:calc(theme(spacing.14))]">
       <SidebarProvider className="flex flex-col">
         <Header data={user} error={error} />
         <div className="flex flex-1">

@@ -7,6 +7,7 @@ import {
   House,
   LockKeyhole,
   MessagesSquare,
+  LifeBuoy,
   PersonStanding,
   Ruler,
   Scale,
@@ -39,6 +40,8 @@ export const MEMBER_MORE: MemberNavItem[] = [
   { href: '/structural-balance', label: 'تعادل ساختاری', icon: Scale },
   { href: '/measurements', label: 'اندازه‌گیری', icon: Ruler },
   { href: '/coach', label: 'مربی', icon: MessagesSquare },
+  { href: '/support', label: 'پشتیبانی', icon: LifeBuoy },
+  { href: '/contact', label: 'ارتباط با ما', icon: LifeBuoy },
   { href: '/settings', label: 'تنظیمات', icon: Settings },
 ]
 

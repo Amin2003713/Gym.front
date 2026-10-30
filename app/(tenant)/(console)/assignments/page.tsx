@@ -19,18 +19,15 @@ import {
 import { AssignmentTable } from './_components/assignment-table'
 import { BulkAssignDialog } from './_components/bulk-assign-dialog'
 import { EnrollPlanDialog } from './_components/enroll-plan-dialog'
-import type {
-  AssignmentListItem,
-  CoachAssignmentItem,
-  PlanAssignmentStatus,
-} from '@/app/(tenant)/_model/assignment.types'
+import { PlanAssignmentStatus } from '@/app/(tenant)/_model/assignment.types'
+import type { AssignmentListItem, CoachAssignmentItem } from '@/app/(tenant)/_model/assignment.types'
 
 
 const statusLabel: Record<PlanAssignmentStatus, string> = {
-  Active: 'فعال',
-  Paused: 'متوقف',
-  Completed: 'تکمیل‌شده',
-  Cancelled: 'لغوشده',
+  [PlanAssignmentStatus.Active]: 'فعال',
+  [PlanAssignmentStatus.Paused]: 'متوقف',
+  [PlanAssignmentStatus.Completed]: 'تکمیل‌شده',
+  [PlanAssignmentStatus.Cancelled]: 'لغوشده',
 }
 
 export default function AssignmentsPage() {
@@ -85,7 +82,7 @@ export default function AssignmentsPage() {
 
   const changeStatus = async (
     item: CoachAssignmentItem | AssignmentListItem,
-    next: 'Active' | 'Paused' | 'Cancelled',
+    next: PlanAssignmentStatus,
   ) => {
     const id = ('assignmentId' in item && item.assignmentId) || item.id
     if (!window.confirm(`وضعیت تخصیص به ${statusLabel[next]} تغییر کند؟`)) return
@@ -166,7 +163,7 @@ export default function AssignmentsPage() {
             {coachView && (
               <input
                 className="h-10 rounded-md border bg-background px-3 text-sm"
-                placeholder="جستجوی شاگرد"
+                placeholder="جستجوی نام برنامه"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />

@@ -47,10 +47,10 @@ export const enrollInPlan = (planId: string) =>
   )
 export const changeAssignmentStatus = (
   assignmentId: string,
-  status: Extract<PlanAssignmentStatus, 'Active' | 'Paused' | 'Cancelled'>,
+  status: PlanAssignmentStatus,
   startDate?: string,
 ) =>
-  updateData<{ status: string; startDate?: string }, AssignmentStatusResponse>(
+  updateData<{ status: PlanAssignmentStatus; startDate?: string }, AssignmentStatusResponse>(
     `${BASE}/${encodeURIComponent(assignmentId)}/status`,
     { status, ...(startDate ? { startDate } : {}) },
   )

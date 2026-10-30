@@ -25,11 +25,11 @@ export interface AssignmentStatusResponse {
 }
 export interface CoachAssignmentItem extends AssignmentStatusResponse {
   assignmentId?: string
-  memberId: string
-  memberName?: string | null
-  memberEmail?: string | null
+  memberId?: string
+  member?: { userId: string; firstName?: string | null; lastName?: string | null; email?: string | null; avatar?: string | null }
   planId?: string
   planTitle?: string | null
+  plan?: AssignmentPlan
   source?: PlanAssignmentSource
 }
 export interface PagedResult<T> {
@@ -93,4 +93,6 @@ export interface AssignmentPlanExercise {
     supersetGroup: number | null
   }
   exerciseName?: string | null
+  bodyPart?: string | null
+  target?: string | null
 }

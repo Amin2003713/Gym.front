@@ -13,6 +13,7 @@ import type { PlanDetail, PlanDurationType, PlanGoal, PlanLevel, PlanSummary, Pl
 
 import ExercisePicker, { type ExercisePickerSelection } from './exercise-picker'
 import PlanCoverageMap from './plan-coverage-map'
+import { useAppLocale } from '@/hooks/use-app-locale'
 
 type Props = { open: boolean; plan?: PlanSummary | null; onOpenChange: (open: boolean) => void; onSaved: () => void }
 type ExerciseRow = { exerciseId: string; exerciseName: string; targetSets: string; targetRepsMin: string; targetRepsMax: string; targetRir: string; restSeconds: string; notes: string }
@@ -70,6 +71,7 @@ const toPayload = (f: {
 })
 
 export function PlanFormDialog({ open, plan, onOpenChange, onSaved }: Props) {
+  const locale = useAppLocale()
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [step, setStep] = useState(0)
@@ -217,8 +219,8 @@ export function PlanFormDialog({ open, plan, onOpenChange, onSaved }: Props) {
               <label className="space-y-1 text-sm"><span>عنوان *</span><Input value={title} onChange={e => setTitle(e.target.value)} required /></label>
               <label className="space-y-1 text-sm"><span>دسترسی</span><select className="h-10 rounded-md border bg-background px-3" value={visibility} onChange={e => setVisibility(e.target.value as PlanVisibility)}><option value="Private">خصوصی</option><option value="Public">عمومی</option></select></label>
               <label className="space-y-1 text-sm sm:col-span-2"><span>توضیحات</span><Input value={description} onChange={e => setDescription(e.target.value)} /></label>
-              <label className="space-y-1 text-sm"><span>هدف</span><select className="h-10 w-full rounded-md border bg-background px-3" value={goal} onChange={e => setGoal(e.target.value as PlanGoal)}>{GOALS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></label>
-              <label className="space-y-1 text-sm"><span>سطح</span><select className="h-10 w-full rounded-md border bg-background px-3" value={level} onChange={e => setLevel(e.target.value as PlanLevel)}>{LEVELS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></label>
+              <label className="space-y-1 text-sm"><span>هدف</span><select className="h-10 w-full rounded-md border bg-background px-3" value={goal} onChange={e => setGoal(e.target.value as PlanGoal)}>{GOALS.map(([v, l]) => <option key={v} value={v}>{locale === 'en' ? ({ GetStronger: 'Strength', BuildMuscle: 'Muscle gain', LoseWeight: 'Weight loss', Endurance: 'Endurance', Fitness: 'Fitness', Mobility: 'Mobility' } as const)[v] : l}</option>)}</select></label>
+              <label className="space-y-1 text-sm"><span>سطح</span><select className="h-10 w-full rounded-md border bg-background px-3" value={level} onChange={e => setLevel(e.target.value as PlanLevel)}>{LEVELS.map(([v, l]) => <option key={v} value={v}>{locale === 'en' ? ({ Beginner: 'Beginner', Intermediate: 'Intermediate', Advanced: 'Advanced' } as const)[v] : l}</option>)}</select></label>
               <label className="space-y-1 text-sm"><span>نوع مدت</span><select className="h-10 rounded-md border bg-background px-3" value={durationType} onChange={e => setDurationType(e.target.value as PlanDurationType)}><option value="Sessions">جلسه</option><option value="Weeks">هفته</option></select></label>
               {durationType === 'Sessions' ? <label className="space-y-1 text-sm"><span>تعداد جلسات *</span><Input type="number" min="1" value={totalSessions} onChange={e => setTotalSessions(e.target.value)} required /></label> : <label className="space-y-1 text-sm"><span>تعداد هفته *</span><Input type="number" min="1" value={durationWeeks} onChange={e => setDurationWeeks(e.target.value)} required /></label>}
               <label className="space-y-1 text-sm sm:col-span-2"><span>تعداد روزهای تمرین در برنامه * (تا {MAX_DAYS} روز)</span><Input type="number" min="1" max={MAX_DAYS} value={dayCount} onChange={e => changeDayCount(e.target.value)} /></label>
@@ -269,7 +271,7 @@ export function PlanFormDialog({ open, plan, onOpenChange, onSaved }: Props) {
                     <label className="space-y-1 text-xs"><span>حداقل تکرار</span><Input type="number" min="1" value={ex.targetRepsMin} onChange={e => updateExercise(di, ei, { targetRepsMin: e.target.value })} /></label>
                     <label className="space-y-1 text-xs"><span>حداکثر تکرار</span><Input type="number" min="1" value={ex.targetRepsMax} onChange={e => updateExercise(di, ei, { targetRepsMax: e.target.value })} /></label>
                     <label className="space-y-1 text-xs"><span>RIR هدف</span><Input type="number" min="0" value={ex.targetRir} onChange={e => updateExercise(di, ei, { targetRir: e.target.value })} /></label>
-                    <label className="space-y-1 text-xs"><span>استراحت (ثانیه)</span><Input type="number" min="0" value={ex.restSeconds} onChange={e => updateExercise(di, ei, { restSeconds: e.target.value })} /></label>
+                    <label className="space-y-1 text-xs"><span>{locale === 'en' ? 'Rest interval' : 'استراحت (ثانیه)'}</span><select className="h-10 w-full rounded-md border bg-background px-3" value={ex.restSeconds} onChange={e => updateExercise(di, ei, { restSeconds: e.target.value })} aria-label="مدت استراحت بین ست‌ها">{[30,45,60,75,90,120,150,180,240,300].map(seconds => <option key={seconds} value={seconds}>{locale === 'en' ? `${seconds} sec` : `${seconds.toLocaleString('fa-IR')} ثانیه`}</option>)}</select></label>
                     <label className="space-y-1 text-xs"><span>یادداشت</span><Input value={ex.notes} onChange={e => updateExercise(di, ei, { notes: e.target.value })} /></label>
                     <div className="sm:col-span-3">
                       <Button type="button" variant="ghost" size="sm" disabled={day.exercises.length === 1} onClick={() => updateDay(di, { exercises: day.exercises.filter((_, i) => i !== ei) })}><Trash2 className="ml-1 size-3" />حذف حرکت</Button>

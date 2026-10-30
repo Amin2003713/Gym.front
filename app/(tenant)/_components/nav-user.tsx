@@ -140,7 +140,7 @@ export function NavUser({ isHeader, data: user, error }: NavUserProp) {
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
           <DropdownMenuItem asChild>
-            <Link href="/profile">
+            <Link href="/console/profile">
               <UserRoundPen />
               پروفایل من
             </Link>

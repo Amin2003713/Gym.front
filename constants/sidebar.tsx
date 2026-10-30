@@ -7,6 +7,7 @@ import {
   FileUp,
   History,
   LockKeyhole,
+  LifeBuoy,
   MessagesSquare,
   Settings2,
   ShieldCheck,

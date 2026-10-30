@@ -1,7 +1,7 @@
 'use client'
 
 import { Play, RefreshCw } from 'lucide-react'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -37,27 +37,44 @@ export default function WorkoutsPage() {
   const [starting, setStarting] = useState(false)
   const [plannedOpen, setPlannedOpen] = useState(false)
   const [assignments, setAssignments] = useState<AssignmentListItem[]>([])
+  const [nextCursor, setNextCursor] = useState<string | null>(null)
+  const [loadingMore, setLoadingMore] = useState(false)
+  const requestSequence = useRef(0)
 
   const load = useCallback(async () => {
+    const sequence = ++requestSequence.current
     setLoading(true)
+    setLoadingMore(false)
+    setNextCursor(null)
     try {
-      // type arrives as the numeric enum value (''/0/1) from the filter select.
-      const result = await listMyWorkouts(
-        type === '' ? '' : (Number(type) as WorkoutSessionType),
-      )
-      setItems(
-        Array.isArray(result)
-          ? result
-          : [...(result.items ?? []), ...(result.results ?? [])],
-      )
+      // Keep the first request bounded; older history is fetched only when requested.
+      const result = await listMyWorkouts(type === '' ? '' : (Number(type) as WorkoutSessionType), null, 20)
+      if (sequence !== requestSequence.current) return
+      if (Array.isArray(result)) { setItems(result); setNextCursor(null) }
+      else { setItems(result.items ?? result.results ?? []); setNextCursor(result.nextCursor ?? null) }
     } catch (e) {
-      toast.error('دریافت سوابق تمرین ناموفق بود', {
-        description: e instanceof Error ? e.message : 'خطای ناشناخته',
-      })
-    } finally {
-      setLoading(false)
-    }
+      if (sequence === requestSequence.current) toast.error('دریافت سوابق تمرین ناموفق بود', { description: e instanceof Error ? e.message : 'خطای ناشناخته' })
+    } finally { if (sequence === requestSequence.current) setLoading(false) }
   }, [type])
+
+  const loadMore = async () => {
+    if (!nextCursor || loadingMore) return
+    setLoadingMore(true)
+    const sequence = requestSequence.current
+    try {
+      const result = await listMyWorkouts(type === '' ? '' : (Number(type) as WorkoutSessionType), nextCursor, 20)
+      if (sequence !== requestSequence.current) return
+      if (!Array.isArray(result)) {
+        const more = result.items ?? result.results ?? []
+        setItems(current => {
+          const seen = new Set(current.map(item => item.sessionId ?? item.id))
+          return [...current, ...more.filter(item => !seen.has(item.sessionId ?? item.id))]
+        })
+        setNextCursor(result.nextCursor ?? null)
+      }
+    } catch (e) { if (sequence === requestSequence.current) toast.error('بارگذاری سوابق بیشتر ناموفق بود', { description: e instanceof Error ? e.message : undefined }) }
+    finally { if (sequence === requestSequence.current) setLoadingMore(false) }
+  }
 
   useEffect(() => {
     void load()
@@ -261,8 +278,8 @@ export default function WorkoutsPage() {
             onChange={(e) => setType(e.target.value)}
           >
             <option value="">همه انواع</option>
-            <option value="0">برنامه‌ریزی‌شده</option>
-            <option value="1">آزاد</option>
+            <option value="1">برنامه‌ریزی‌شده</option>
+            <option value="2">آزاد</option>
           </select>
         </CardHeader>
         <CardContent>
@@ -271,6 +288,7 @@ export default function WorkoutsPage() {
             loading={loading}
             onResume={(id) => setActiveSessionId(id)}
           />
+          {nextCursor && <div className="mt-4 flex justify-center"><Button variant="outline" onClick={() => void loadMore()} disabled={loadingMore}>{loadingMore ? 'در حال بارگذاری…' : 'نمایش سوابق قدیمی‌تر'}</Button></div>}
         </CardContent>
       </Card>
 

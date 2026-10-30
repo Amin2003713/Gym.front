@@ -39,7 +39,7 @@ export function MemberShell({ user, error, children }: MemberShellProps) {
   const pathname = usePathname()
 
   return (
-    <div dir="rtl" className="bg-background min-h-svh">
+    <div data-slot="member-shell" dir="rtl" className="bg-background min-h-svh">
       <header className="bg-card/90 supports-[backdrop-filter]:bg-card/75 sticky top-0 z-40 border-b backdrop-blur">
         <div className="mx-auto flex h-14 w-full max-w-5xl items-center gap-3 px-4">
           <Link href="/home" className="flex items-center gap-2">

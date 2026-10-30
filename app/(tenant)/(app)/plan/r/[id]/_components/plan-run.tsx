@@ -14,6 +14,8 @@ import type {
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { toast } from '@/lib/toast'
+import BodyMapPanel from '@/app/(tenant)/_components/progress/body-map-panel'
+import { muscleLoad } from '@/lib/muscle-mapping'
 
 const fa = (value: number) => value.toLocaleString('fa-IR')
 
@@ -166,6 +168,15 @@ export function PlanRun({ assignmentId }: { assignmentId: string }) {
                 </Button>
               </div>
 
+              {(() => {
+                const load = muscleLoad(day.exercises)
+                return Object.keys(load).length > 0 ? (
+                  <div className="mt-3 rounded-xl border bg-muted/20 p-3">
+                    <p className="mb-2 text-xs font-semibold text-muted-foreground">عضلات هدف این روز</p>
+                    <BodyMapPanel body="male" palette="load" load={load} className="mx-auto max-w-[260px]"/>
+                  </div>
+                ) : null
+              })()}
               <ul className="mt-3 space-y-1.5">
                 {day.exercises.map((exercise) => (
                   <li

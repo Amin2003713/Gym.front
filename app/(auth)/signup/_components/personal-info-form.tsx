@@ -46,6 +46,7 @@ function PersonalInfoForm({ form }: StepFormProps) {
       'email',
       'firstName',
       'lastName',
+      'phoneNumber',
       'password',
       'confirmPassword',
     ])
@@ -86,7 +87,7 @@ function PersonalInfoForm({ form }: StepFormProps) {
             <NumberField<SignupValues>
               form={form}
               name="phoneNumber"
-              type="number"
+              type="tel"
               label="شماره همراه مدیر"
               maxLength={11}
             />

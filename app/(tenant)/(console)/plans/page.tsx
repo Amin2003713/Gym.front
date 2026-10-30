@@ -1,7 +1,7 @@
 'use client'
 
 import { Archive, Eye, Plus, RefreshCw, Search, UserPlus } from 'lucide-react'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 
 import { Badge } from '@/components/ui/badge'
@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { useUserRoles } from '@/hooks/use-user-roles'
 import { toast } from '@/lib/toast'
+import { useAppLocale } from '@/hooks/use-app-locale'
 
 import { archivePlan, getPlan, listMyPlans, listPublicPlans } from './_api/plan-api'
 import { PlanFormDialog } from './_components/plan-form-dialog'
@@ -31,6 +32,8 @@ const levelLabels: Record<PlanLevel, string> = {
 
 export default function PlansPage() {
   const { canManage, isTraineeOnly, isAdmin, isTrainer } = useUserRoles()
+  const locale = useAppLocale()
+  const requestSequence = useRef(0)
 
   const [plans, setPlans] = useState<PlanSummary[]>([])
   const [loading, setLoading] = useState(true)
@@ -45,30 +48,28 @@ export default function PlansPage() {
   const [nextCursor, setNextCursor] = useState<string | null>(null)
 
   const load = useCallback(async () => {
+    const sequence = ++requestSequence.current
     setLoading(true)
     try {
       if (!catalog) {
-        const result = await listMyPlans()
+        const result = await listMyPlans(1, 30)
+        if (sequence !== requestSequence.current) return
         setPlans(Array.isArray(result) ? result : [])
         setNextCursor(null)
       } else {
-        const result = await listPublicPlans({
-          goal: goal as never,
-          level: level as never,
-          cursor,
-          pageSize: 20,
+        const result = await listPublicPlans({ goal: goal as never, level: level as never, cursor, pageSize: 20 })
+        if (sequence !== requestSequence.current) return
+        const rows = Array.isArray(result) ? [...result] : [...(result.items ?? result.results ?? [])]
+        setPlans(current => {
+          if (!cursor) return rows
+          const seen = new Set(current.map(item => item.id))
+          return [...current, ...rows.filter(item => !seen.has(item.id))]
         })
-        const rows = Array.isArray(result) ? [...result] : [...result.items ?? [], ...result.results ?? []]
-        setPlans(rows)
         setNextCursor(Array.isArray(result) ? null : result.nextCursor ?? null)
       }
     } catch (e) {
-      toast.error('دریافت برنامه‌ها ناموفق بود', {
-        description: e instanceof Error ? e.message : 'خطای ناشناخته',
-      })
-    } finally {
-      setLoading(false)
-    }
+      if (sequence === requestSequence.current) toast.error('دریافت برنامه‌ها ناموفق بود', { description: e instanceof Error ? e.message : 'خطای ناشناخته' })
+    } finally { if (sequence === requestSequence.current) setLoading(false) }
   }, [catalog, goal, level, cursor])
 
   useEffect(() => {
@@ -186,10 +187,10 @@ export default function PlansPage() {
                     setCursor(null)
                   }}
                 >
-                  <option value="">همه هدف‌ها</option>
+                  <option value="">{locale === 'en' ? 'All goals' : 'همه هدف‌ها'}</option>
                   {Object.entries(goalLabels).map(([value, label]) => (
                     <option key={value} value={value}>
-                      {label}
+                      {locale === 'en' ? ({ GetStronger: 'Strength', BuildMuscle: 'Muscle gain', LoseWeight: 'Weight loss', Endurance: 'Endurance', Fitness: 'Fitness', Mobility: 'Mobility' } as const)[value as PlanGoal] : label}
                     </option>
                   ))}
                 </select>
@@ -201,10 +202,10 @@ export default function PlansPage() {
                     setCursor(null)
                   }}
                 >
-                  <option value="">همه سطح‌ها</option>
+                  <option value="">{locale === 'en' ? 'All levels' : 'همه سطح‌ها'}</option>
                   {Object.entries(levelLabels).map(([value, label]) => (
                     <option key={value} value={value}>
-                      {label}
+                      {locale === 'en' ? ({ Beginner: 'Beginner', Intermediate: 'Intermediate', Advanced: 'Advanced' } as const)[value as PlanLevel] : label}
                     </option>
                   ))}
                 </select>
@@ -233,8 +234,8 @@ export default function PlansPage() {
                   {filtered.map((plan) => (
                     <tr key={plan.id} className="border-b last:border-0 hover:bg-muted/30">
                       <td className="p-3 font-medium">{plan.title}</td>
-                      <td className="p-3">{goalLabels[plan.goal]}</td>
-                      <td className="p-3">{levelLabels[plan.level]}</td>
+                      <td className="p-3">{locale === 'en' ? ({ GetStronger: 'Strength', BuildMuscle: 'Muscle gain', LoseWeight: 'Weight loss', Endurance: 'Endurance', Fitness: 'Fitness', Mobility: 'Mobility' } as const)[plan.goal] : goalLabels[plan.goal]}</td>
+                      <td className="p-3">{locale === 'en' ? ({ Beginner: 'Beginner', Intermediate: 'Intermediate', Advanced: 'Advanced' } as const)[plan.level] : levelLabels[plan.level]}</td>
                       <td className="p-3">
                         {plan.durationType === 'Sessions'
                           ? `${plan.totalSessions ?? '—'} جلسه`
@@ -289,7 +290,7 @@ export default function PlansPage() {
           {catalog && nextCursor && (
             <div className="mt-4 flex justify-center">
               <Button variant="outline" onClick={() => setCursor(nextCursor)} disabled={loading}>
-                صفحه بعد
+                {locale === 'en' ? 'Load more' : 'نمایش بیشتر'}
               </Button>
             </div>
           )}

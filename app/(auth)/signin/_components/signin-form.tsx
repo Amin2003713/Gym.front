@@ -105,7 +105,8 @@ export function SigninForm() {
             <CustomFormField
               control={form.control}
               name="userName"
-              label="نام کاربری"
+              label="شماره همراه (نام کاربری)"
+              type="tel"
             />
           </div>
           <div className="grid gap-2">

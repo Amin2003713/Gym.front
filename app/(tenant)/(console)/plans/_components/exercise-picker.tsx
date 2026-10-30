@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { exerciseApi } from '../../exercises/_api/exercise-api'
 import type { ExerciseListItem } from '../../exercises/_model/exercise.types'
+import { useAppLocale } from '@/hooks/use-app-locale'
 
 const PAGE_SIZE = 20
 const SEARCH_DEBOUNCE_MS = 400
@@ -35,6 +36,7 @@ export default function ExercisePicker({
   onSelect,
   placeholder = 'انتخاب حرکت…',
 }: ExercisePickerProps) {
+  const locale = useAppLocale()
   const [open, setOpen] = useState(false)
   const [items, setItems] = useState<ExerciseListItem[]>([])
   const [query, setQuery] = useState('')
@@ -67,7 +69,7 @@ export default function ExercisePicker({
           pageNumber,
           pageSize: PAGE_SIZE,
           search: debouncedQuery.trim() || undefined,
-          languageCode: 'fa',
+          languageCode: locale,
         })
         if (requestId !== requestIdRef.current) return
         setPageCount(result.pageCount ?? 0)
@@ -85,7 +87,7 @@ export default function ExercisePicker({
         }
       }
     },
-    [debouncedQuery],
+    [debouncedQuery, locale],
   )
 
   useEffect(() => {

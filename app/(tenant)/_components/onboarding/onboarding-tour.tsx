@@ -4,8 +4,8 @@ import { HelpCircle } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import Shepherd from 'shepherd.js'
 
-import { Button } from '@/components/ui/button'
 import { useUserRoles } from '@/hooks/use-user-roles'
+import { Button } from '@/components/ui/button'
 
 import 'shepherd.js/dist/css/shepherd.css'
 
@@ -21,19 +21,29 @@ const ROLE_STEPS: Record<'member' | 'coach' | 'console', TourStep[]> = {
     { id: 'home', title: 'صفحه اصلی', text: 'نمای کلی فعالیت‌ها و مسیر پیشرفت شما از این بخش در دسترس است.', selector: '[data-slot="member-shell"]' },
     { id: 'workouts', title: 'تمرین‌ها', text: 'جلسه تمرینی فعال را اجرا کنید، ست‌ها را ثبت کنید و سوابق خود را ببینید.', selector: 'a[href="/workout"], a[href="/workouts"]' },
     { id: 'plans', title: 'برنامه‌ها', text: 'برنامه‌های اختصاص‌یافته و برنامه‌های قابل ثبت‌نام را بررسی کنید.', selector: 'a[href="/plan"], a[href="/plans"]' },
+    { id: 'locker', title: 'کمد شخصی', text: 'جای کمد خود را روی نقشه اتاق پیدا کنید و وضعیت آن را ببینید.', selector: 'a[href="/locker"]' },
+    { id: 'muscles', title: 'نقشه عضلات', text: 'تعادل تمرین و عضلات درگیر را روی نقشه بدن بررسی کنید.', selector: 'a[href="/muscles"]' },
+    { id: 'support', title: 'پشتیبانی', text: 'درخواست پشتیبانی ثبت کنید و پاسخ‌ها را در همان گفتگو دنبال کنید.', selector: 'a[href="/support"]' },
     { id: 'profile', title: 'پروفایل', text: 'اطلاعات شخصی و تصویر حساب خود را مدیریت کنید.', selector: 'a[href="/profile"]' },
   ],
   coach: [
-    { id: 'home', title: 'نمای مربی', text: 'از این بخش به ابزارهای روزانه مربی دسترسی دارید.', selector: '[data-slot="coach-shell"]' },
+    { id: 'home', title: 'نمای مربی', text: 'از این بخش به ابزارهای روزانه مربی دسترسی دارید.', selector: '[data-slot="console-layout"]' },
     { id: 'members', title: 'شاگردها', text: 'اعضا و وضعیت پیشرفت آن‌ها را بررسی کنید.', selector: 'a[href="/members"]' },
     { id: 'plans', title: 'برنامه‌ها', text: 'برنامه‌های تمرینی را ایجاد و مدیریت کنید.', selector: 'a[href="/plans"]' },
     { id: 'assignments', title: 'تخصیص‌ها', text: 'برنامه‌ها را به شاگردها اختصاص دهید و وضعیت آن‌ها را پیگیری کنید.', selector: 'a[href="/assignments"]' },
+    { id: 'workouts', title: 'تمرین‌ها', text: 'جلسه‌های اعضا و تاریخچه تمرین را بررسی کنید.', selector: 'a[href="/workouts"]' },
+    { id: 'support', title: 'پشتیبانی', text: 'درخواست‌های اعضا را بررسی و پاسخ دهید.', selector: 'a[href="/support-desk"]' },
+    { id: 'profile', title: 'پروفایل مربی', text: 'اطلاعات حساب و تصویر پروفایل خود را ویرایش کنید.', selector: 'a[href="/console/profile"]' },
   ],
   console: [
     { id: 'home', title: 'داشبورد مدیریت', text: 'نمای کلی مدیریت باشگاه و دسترسی سریع به بخش‌های اصلی.', selector: '[data-slot="console-layout"]' },
     { id: 'members', title: 'اعضا', text: 'اطلاعات اعضا و وضعیت عضویت را مدیریت کنید.', selector: 'a[href="/members"]' },
     { id: 'plans', title: 'برنامه‌ها', text: 'برنامه‌های تمرینی باشگاه را مدیریت کنید.', selector: 'a[href="/plans"]' },
     { id: 'assignments', title: 'تخصیص برنامه', text: 'برنامه مناسب را برای اعضا تخصیص دهید.', selector: 'a[href="/assignments"]' },
+    { id: 'lockers', title: 'کمدها', text: 'اتاق‌ها و کمدهای باشگاه را مدیریت کنید.', selector: 'a[href="/lockers"]' },
+    { id: 'billing', title: 'مالی و اشتراک', text: 'محصولات، اشتراک‌ها و پرداخت‌ها را مدیریت کنید.', selector: 'a[href="/billing"]' },
+    { id: 'support', title: 'مرکز پشتیبانی', text: 'درخواست‌های اعضا را بررسی و پاسخ دهید.', selector: 'a[href="/support-desk"]' },
+    { id: 'profile', title: 'پروفایل مدیر', text: 'اطلاعات حساب و تصویر پروفایل خود را ویرایش کنید.', selector: 'a[href="/console/profile"]' },
   ],
 }
 

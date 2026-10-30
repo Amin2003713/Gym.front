@@ -22,12 +22,16 @@ import {
   SessionResponse,
   WorkoutSessionStatus,
   WorkoutSessionType,
+  normalizeSessionStatus,
+  normalizeSessionType,
 } from '@/app/(tenant)/_model/workout.types'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { toast } from '@/lib/toast'
+import BodyMapPanel from '@/app/(tenant)/_components/progress/body-map-panel'
+import { muscleLoad } from '@/lib/muscle-mapping'
 
 
 export function WorkoutSessionPanel({
@@ -270,8 +274,7 @@ export function WorkoutSessionPanel({
               onClick={() => void closeSession('complete')}
               disabled={
                 busy ||
-                session.status ==
-                  WorkoutSessionStatus.InProgress /* InProgress (numeric enum) */
+                normalizeSessionStatus(session.status) !== WorkoutSessionStatus.InProgress
               }
             >
               <CheckCircle2 className="ml-1 size-4" />
@@ -281,7 +284,7 @@ export function WorkoutSessionPanel({
               variant="outline"
               onClick={() => void closeSession('abandon')}
               disabled={
-                busy || session.status == WorkoutSessionStatus.InProgress
+                busy || normalizeSessionStatus(session.status) !== WorkoutSessionStatus.InProgress
               }
             >
               رها کردن
@@ -290,23 +293,32 @@ export function WorkoutSessionPanel({
         </CardHeader>
         <CardContent>
           <Badge>
-            {session.status === WorkoutSessionStatus.InProgress
+            {normalizeSessionStatus(session.status) === WorkoutSessionStatus.InProgress
               ? 'در جریان'
-              : session.status === WorkoutSessionStatus.Completed
+              : normalizeSessionStatus(session.status) === WorkoutSessionStatus.Completed
                 ? 'تکمیل‌شده'
-                : session.status === WorkoutSessionStatus.Abandoned
+                : normalizeSessionStatus(session.status) === WorkoutSessionStatus.Abandoned
                   ? 'لغوشده'
                   : '—'}
           </Badge>{' '}
           <Badge variant="secondary">
-            {session.type === WorkoutSessionType.Planned
+            {normalizeSessionType(session.type) === WorkoutSessionType.Planned
               ? 'برنامه‌ریزی‌شده'
-              : session.type === WorkoutSessionType.Free
+              : normalizeSessionType(session.type) === WorkoutSessionType.Free
                 ? 'آزاد'
                 : 'Workout'}
           </Badge>
         </CardContent>
       </Card>
+      {session.exercises?.length > 0 && (() => {
+        const load = muscleLoad(session.exercises)
+        return Object.keys(load).length > 0 ? (
+          <Card>
+            <CardHeader><CardTitle>عضلات درگیر این جلسه</CardTitle></CardHeader>
+            <CardContent><BodyMapPanel body="male" palette="load" load={load}/></CardContent>
+          </Card>
+        ) : null
+      })()}
       {celebration && (
         <Card>
           <CardContent className="space-y-2 p-4">

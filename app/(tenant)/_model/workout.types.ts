@@ -13,14 +13,14 @@ export enum WorkoutSessionStatus {
 
 /** Accepts numeric enum members (or legacy string names) from the API and normalizes. */
 export function normalizeSessionType(value: unknown): WorkoutSessionType | null {
-  if (value === WorkoutSessionType.Planned || value === 'Planned' || value === '0') return WorkoutSessionType.Planned
-  if (value === WorkoutSessionType.Free || value === 'Free' || value === '1') return WorkoutSessionType.Free
+  if (value === WorkoutSessionType.Planned || value === 'Planned' || value === '1') return WorkoutSessionType.Planned
+  if (value === WorkoutSessionType.Free || value === 'Free' || value === '2') return WorkoutSessionType.Free
   return null
 }
 export function normalizeSessionStatus(value: unknown): WorkoutSessionStatus | null {
-  if (value === WorkoutSessionStatus.InProgress || value === 'InProgress' || value === '0') return WorkoutSessionStatus.InProgress
-  if (value === WorkoutSessionStatus.Completed || value === 'Completed' || value === '1') return WorkoutSessionStatus.Completed
-  if (value === WorkoutSessionStatus.Abandoned || value === 'Abandoned' || value === '2') return WorkoutSessionStatus.Abandoned
+  if (value === WorkoutSessionStatus.InProgress || value === 'InProgress' || value === '1') return WorkoutSessionStatus.InProgress
+  if (value === WorkoutSessionStatus.Completed || value === 'Completed' || value === '2') return WorkoutSessionStatus.Completed
+  if (value === WorkoutSessionStatus.Abandoned || value === 'Abandoned' || value === '3') return WorkoutSessionStatus.Abandoned
   return null
 }
 
@@ -40,6 +40,8 @@ export interface SessionExerciseItem {
   exerciseName?: string | null
   category?: string | null
   equipment?: string | null
+  bodyPart?: string | null
+  target?: string | null
   exerciseOrder: number
   isPlanned: boolean
   isExtra: boolean
@@ -56,8 +58,8 @@ export interface SessionExerciseItem {
 export interface SessionResponse {
   id: string
   sessionId?: string
-  status: WorkoutSessionStatus
-  type?: WorkoutSessionType
+  status: WorkoutSessionStatus | string
+  type?: WorkoutSessionType | string
   title?: string | null
   startedAt?: string
   completedAt?: string | null
@@ -73,8 +75,8 @@ export interface StartSessionResponse {
 export interface WorkoutListItem {
   id: string
   sessionId?: string
-  type?: WorkoutSessionType
-  status?: WorkoutSessionStatus
+  type?: WorkoutSessionType | string
+  status?: WorkoutSessionStatus | string
   title?: string | null
   startedAt?: string
   completedAt?: string | null
