@@ -641,3 +641,39 @@
 .dark .hamowj-toaster [data-sileo-toast] {
     box-shadow: 0 14px 36px -12px rgb(0 0 0 / 0.65), 0 2px 8px -4px rgb(0 0 0 / 0.5) !important;
 }
+
+
+/* Shepherd onboarding: keep the guided tour legible in both themes and RTL. */
+.hamowj-shepherd.shepherd-element,
+.shepherd-element.hamowj-shepherd {
+  direction: rtl;
+  font-family: var(--font-vazirmatn), sans-serif;
+  color: var(--popover-foreground);
+  background: var(--popover);
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  box-shadow: 0 18px 50px rgb(0 0 0 / 0.24);
+}
+.hamowj-shepherd .shepherd-header,
+.hamowj-shepherd .shepherd-text {
+  background: var(--popover);
+  color: var(--popover-foreground);
+}
+.hamowj-shepherd .shepherd-title {
+  color: var(--foreground);
+  font-weight: 800;
+}
+.hamowj-shepherd .shepherd-text {
+  line-height: 1.9;
+}
+.hamowj-shepherd .shepherd-button {
+  background: var(--primary);
+  color: var(--primary-foreground);
+  border-radius: .65rem;
+  font-family: inherit;
+  font-weight: 700;
+}
+.hamowj-shepherd .shepherd-button.shepherd-button-secondary {
+  background: var(--secondary);
+  color: var(--secondary-foreground);
+}

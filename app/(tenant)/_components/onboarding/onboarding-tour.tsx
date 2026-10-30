@@ -1,140 +1,124 @@
 'use client'
 
-import { ArrowLeft, ArrowRight, X } from 'lucide-react'
-import Link from 'next/link'
-import { useEffect, useState } from 'react'
+import { HelpCircle } from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
+import Shepherd from 'shepherd.js'
 
-import { getOnboarding, updateOnboarding } from '@/app/(tenant)/_api/onboarding-api'
-import { TOUR_BY_ROLE, type OnboardingState } from '@/app/(tenant)/_model/onboarding'
 import { Button } from '@/components/ui/button'
+import { useUserRoles } from '@/hooks/use-user-roles'
 
-/**
- * First-run tour, one flow per role. It is mounted once in the tenant layout, so both the member app
- * and the console get it; the tour only renders while the stored `tourCompleted` flag is false.
- */
+import 'shepherd.js/dist/css/shepherd.css'
+
+type TourStep = {
+  id: string
+  title: string
+  text: string
+  selector?: string
+}
+
+const ROLE_STEPS: Record<'member' | 'coach' | 'console', TourStep[]> = {
+  member: [
+    { id: 'home', title: 'صفحه اصلی', text: 'نمای کلی فعالیت‌ها و مسیر پیشرفت شما از این بخش در دسترس است.', selector: '[data-slot="member-shell"]' },
+    { id: 'workouts', title: 'تمرین‌ها', text: 'جلسه تمرینی فعال را اجرا کنید، ست‌ها را ثبت کنید و سوابق خود را ببینید.', selector: 'a[href="/workout"], a[href="/workouts"]' },
+    { id: 'plans', title: 'برنامه‌ها', text: 'برنامه‌های اختصاص‌یافته و برنامه‌های قابل ثبت‌نام را بررسی کنید.', selector: 'a[href="/plan"], a[href="/plans"]' },
+    { id: 'profile', title: 'پروفایل', text: 'اطلاعات شخصی و تصویر حساب خود را مدیریت کنید.', selector: 'a[href="/profile"]' },
+  ],
+  coach: [
+    { id: 'home', title: 'نمای مربی', text: 'از این بخش به ابزارهای روزانه مربی دسترسی دارید.', selector: '[data-slot="coach-shell"]' },
+    { id: 'members', title: 'شاگردها', text: 'اعضا و وضعیت پیشرفت آن‌ها را بررسی کنید.', selector: 'a[href="/members"]' },
+    { id: 'plans', title: 'برنامه‌ها', text: 'برنامه‌های تمرینی را ایجاد و مدیریت کنید.', selector: 'a[href="/plans"]' },
+    { id: 'assignments', title: 'تخصیص‌ها', text: 'برنامه‌ها را به شاگردها اختصاص دهید و وضعیت آن‌ها را پیگیری کنید.', selector: 'a[href="/assignments"]' },
+  ],
+  console: [
+    { id: 'home', title: 'داشبورد مدیریت', text: 'نمای کلی مدیریت باشگاه و دسترسی سریع به بخش‌های اصلی.', selector: '[data-slot="console-layout"]' },
+    { id: 'members', title: 'اعضا', text: 'اطلاعات اعضا و وضعیت عضویت را مدیریت کنید.', selector: 'a[href="/members"]' },
+    { id: 'plans', title: 'برنامه‌ها', text: 'برنامه‌های تمرینی باشگاه را مدیریت کنید.', selector: 'a[href="/plans"]' },
+    { id: 'assignments', title: 'تخصیص برنامه', text: 'برنامه مناسب را برای اعضا تخصیص دهید.', selector: 'a[href="/assignments"]' },
+  ],
+}
+
+const storageKey = (role: string) => `hamowj-tour-${role}-completed`
+
 export function OnboardingTour() {
-  const [state, setState] = useState<OnboardingState | null>(null)
-  const [open, setOpen] = useState(false)
-  const [step, setStep] = useState(0)
+  const { isAdmin, isTrainer } = useUserRoles()
+  const role = useMemo(
+    () => (isAdmin ? 'console' : isTrainer ? 'coach' : 'member') as keyof typeof ROLE_STEPS,
+    [isAdmin, isTrainer],
+  )
+  const [ready, setReady] = useState(false)
 
-  useEffect(() => {
-    let cancelled = false
+  const startTour = () => {
+    const tour = new Shepherd.Tour({
+      useModalOverlay: true,
+      defaultStepOptions: {
+        cancelIcon: { enabled: true },
+        classes: 'hamowj-shepherd',
+        scrollTo: { behavior: 'smooth', block: 'center' },
+        buttons: [
+          { text: 'قبلی', action() { tour.back() }, classes: 'shepherd-button-secondary' },
+          { text: 'بعدی', action() { tour.next() } },
+        ],
+      },
+    })
 
-    void (async () => {
-      try {
-        const loaded = await getOnboarding()
+    const available = ROLE_STEPS[role]
+      .map((step) => {
+        const target = step.selector ? document.querySelector(step.selector) : null
+        return {
+          id: step.id,
+          title: step.title,
+          text: step.text,
+          ...(target ? { attachTo: { element: target as HTMLElement, on: 'bottom' as const } } : {}),
+          buttons: [
+            { text: 'خروج', action() { tour.cancel() }, classes: 'shepherd-button-secondary' },
+            { text: 'قبلی', action() { tour.back() }, classes: 'shepherd-button-secondary' },
+            { text: 'بعدی', action() { tour.next() } },
+          ],
+        }
+      })
 
-        if (cancelled) return
-
-        setState(loaded)
-        setOpen(!loaded.tourCompleted)
-      } catch {
-        /* First-run help is optional: a failed read must never block the app. */
-      }
-    })()
-
-    return () => {
-      cancelled = true
-    }
-  }, [])
-
-  const finish = async () => {
-    setOpen(false)
-
-    try {
-      const updated = await updateOnboarding({ tourCompleted: true })
-      setState(updated)
-    } catch {
-      /* The tour reappears next visit if this fails; nothing else depends on it. */
-    }
+    available.forEach((step, index) => {
+      const isLast = index === available.length - 1
+      tour.addStep({
+        ...step,
+        buttons: isLast
+          ? [
+              { text: 'خروج', action() { tour.cancel() }, classes: 'shepherd-button-secondary' },
+              { text: 'پایان راهنما', action() { tour.complete() } },
+            ]
+          : step.buttons,
+      })
+    })
+    tour.on('complete', () => localStorage.setItem(storageKey(role), '1'))
+    tour.on('cancel', () => localStorage.setItem(storageKey(role), '1'))
+    tour.start()
   }
 
-  if (!open || !state) return null
+  useEffect(() => {
+    setReady(true)
+  }, [])
 
-  const steps = TOUR_BY_ROLE[state.role] ?? TOUR_BY_ROLE.Trainee
-  const current = steps[step]
-  const last = step === steps.length - 1
+  useEffect(() => {
+    if (!ready || localStorage.getItem(storageKey(role))) return
+    const id = window.setTimeout(startTour, 700)
+    return () => window.clearTimeout(id)
+    // startTour is intentionally recreated with the current role.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ready, role])
+
+  if (!ready) return null
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-label="راهنمای شروع"
-      dir="rtl"
-      className="fixed inset-0 z-[60] flex items-end justify-center bg-black/45 p-3 sm:items-center"
-      onKeyDown={(event) => {
-        if (event.key === 'Escape') void finish()
-      }}
+    <Button
+      type="button"
+      variant="outline"
+      size="icon"
+      className="fixed bottom-5 left-5 z-40 size-11 rounded-full bg-background shadow-lg"
+      aria-label="راهنمای سریع"
+      title="راهنمای سریع"
+      onClick={startTour}
     >
-      <div className="bg-card w-full max-w-md rounded-2xl border p-5 shadow-xl">
-        <div className="flex items-start justify-between gap-2">
-          <div className="flex items-center gap-1.5">
-            {steps.map((_, index) => (
-              <span
-                key={index}
-                className={`h-1.5 rounded-full transition-all ${
-                  index === step ? 'bg-primary w-6' : 'bg-muted-foreground/30 w-1.5'
-                }`}
-              />
-            ))}
-          </div>
-          <button
-            type="button"
-            onClick={() => void finish()}
-            aria-label="بستن راهنما"
-            className="text-muted-foreground hover:text-foreground -m-1 p-1"
-          >
-            <X className="size-4" />
-          </button>
-        </div>
-
-        <h2 className="mt-4 text-lg font-extrabold">{current.title}</h2>
-        <p className="text-muted-foreground mt-2 min-h-20 text-sm leading-7">{current.body}</p>
-
-        {current.href && (
-          <Link
-            href={current.href}
-            onClick={() => void finish()}
-            className="text-primary inline-flex items-center gap-1 text-xs font-semibold hover:underline"
-          >
-            {current.cta}
-            <ArrowLeft className="size-3.5" />
-          </Link>
-        )}
-
-        <div className="mt-5 flex items-center justify-between gap-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setStep((value) => Math.max(0, value - 1))}
-            disabled={step === 0}
-          >
-            <ArrowRight className="size-4" />
-            قبلی
-          </Button>
-
-          {last ? (
-            <Button size="sm" onClick={() => void finish()}>
-              شروع میکنم
-            </Button>
-          ) : (
-            <Button size="sm" onClick={() => setStep((value) => value + 1)}>
-              بعدی
-              <ArrowLeft className="size-4" />
-            </Button>
-          )}
-        </div>
-
-        {!last && (
-          <button
-            type="button"
-            onClick={() => void finish()}
-            className="text-muted-foreground hover:text-foreground mt-3 w-full text-center text-[11px]"
-          >
-            رد کردن راهنما
-          </button>
-        )}
-      </div>
-    </div>
+      <HelpCircle className="size-5" />
+    </Button>
   )
 }
