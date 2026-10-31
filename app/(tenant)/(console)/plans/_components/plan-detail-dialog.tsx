@@ -4,16 +4,16 @@ import { Dumbbell, Loader2, X } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 
 import { MUSCLE_LABEL } from '@/app/(tenant)/_model/muscle-labels'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import BodyMap, { BodyMapLegend } from '@/features/gym/components/body-map'
 import { useAppLocale } from '@/hooks/use-app-locale'
 import { muscleLoad, muscleSlugs } from '@/lib/muscle-mapping'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
 
 import { exerciseApi } from '../../exercises/_api/exercise-api'
 import type { ExerciseListItem } from '../../exercises/_model/exercise.types'
-import type { PlanDetail, PlanExerciseDetail } from '../_model/plan.types'
 import { planGoalText, planLevelText } from '../_model/plan-labels'
+import type { PlanDetail, PlanExerciseDetail } from '../_model/plan.types'
 
 const fa = (value: number) => (value ?? 0).toLocaleString('fa-IR')
 
@@ -40,13 +40,21 @@ export function PlanDetailDialog({
   onClose: () => void
 }) {
   const locale = useAppLocale()
-  const [exercises, setExercises] = useState<Record<string, ExerciseListItem>>({})
+  const [exercises, setExercises] = useState<Record<string, ExerciseListItem>>(
+    {},
+  )
   const [loadingExercises, setLoadingExercises] = useState(false)
   const [exercisesFailed, setExercisesFailed] = useState(false)
 
   const exerciseIds = useMemo(
     () => [
-      ...new Set(plan.days.flatMap((day) => day.exercises.map((item) => item.exerciseId))),
+      ...new Set(
+        plan.days.flatMap((day) =>
+          day.exercises
+            .map((item) => item.slot?.exerciseId)
+            .filter((id): id is string => Boolean(id)),
+        ),
+      ),
     ],
     [plan],
   )
@@ -113,10 +121,17 @@ export function PlanDetailDialog({
     [exercises, plan],
   )
 
-  const exerciseCount = plan.days.reduce((sum, day) => sum + day.exercises.length, 0)
+  const exerciseCount = plan.days.reduce(
+    (sum, day) => sum + day.exercises.length,
+    0,
+  )
   const setCount = plan.days.reduce(
     (sum, day) =>
-      sum + day.exercises.reduce((daySum, item) => daySum + (item.targetSets ?? 0), 0),
+      sum +
+      day.exercises.reduce(
+        (daySum, item) => daySum + (item.targetSets ?? 0),
+        0,
+      ),
     0,
   )
 
@@ -137,13 +152,20 @@ export function PlanDetailDialog({
       >
         <header className="flex items-start justify-between gap-3 border-b p-4 sm:p-5">
           <div className="min-w-0">
-            <h2 id="plan-detail-title" className="truncate text-lg font-extrabold tracking-tight">
+            <h2
+              id="plan-detail-title"
+              className="truncate text-lg font-extrabold tracking-tight"
+            >
               {plan.title}
             </h2>
             <div className="mt-2 flex flex-wrap items-center gap-1.5">
               <Badge>{planGoalText(plan.goal, locale)}</Badge>
-              <Badge variant="secondary">{planLevelText(plan.level, locale)}</Badge>
-              <Badge variant={plan.visibility === 'Public' ? 'default' : 'outline'}>
+              <Badge variant="secondary">
+                {planLevelText(plan.level, locale)}
+              </Badge>
+              <Badge
+                variant={plan.visibility === 'Public' ? 'default' : 'outline'}
+              >
                 {plan.visibility === 'Public' ? 'عمومی' : 'خصوصی'}
               </Badge>
               <span className="text-muted-foreground text-xs">
@@ -155,7 +177,12 @@ export function PlanDetailDialog({
               </span>
             </div>
           </div>
-          <Button variant="ghost" size="icon" onClick={onClose} aria-label="بستن">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onClose}
+            aria-label="بستن"
+          >
             <X className="size-5" />
           </Button>
         </header>
@@ -163,7 +190,9 @@ export function PlanDetailDialog({
         <div className="min-h-0 flex-1 overflow-y-auto">
           <div className="space-y-4 p-4 sm:p-5">
             {plan.description && (
-              <p className="text-muted-foreground text-sm leading-7">{plan.description}</p>
+              <p className="text-muted-foreground text-sm leading-7">
+                {plan.description}
+              </p>
             )}
 
             <div className="grid gap-2 sm:grid-cols-3">
@@ -176,8 +205,8 @@ export function PlanDetailDialog({
               <div className="space-y-2">
                 <h3 className="text-sm font-bold">پوشش عضلانی کل برنامه</h3>
                 <p className="text-muted-foreground text-xs leading-6">
-                  همه حرکات همه روزها در یک نقشه؛ عضله‌ای که در روزهای بیشتری تمرین داده شود
-                  پررنگ‌تر دیده می‌شود.
+                  همه حرکات همه روزها در یک نقشه؛ عضله‌ای که در روزهای بیشتری
+                  تمرین داده شود پررنگ‌تر دیده می‌شود.
                 </p>
                 {loadingExercises ? (
                   <p className="text-muted-foreground flex items-center gap-2 text-xs">
@@ -198,13 +227,14 @@ export function PlanDetailDialog({
                 )}
                 {exercisesFailed && (
                   <p className="text-destructive text-xs">
-                    اطلاعات حرکات بارگذاری نشد؛ فهرست روزها همچنان قابل مشاهده است.
+                    اطلاعات حرکات بارگذاری نشد؛ فهرست روزها همچنان قابل مشاهده
+                    است.
                   </p>
                 )}
               </div>
 
               {Object.keys(planLoad).length > 0 && (
-                <div className="border-t pt-3 lg:border-s lg:border-t-0 lg:pt-0 lg:ps-4">
+                <div className="border-t pt-3 lg:border-s lg:border-t-0 lg:ps-4 lg:pt-0">
                   <BodyMap body="male" palette="load" load={planLoad} />
                   <div className="mt-2 flex justify-center">
                     <BodyMapLegend palette="load" />
@@ -235,10 +265,18 @@ export function PlanDetailDialog({
                         {fa(day.dayNumber)}
                       </span>
                       <div>
-                        <h3 className="text-sm font-bold">{day.name || `روز ${fa(day.dayNumber)}`}</h3>
+                        <h3 className="text-sm font-bold">
+                          {day.name || `روز ${fa(day.dayNumber)}`}
+                        </h3>
                         <p className="text-muted-foreground mt-0.5 text-xs">
                           {fa(day.exercises.length)} حرکت ·{' '}
-                          {fa(day.exercises.reduce((sum, item) => sum + (item.targetSets ?? 0), 0))} ست
+                          {fa(
+                            day.exercises.reduce(
+                              (sum, item) => sum + (item.targetSets ?? 0),
+                              0,
+                            ),
+                          )}{' '}
+                          ست
                         </p>
                       </div>
                     </div>
@@ -272,18 +310,26 @@ export function PlanDetailDialog({
 
                           <div className="min-w-0">
                             <p className="truncate text-sm font-semibold">
-                              {exercise.exerciseName || meta?.name || exercise.exerciseId}
+                              {exercise.exerciseName ||
+                                meta?.name ||
+                                exercise.exerciseId}
                             </p>
                             <div className="text-muted-foreground mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
                               <span className="tabular-nums">
                                 {fa(exercise.targetSets ?? 0)} ست ×{' '}
-                                {repsLabel(exercise.targetRepsMin, exercise.targetRepsMax)} تکرار
+                                {repsLabel(
+                                  exercise.targetRepsMin,
+                                  exercise.targetRepsMax,
+                                )}{' '}
+                                تکرار
                               </span>
                               {exercise.targetRir != null && (
                                 <span>RIR {fa(exercise.targetRir)}</span>
                               )}
                               {exercise.restSeconds != null && (
-                                <span>{fa(exercise.restSeconds)} ثانیه استراحت</span>
+                                <span>
+                                  {fa(exercise.restSeconds)} ثانیه استراحت
+                                </span>
                               )}
                               {meta?.equipment && <span>{meta.equipment}</span>}
                             </div>
@@ -348,7 +394,9 @@ function Stat({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-xl border p-3">
       <p className="text-muted-foreground text-xs">{label}</p>
-      <p className="mt-1 text-lg font-extrabold tracking-tight tabular-nums">{value}</p>
+      <p className="mt-1 text-lg font-extrabold tracking-tight tabular-nums">
+        {value}
+      </p>
     </div>
   )
 }
