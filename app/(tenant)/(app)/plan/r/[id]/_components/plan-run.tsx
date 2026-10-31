@@ -17,7 +17,7 @@ import { toast } from '@/lib/toast'
 import BodyMapPanel from '@/app/(tenant)/_components/progress/body-map-panel'
 import { muscleLoad } from '@/lib/muscle-mapping'
 
-const fa = (value: number) => value.toLocaleString('fa-IR')
+const fa = (value: number) => (value ?? 0).toLocaleString('fa-IR')
 
 const repsLabel = (min: number | null, max: number | null) => {
   if (min && max && min !== max) return `${fa(min)}–${fa(max)}`

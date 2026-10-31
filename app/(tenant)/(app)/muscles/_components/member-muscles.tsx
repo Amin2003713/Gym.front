@@ -21,7 +21,7 @@ import { setsOf } from '@/app/(tenant)/_model/structural-balance'
 import { useFigureGender } from '@/hooks/use-figure-gender'
 import { MUSCLES, type MuscleSlug } from '@/lib/muscles'
 
-const fa = (value: number) => value.toLocaleString('fa-IR')
+const fa = (value: number) => (value ?? 0).toLocaleString('fa-IR')
 
 type MapMode = 'trained' | 'recovery'
 

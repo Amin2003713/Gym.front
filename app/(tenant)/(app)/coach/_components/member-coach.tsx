@@ -16,7 +16,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { toast } from '@/lib/toast'
 
-const fa = (value: number) => value.toLocaleString('fa-IR')
+const fa = (value: number) => (value ?? 0).toLocaleString('fa-IR')
 
 /**
  * The member's coach screen: two products behind one tab switch. The assistant answers immediately;

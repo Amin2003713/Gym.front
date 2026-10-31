@@ -641,39 +641,107 @@
 .dark .hamowj-toaster [data-sileo-toast] {
     box-shadow: 0 14px 36px -12px rgb(0 0 0 / 0.65), 0 2px 8px -4px rgb(0 0 0 / 0.5) !important;
 }
+/* ==========================================================================
+   Shepherd.js Theme Overrides
+   ========================================================================== */
 
-
-/* Shepherd onboarding: keep the guided tour legible in both themes and RTL. */
+/* 1. Main Container */
 .hamowj-shepherd.shepherd-element,
 .shepherd-element.hamowj-shepherd {
-  direction: rtl;
-  font-family: var(--font-vazirmatn), sans-serif;
-  color: var(--popover-foreground);
-  background: var(--popover);
-  border: 1px solid var(--border);
-  border-radius: 1rem;
-  box-shadow: 0 18px 50px rgb(0 0 0 / 0.24);
+    direction: rtl !important;
+    font-family: var(--font-vazirmatn), sans-serif !important;
+    background: var(--popover) !important;
+    color: var(--popover-foreground) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 1rem !important;
+    box-shadow: 0 18px 50px rgb(0 0 0 / 0.24) !important;
+    max-width: min(26rem, calc(100vw - 2rem)) !important;
+    padding: 0 !important; /* Reset padding to handle header/footer individually */
 }
+
+/* 2. Internal Sections (Header, Content, Footer) */
+.hamowj-shepherd .shepherd-content,
 .hamowj-shepherd .shepherd-header,
-.hamowj-shepherd .shepherd-text {
-  background: var(--popover);
-  color: var(--popover-foreground);
+.hamowj-shepherd .shepherd-text,
+.hamowj-shepherd .shepherd-footer {
+    background: var(--popover) !important;
+    color: var(--popover-foreground) !important;
 }
+
+.hamowj-shepherd .shepherd-header {
+    padding: 1rem 1.25rem 0.5rem !important;
+    border-bottom: none !important;
+}
+
+.hamowj-shepherd .shepherd-text {
+    padding: 0 1.25rem 1rem !important;
+    line-height: 1.9 !important;
+    color: var(--muted-foreground) !important; /* Softer text for the body */
+}
+
+.hamowj-shepherd .shepherd-footer {
+    padding: 0 1.25rem 1.25rem !important;
+    display: flex !important;
+    gap: 0.5rem !important;
+}
+
+/* 3. Titles */
 .hamowj-shepherd .shepherd-title {
-  color: var(--foreground);
-  font-weight: 800;
+    color: var(--foreground) !important;
+    font-weight: 800 !important;
+    font-size: 1.1rem !important;
 }
-.hamowj-shepherd .shepherd-text {
-  line-height: 1.9;
+
+/* 4. The Arrow (Crucial Fix) */
+.hamowj-shepherd .shepherd-arrow::before,
+.hamowj-shepherd.shepherd-element .shepherd-arrow::before {
+    background-color: var(--popover) !important;
+    border: 1px solid var(--border) !important;
 }
+
+/* 5. Buttons */
 .hamowj-shepherd .shepherd-button {
-  background: var(--primary);
-  color: var(--primary-foreground);
-  border-radius: .65rem;
-  font-family: inherit;
-  font-weight: 700;
+    background: var(--primary) !important;
+    color: var(--primary-foreground) !important;
+    border-radius: 0.65rem !important;
+    font-family: inherit !important;
+    font-weight: 700 !important;
+    padding: 0.5rem 1rem !important;
+    transition: all 0.2s ease !important;
+    border: none !important;
 }
+
+.hamowj-shepherd .shepherd-button:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--primary) 85%, black) !important;
+}
+
+/* Secondary Button (e.g., "Previous" or "Cancel" in tour) */
 .hamowj-shepherd .shepherd-button.shepherd-button-secondary {
-  background: var(--secondary);
-  color: var(--secondary-foreground);
+    background: var(--secondary) !important;
+    color: var(--secondary-foreground) !important;
+}
+
+.hamowj-shepherd .shepherd-button.shepherd-button-secondary:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--secondary) 85%, black) !important;
+}
+
+/* 6. Close Icon (The 'X' in the header) */
+.hamowj-shepherd .shepherd-cancel-icon {
+    color: var(--muted-foreground) !important;
+    opacity: 0.7 !important;
+    transition: opacity 0.2s ease !important;
+}
+
+.hamowj-shepherd .shepherd-cancel-icon:hover {
+    opacity: 1 !important;
+    color: var(--foreground) !important;
+}
+
+/* 7. Modal Overlay Dimmer */
+.shepherd-modal-overlay-container {
+    fill: rgb(0 0 0 / 0.4) !important;
+}
+
+.dark .shepherd-modal-overlay-container {
+    fill: rgb(0 0 0 / 0.65) !important;
 }

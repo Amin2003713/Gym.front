@@ -14,7 +14,7 @@ import {
 } from '@/app/(tenant)/_model/gamification'
 import { toast } from '@/lib/toast'
 
-const fa = (value: number) => value.toLocaleString('fa-IR')
+const fa = (value: number) => (value ?? 0).toLocaleString('fa-IR')
 
 const SEEN_KEY = 'hamowj.seen-badges'
 

@@ -14,7 +14,7 @@ import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { toast } from '@/lib/toast'
 
-const fa = (value: number) => value.toLocaleString('fa-IR')
+const fa = (value: number) => (value ?? 0).toLocaleString('fa-IR')
 
 const repsLabel = (min: number | null, max: number | null) => {
   if (min && max && min !== max) return `${fa(min)}-${fa(max)}`

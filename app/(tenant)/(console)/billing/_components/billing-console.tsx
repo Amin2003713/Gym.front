@@ -36,7 +36,8 @@ import { Input } from '@/components/ui/input'
 import { Switch } from '@/components/ui/switch'
 import { toast } from '@/lib/toast'
 
-const fa = (value: number) => value.toLocaleString('fa-IR')
+const fa = (value: number | undefined | null): string =>
+  (value ?? 0).toLocaleString('fa-IR')
 
 const FEATURE_FLAGS: Array<{ flag: ProductFeature; label: string }> = [
   { flag: ProductFeature.WorkoutTracking, label: 'ثبت تمرین' },
@@ -58,7 +59,10 @@ const emptyProduct = {
   includedSessions: 0,
   capacity: 0,
   trialDays: 0,
-  features: ProductFeature.WorkoutTracking | ProductFeature.ExerciseLibrary | ProductFeature.ProgressTracking,
+  features:
+    ProductFeature.WorkoutTracking |
+    ProductFeature.ExerciseLibrary |
+    ProductFeature.ProgressTracking,
   isPublished: true,
 }
 
@@ -158,7 +162,9 @@ export function BillingConsole() {
   const saveProduct = () =>
     run(
       () =>
-        editingId ? updateProduct(editingId, toPayload()) : createProduct(toPayload()),
+        editingId
+          ? updateProduct(editingId, toPayload())
+          : createProduct(toPayload()),
       editingId ? 'محصول به‌روزرسانی شد' : 'محصول ثبت شد',
     ).then(() => {
       setForm(emptyProduct)
@@ -185,7 +191,10 @@ export function BillingConsole() {
   const toggleFeature = (flag: ProductFeature) =>
     setForm((current) => ({
       ...current,
-      features: current.features & flag ? current.features & ~flag : current.features | flag,
+      features:
+        current.features & flag
+          ? current.features & ~flag
+          : current.features | flag,
     }))
 
   if (loading) {
@@ -196,7 +205,9 @@ export function BillingConsole() {
     <div className="space-y-5 p-1">
       <header className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-extrabold tracking-tight">مالی و اشتراک</h1>
+          <h1 className="text-2xl font-extrabold tracking-tight">
+            مالی و اشتراک
+          </h1>
           <p className="text-muted-foreground text-sm leading-6">
             محصولات، پرداخت‌ها، درگاه اختصاصی و پلن هم‌اوج.
           </p>
@@ -212,24 +223,34 @@ export function BillingConsole() {
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <p className="text-muted-foreground text-xs">پلن فعلی هم‌اوج</p>
-              <p className="text-lg font-extrabold">{PLAN_LABELS[entitlements.plan]}</p>
+              <p className="text-lg font-extrabold">
+                {PLAN_LABELS[entitlements.plan]}
+              </p>
             </div>
             <div className="flex flex-wrap gap-1">
-              {([TenantPlan.Starter, TenantPlan.Pro, TenantPlan.Enterprise] as TenantPlan[]).map(
-                (plan) => (
-                  <button
-                    key={plan}
-                    type="button"
-                    disabled={busy || plan === entitlements.plan}
-                    onClick={() => run(() => applyPlan(plan), 'پلن به‌روزرسانی شد')}
-                    className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors disabled:opacity-60 ${
-                      plan === entitlements.plan ? 'bg-primary text-primary-foreground border-primary' : ''
-                    }`}
-                  >
-                    {PLAN_LABELS[plan]}
-                  </button>
-                ),
-              )}
+              {(
+                [
+                  TenantPlan.Starter,
+                  TenantPlan.Pro,
+                  TenantPlan.Enterprise,
+                ] as TenantPlan[]
+              ).map((plan) => (
+                <button
+                  key={plan}
+                  type="button"
+                  disabled={busy || plan === entitlements.plan}
+                  onClick={() =>
+                    run(() => applyPlan(plan), 'پلن به‌روزرسانی شد')
+                  }
+                  className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors disabled:opacity-60 ${
+                    plan === entitlements.plan
+                      ? 'bg-primary text-primary-foreground border-primary'
+                      : ''
+                  }`}
+                >
+                  {PLAN_LABELS[plan]}
+                </button>
+              ))}
             </div>
           </div>
 
@@ -239,10 +260,14 @@ export function BillingConsole() {
                 <p className="text-muted-foreground text-xs">{limit.label}</p>
                 <p className="mt-1 text-sm font-bold tabular-nums">
                   {limit.used === null ? '—' : fa(limit.used)}
-                  {limit.limit !== null ? ` از ${fa(limit.limit)}` : ' · نامحدود'}
+                  {limit.limit !== null
+                    ? ` از ${fa(limit.limit)}`
+                    : ' · نامحدود'}
                 </p>
                 {limit.isExceeded && (
-                  <p className="text-destructive text-[11px]">سقف پلن پر شده است</p>
+                  <p className="text-destructive text-[11px]">
+                    سقف پلن پر شده است
+                  </p>
                 )}
               </div>
             ))}
@@ -250,7 +275,10 @@ export function BillingConsole() {
 
           <div className="flex flex-wrap gap-1.5">
             {entitlements.features.map((feature) => (
-              <span key={feature} className="bg-primary/10 text-primary rounded-full px-2 py-1 text-[10px] font-semibold">
+              <span
+                key={feature}
+                className="bg-primary/10 text-primary rounded-full px-2 py-1 text-[10px] font-semibold"
+              >
                 {FEATURE_LABELS[feature] ?? feature}
               </span>
             ))}
@@ -268,7 +296,9 @@ export function BillingConsole() {
             <Input
               placeholder="نام محصول"
               value={form.name}
-              onChange={(event) => setForm({ ...form, name: event.target.value })}
+              onChange={(event) =>
+                setForm({ ...form, name: event.target.value })
+              }
             />
             <label className="text-xs">
               <span className="text-muted-foreground">نوع</span>
@@ -276,7 +306,10 @@ export function BillingConsole() {
                 className="border-input mt-1 h-9 w-full rounded-md border px-2 text-xs"
                 value={form.kind}
                 onChange={(event) =>
-                  setForm({ ...form, kind: Number(event.target.value) as ProductKind })
+                  setForm({
+                    ...form,
+                    kind: Number(event.target.value) as ProductKind,
+                  })
                 }
               >
                 {Object.entries(PRODUCT_KIND_LABELS).map(([value, label]) => (
@@ -298,7 +331,10 @@ export function BillingConsole() {
                 className="border-input mt-1 h-9 w-full rounded-md border px-2 text-xs"
                 value={form.billingPeriod}
                 onChange={(event) =>
-                  setForm({ ...form, billingPeriod: Number(event.target.value) as BillingPeriod })
+                  setForm({
+                    ...form,
+                    billingPeriod: Number(event.target.value) as BillingPeriod,
+                  })
                 }
               >
                 {Object.entries(BILLING_PERIOD_LABELS).map(([value, label]) => (
@@ -317,7 +353,9 @@ export function BillingConsole() {
             <NumberField
               label="جلسات شامل (۰ = ندارد)"
               value={form.includedSessions}
-              onChange={(includedSessions) => setForm({ ...form, includedSessions })}
+              onChange={(includedSessions) =>
+                setForm({ ...form, includedSessions })
+              }
             />
             <NumberField
               label="ظرفیت (۰ = نامحدود)"
@@ -334,7 +372,9 @@ export function BillingConsole() {
           <Input
             placeholder="توضیح کوتاه"
             value={form.description}
-            onChange={(event) => setForm({ ...form, description: event.target.value })}
+            onChange={(event) =>
+              setForm({ ...form, description: event.target.value })
+            }
           />
 
           <div className="flex flex-wrap gap-1.5">
@@ -345,7 +385,9 @@ export function BillingConsole() {
                 aria-pressed={(form.features & item.flag) !== 0}
                 onClick={() => toggleFeature(item.flag)}
                 className={`rounded-full border px-2.5 py-1 text-[11px] font-semibold transition-colors ${
-                  form.features & item.flag ? 'bg-primary text-primary-foreground border-primary' : ''
+                  form.features & item.flag
+                    ? 'bg-primary text-primary-foreground border-primary'
+                    : ''
                 }`}
               >
                 {item.label}
@@ -357,7 +399,9 @@ export function BillingConsole() {
             <label className="flex items-center gap-2 text-xs">
               <Switch
                 checked={form.isPublished}
-                onCheckedChange={(isPublished) => setForm({ ...form, isPublished })}
+                onCheckedChange={(isPublished) =>
+                  setForm({ ...form, isPublished })
+                }
                 aria-label="نمایش در فروشگاه"
               />
               نمایش در فروشگاه
@@ -375,7 +419,10 @@ export function BillingConsole() {
                   انصراف
                 </Button>
               )}
-              <Button onClick={saveProduct} disabled={busy || form.name.trim().length < 2}>
+              <Button
+                onClick={saveProduct}
+                disabled={busy || form.name.trim().length < 2}
+              >
                 <Plus className="size-4" />
                 {editingId ? 'ذخیره تغییرات' : 'افزودن محصول'}
               </Button>
@@ -386,12 +433,15 @@ export function BillingConsole() {
         <article className="bg-card space-y-3 rounded-2xl border p-4">
           <h2 className="text-sm font-bold">درگاه پرداخت اختصاصی</h2>
           <p className="text-muted-foreground text-xs leading-6">
-            پرداخت‌ها مستقیم به حساب پذیرنده خودتان می‌رود. شناسه پذیرنده فقط در سرور ذخیره می‌شود.
+            پرداخت‌ها مستقیم به حساب پذیرنده خودتان می‌رود. شناسه پذیرنده فقط در
+            سرور ذخیره می‌شود.
           </p>
 
           <div className="grid gap-2 sm:grid-cols-2">
             <Input
-              placeholder={gateway?.maskedMerchantId ?? 'شناسه پذیرنده زرین‌پال'}
+              placeholder={
+                gateway?.maskedMerchantId ?? 'شناسه پذیرنده زرین‌پال'
+              }
               value={merchantId}
               onChange={(event) => setMerchantId(event.target.value)}
             />
@@ -404,11 +454,19 @@ export function BillingConsole() {
 
           <div className="flex flex-wrap gap-4 text-xs">
             <label className="flex items-center gap-2">
-              <Switch checked={isSandbox} onCheckedChange={setIsSandbox} aria-label="حالت آزمایشی" />
+              <Switch
+                checked={isSandbox}
+                onCheckedChange={setIsSandbox}
+                aria-label="حالت آزمایشی"
+              />
               حالت آزمایشی (Sandbox)
             </label>
             <label className="flex items-center gap-2">
-              <Switch checked={isEnabled} onCheckedChange={setIsEnabled} aria-label="فعال" />
+              <Switch
+                checked={isEnabled}
+                onCheckedChange={setIsEnabled}
+                aria-label="فعال"
+              />
               درگاه فعال باشد
             </label>
           </div>
@@ -450,16 +508,23 @@ export function BillingConsole() {
         <h2 className="text-sm font-bold">محصولات</h2>
 
         {products.length === 0 ? (
-          <p className="text-muted-foreground text-xs">هنوز محصولی ثبت نشده است.</p>
+          <p className="text-muted-foreground text-xs">
+            هنوز محصولی ثبت نشده است.
+          </p>
         ) : (
           <ul className="divide-y rounded-2xl border">
             {products.map((product) => (
-              <li key={product.id} className="flex flex-wrap items-center justify-between gap-2 p-3">
+              <li
+                key={product.id}
+                className="flex flex-wrap items-center justify-between gap-2 p-3"
+              >
                 <div className="min-w-0">
                   <p className="text-sm font-semibold">
                     {product.name}
                     {!product.isPublished && (
-                      <span className="text-muted-foreground mr-2 text-[10px]">(مخفی)</span>
+                      <span className="text-muted-foreground mr-2 text-[10px]">
+                        (مخفی)
+                      </span>
                     )}
                   </p>
                   <p className="text-muted-foreground text-xs">
@@ -471,14 +536,20 @@ export function BillingConsole() {
                   </p>
                 </div>
                 <div className="flex gap-2">
-                  <Button variant="outline" size="sm" onClick={() => editProduct(product)}>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => editProduct(product)}
+                  >
                     ویرایش
                   </Button>
                   <Button
                     variant="ghost"
                     size="sm"
                     disabled={busy}
-                    onClick={() => run(() => archiveProduct(product.id), 'محصول حذف شد')}
+                    onClick={() =>
+                      run(() => archiveProduct(product.id), 'محصول حذف شد')
+                    }
                   >
                     <Trash2 className="size-4" />
                     حذف
@@ -498,7 +569,10 @@ export function BillingConsole() {
         ) : (
           <ul className="divide-y rounded-2xl border">
             {payments.map((payment) => (
-              <li key={payment.id} className="flex flex-wrap items-center justify-between gap-2 p-3 text-xs">
+              <li
+                key={payment.id}
+                className="flex flex-wrap items-center justify-between gap-2 p-3 text-xs"
+              >
                 <span className="inline-flex items-center gap-2">
                   <CreditCard className="text-muted-foreground size-4" />
                   {payment.description ?? 'پرداخت'}

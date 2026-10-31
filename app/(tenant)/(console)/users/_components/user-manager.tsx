@@ -349,7 +349,7 @@ function StatCard({ label, value, icon }: { label: string; value: number; icon: 
       <CardContent className="flex items-center justify-between p-4">
         <div>
           <p className="text-muted-foreground text-sm">{label}</p>
-          <p className="mt-1 text-2xl font-bold">{value.toLocaleString('fa-IR')}</p>
+          <p className="mt-1 text-2xl font-bold">{(value ?? 0).toLocaleString('fa-IR')}</p>
         </div>
         {icon}
       </CardContent>

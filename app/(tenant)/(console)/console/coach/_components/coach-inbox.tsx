@@ -12,7 +12,7 @@ import {
 } from '@/app/(tenant)/_model/coach'
 import { toast } from '@/lib/toast'
 
-const fa = (value: number) => value.toLocaleString('fa-IR')
+const fa = (value: number) => (value ?? 0).toLocaleString('fa-IR')
 
 const activityFmt = new Intl.DateTimeFormat('fa-IR', {
   month: 'short',

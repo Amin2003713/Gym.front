@@ -8,7 +8,6 @@ import type {
 } from '@/app/(tenant)/_model/assignment.types'
 import { createData, readData, updateData } from '@/core/http-service'
 
-
 const BASE = 'assignment'
 const query = (values: Record<string, string | number | undefined | null>) => {
   const params = new URLSearchParams()
@@ -33,13 +32,12 @@ export const listCoachAssignments = (filters: {
     `${BASE}/list?${query({ pageNumber: 1, pageSize: 100, ...filters })}`,
   )
 export const bulkAssignPlan = (
-  planId: string,
-  payload: { memberIds: string[]; startDate: string },
+  payload: {planId: string, memberIds: string[]; startDate: string },
 ) =>
   createData<
-    { memberIds: string[]; startDate: string },
+    { planId: string; memberIds: string[]; startDate: string },
     BulkAssignmentResponse
-  >(`${BASE}/plan/${encodeURIComponent(planId)}/assignments`, payload)
+  >(`${BASE}`, payload)
 export const enrollInPlan = (planId: string) =>
   createData<Record<string, never>, AssignmentStatusResponse>(
     `${BASE}/plan/${encodeURIComponent(planId)}/enroll`,
@@ -50,7 +48,10 @@ export const changeAssignmentStatus = (
   status: PlanAssignmentStatus,
   startDate?: string,
 ) =>
-  updateData<{ status: PlanAssignmentStatus; startDate?: string }, AssignmentStatusResponse>(
-    `${BASE}/${encodeURIComponent(assignmentId)}/status`,
-    { status, ...(startDate ? { startDate } : {}) },
-  )
+  updateData<
+    { status: PlanAssignmentStatus; startDate?: string },
+    AssignmentStatusResponse
+  >(`${BASE}/${encodeURIComponent(assignmentId)}/status`, {
+    status,
+    ...(startDate ? { startDate } : {}),
+  })

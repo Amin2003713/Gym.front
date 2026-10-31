@@ -1,21 +1,22 @@
 'use client'
 
+import { Trash2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 
-import { Trash2 } from 'lucide-react'
 
+import { bulkAssignPlan } from '@/app/(tenant)/_api/assignment-api'
+import { useGetUsers } from '@/app/(tenant)/_api/use-get-users'
+import type { BulkAssignmentResponse } from '@/app/(tenant)/_model/assignment.types'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { toast } from '@/lib/toast'
 
-import { useGetUsers } from '@/app/(tenant)/_api/use-get-users'
 import type { PlanSummary } from '../../plans/_model/plan.types'
-import { bulkAssignPlan } from '@/app/(tenant)/_api/assignment-api'
-import type { BulkAssignmentResponse } from '@/app/(tenant)/_model/assignment.types'
 
-import MemberPicker, { type MemberPickerSelection } from './member-picker'
+
 import MemberBodyMapPanel from './member-body-map-panel'
+import MemberPicker, { type MemberPickerSelection } from './member-picker'
 
 interface SelectedMember {
   id: string
@@ -65,7 +66,8 @@ export function BulkAssignDialog({
     if (!members.length) return toast.error('حداقل یک شاگرد را انتخاب کنید')
     setSaving(true)
     try {
-      const r = await bulkAssignPlan(planId, {
+      const r = await bulkAssignPlan({
+        planId: planId,
         memberIds: members.map((m) => m.id),
         startDate,
       })

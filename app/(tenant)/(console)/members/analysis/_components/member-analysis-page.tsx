@@ -1,15 +1,8 @@
 'use client'
 
-import Link from 'next/link'
 import { Activity, RefreshCw, Search, Shuffle } from 'lucide-react'
+import Link from 'next/link'
 import { useCallback, useEffect, useMemo, useState } from 'react'
-
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { Input } from '@/components/ui/input'
-import { toast } from '@/lib/toast'
 
 import {
   listCoachAssignments,
@@ -19,6 +12,14 @@ import type {
   CoachAssignmentItem,
   PlanAssignmentStatus,
 } from '@/app/(tenant)/_model/assignment.types'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import { toast } from '@/lib/toast'
+
+
 import { listMyPlans, listPublicPlans } from '../../../plans/_api/plan-api'
 import type { PlanSummary } from '../../../plans/_model/plan.types'
 
@@ -162,7 +163,8 @@ export function MemberAnalysisPage() {
     }
     setSaving(true)
     try {
-      await bulkAssignPlan(newPlanId, {
+      await bulkAssignPlan({
+        planId: newPlanId,
         memberIds: [changeTarget.memberId],
         startDate,
       })

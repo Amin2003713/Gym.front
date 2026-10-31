@@ -19,7 +19,7 @@ import {
 } from '@/app/(tenant)/_model/structural-balance'
 import { MUSCLES, type MuscleSlug } from '@/lib/muscles'
 
-const fa = (value: number) => value.toLocaleString('fa-IR')
+const fa = (value: number) => (value ?? 0).toLocaleString('fa-IR')
 
 export function MemberStructuralBalance() {
   const { stats, loading, error, range, setRange, refetch } = useMuscleBalance()

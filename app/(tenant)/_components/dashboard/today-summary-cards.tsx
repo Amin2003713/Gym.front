@@ -119,7 +119,7 @@ const StatisticsItemCard = ({
           </div>
         ) : (
           <div className="text-2xl font-bold">
-            {value ? value.toLocaleString('fa-IR') : '-'}
+            {value ? (value ?? 0).toLocaleString('fa-IR') : '-'}
           </div>
         )}
         <div className={cn('bg-muted rounded-lg p-2', color)}>

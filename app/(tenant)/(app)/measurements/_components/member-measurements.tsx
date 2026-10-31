@@ -27,7 +27,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { toast } from '@/lib/toast'
 
-const fa = (value: number) => value.toLocaleString('fa-IR')
+const fa = (value: number) => (value ?? 0).toLocaleString('fa-IR')
 
 const todayIso = () => new Date().toISOString().slice(0, 10)
 

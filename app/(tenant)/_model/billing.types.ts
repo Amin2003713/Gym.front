@@ -227,4 +227,4 @@ export const FEATURE_LABELS: Record<string, string> = {
 
 /** Iranian Toman, the default tenant currency; the formatter only groups digits. */
 export const formatPrice = (value: number, currency = 'IRT') =>
-  `${value.toLocaleString('fa-IR')} ${currency === 'IRT' ? 'تومان' : currency}`
+  `${(value ?? 0).toLocaleString('fa-IR')} ${currency === 'IRT' ? 'تومان' : currency}`
