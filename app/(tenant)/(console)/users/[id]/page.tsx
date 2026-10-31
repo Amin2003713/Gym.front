@@ -26,7 +26,7 @@ export default async function EditUserPage({
   const { data: user } = await getUser(id)
 
   return (
-    <Protected requiredRoles={[ApiUserRole.Admin, ApiUserRole.Trainer]}>
+    <Protected requiredRoles={[ApiUserRole.Admin]}>
       <div className="p-1">
         {user ? (
           <Suspense>

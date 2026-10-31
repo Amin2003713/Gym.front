@@ -30,8 +30,8 @@ export function useUserRoles() {
   const isTrainer = roles.includes(ApiUserRole.Trainer)
   const isTrainee = roles.includes(ApiUserRole.Trainee)
 
-  /** Admin (Owner) and Trainer may manage/assign content. */
-  const canManage = !isTrainee || isAdmin || isTrainer
+  /** Only Admin (Owner) and Trainer may manage/assign content; a member never can. */
+  const canManage = isAdmin || isTrainer
   /** Trainee-only sign-in: read-only views on shared content. */
   const isTraineeOnly = !isAdmin && !isTrainer
 

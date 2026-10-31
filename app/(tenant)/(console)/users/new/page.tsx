@@ -6,7 +6,7 @@ import { ApiUserRole } from '@/features/users/api/users-api'
 
 export default function NewUserPage() {
   return (
-    <Protected requiredRoles={[ApiUserRole.Admin, ApiUserRole.Trainer]}>
+    <Protected requiredRoles={[ApiUserRole.Admin]}>
       <div className="p-1">
         {/* useSearchParams inside the editor needs a Suspense boundary when prerendered. */}
         <Suspense>

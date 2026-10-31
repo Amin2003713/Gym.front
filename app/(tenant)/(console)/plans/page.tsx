@@ -12,7 +12,9 @@ import { useUserRoles } from '@/hooks/use-user-roles'
 import { toast } from '@/lib/toast'
 
 import { archivePlan, getPlan, listMyPlans, listPublicPlans } from './_api/plan-api'
+import { PlanDetailDialog } from './_components/plan-detail-dialog'
 import { PlanFormDialog } from './_components/plan-form-dialog'
+import { GOAL_LABELS, LEVEL_LABELS } from './_model/plan-labels'
 import type {
   PlanDetail,
   PlanGoal,
@@ -21,21 +23,6 @@ import type {
 } from './_model/plan.types'
 
 const fa = (value: number) => (value ?? 0).toLocaleString('fa-IR')
-
-const GOAL_LABELS: Record<PlanGoal, { fa: string; en: string }> = {
-  GetStronger: { fa: 'افزایش قدرت', en: 'Strength' },
-  BuildMuscle: { fa: 'عضله‌سازی', en: 'Muscle gain' },
-  LoseWeight: { fa: 'کاهش وزن', en: 'Weight loss' },
-  Endurance: { fa: 'استقامت', en: 'Endurance' },
-  Fitness: { fa: 'تناسب اندام', en: 'Fitness' },
-  Mobility: { fa: 'تحرک', en: 'Mobility' },
-}
-
-const LEVEL_LABELS: Record<PlanLevel, { fa: string; en: string }> = {
-  Beginner: { fa: 'مبتدی', en: 'Beginner' },
-  Intermediate: { fa: 'متوسط', en: 'Intermediate' },
-  Advanced: { fa: 'پیشرفته', en: 'Advanced' },
-}
 
 export default function PlansPage() {
   const { canManage, isTraineeOnly, isAdmin, isTrainer } = useUserRoles()
@@ -419,53 +406,7 @@ export default function PlansPage() {
         />
       )}
 
-      {detail && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-          role="dialog"
-          aria-modal="true"
-          aria-label={`جزئیات ${detail.title}`}
-          onClick={() => setDetail(null)}
-        >
-          <div
-            className="bg-background max-h-[85vh] w-full max-w-2xl overflow-y-auto rounded-2xl p-5"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <div className="mb-4 flex items-center justify-between gap-2">
-              <h2 className="text-lg font-bold">{detail.title}</h2>
-              <Button variant="outline" size="sm" onClick={() => setDetail(null)}>
-                بستن
-              </Button>
-            </div>
-            <p className="text-muted-foreground mb-4 text-sm">
-              {detail.description || 'بدون توضیحات'}
-            </p>
-            {detail.days.length === 0 && (
-              <p className="text-muted-foreground text-sm">روزی برای این برنامه ثبت نشده است.</p>
-            )}
-            {detail.days.map((day) => (
-              <div key={day.dayNumber} className="mb-3 rounded-lg border p-3">
-                <h3 className="font-semibold">
-                  {fa(day.dayNumber)}. {day.name}
-                </h3>
-                <ul className="mt-2 space-y-1 text-sm">
-                  {day.exercises.map((exercise) => (
-                    <li key={exercise.id} className="flex justify-between gap-2">
-                      <span className="truncate">
-                        {exercise.exerciseName || exercise.exerciseId}
-                      </span>
-                      <span className="text-muted-foreground shrink-0 tabular-nums">
-                        {fa(exercise.targetSets ?? 0)} ست × {fa(exercise.targetRepsMin ?? 0)}–
-                        {fa(exercise.targetRepsMax ?? 0)}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+      {detail && <PlanDetailDialog plan={detail} onClose={() => setDetail(null)} />}
 
       <p className="text-muted-foreground text-xs leading-5">
         مالک و مربی: ساخت، ویرایش، بایگانی و تخصیص. شاگرد: مشاهده کاتالوگ عمومی و برنامه‌های

@@ -4,7 +4,7 @@ import { ApiUserRole } from '@/features/users/api/users-api'
 
 export default function UsersPage() {
   return (
-    <Protected requiredRoles={[ApiUserRole.Admin, ApiUserRole.Trainer]}>
+    <Protected requiredRoles={[ApiUserRole.Admin]}>
       <UserManager
         title="مدیریت کاربران"
         description="مدیریت هویت و دسترسی مدیران، مربی‌ها و شاگردهای باشگاه"

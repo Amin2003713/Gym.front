@@ -24,6 +24,7 @@ import {
   SidebarMenuItem,
   SidebarMenuSub,
 } from '@/components/ui/sidebar'
+import { normalizeApiUserRole } from '@/constants/user-role'
 import { SIDEBAR_OPTIONS } from '@/constants/sidebar'
 import { ApiUserRole } from '@/features/users/api/users-api'
 import { useIsMounted } from '@/hooks/use-is-mounted'
@@ -35,12 +36,19 @@ import { NavUser } from './nav-user'
 type MainSidebarProps = React.ComponentProps<typeof Sidebar> &
   ApiResponse<PublicUser>
 
-export function MainSidebar({ data: user, error, ...props }: MainSidebarProps) {
+/** Session roles → normalized enum values; unknown/legacy strings are dropped. */
+function useSessionRoles(): ApiUserRole[] {
   const { data: session } = useSession()
-  const sessionRoles = session?.user?.role ?? []
-  const userRoles = (
-    Array.isArray(sessionRoles) ? sessionRoles : [sessionRoles]
-  ) as (ApiUserRole | string)[]
+  const raw = session?.user?.role
+  const values = Array.isArray(raw) ? raw : raw ? [raw] : []
+
+  return values
+    .map((value) => normalizeApiUserRole(value as string | number | null | undefined))
+    .filter((role): role is ApiUserRole => role !== null)
+}
+
+export function MainSidebar({ data: user, error, ...props }: MainSidebarProps) {
+  const userRoles = useSessionRoles()
 
   return (
     <Sidebar
@@ -70,15 +78,10 @@ export function MainSidebar({ data: user, error, ...props }: MainSidebarProps) {
 
       <SidebarContent>
         <SidebarGroup>
-          {/*<SidebarGroupLabel>Files</SidebarGroupLabel>*/}
           <SidebarGroupContent>
             <SidebarMenu>
               {SIDEBAR_OPTIONS.tree.map((item, index) => (
-                <Tree
-                  key={`${item.name}-${index}`}
-                  item={item}
-                  userRoles={userRoles}
-                />
+                <Tree key={`${item.name}-${index}`} item={item} userRoles={userRoles} />
               ))}
             </SidebarMenu>
           </SidebarGroupContent>
@@ -94,41 +97,30 @@ export function MainSidebar({ data: user, error, ...props }: MainSidebarProps) {
 function Tree({
   item,
   userRoles,
+  inheritedRoles = [],
 }: {
   item: SidebarItem
-  userRoles: (ApiUserRole | string)[]
+  userRoles: ApiUserRole[]
+  /** Roles of the parent node; a child without its own `role` is limited to these. */
+  inheritedRoles?: ApiUserRole[]
 }) {
   const isMounted = useIsMounted()
-  const pathname = usePathname() // For checking active route
+  const pathname = usePathname()
   const { name, path, icon, colorClass, children, role } = item
   const href = path ? (path === '/' ? '/' : path) : undefined
-  // The API may return enum names (Admin/Trainer/Trainee), while the UI uses
-  // normalized role slugs (admin/trainer/member). Normalize both before filtering.
-  const normalizeRole = (value: string) => {
-    const normalized = value.toLowerCase().replace(/[ _-]/g, '')
-    // Numeric enum values (C# Roles byte values) and role names both occur.
-    if (normalized === '0' || normalized === 'owner' || normalized === 'admin' || normalized === 'administrator') return 'admin'
-    if (normalized === '1' || normalized === 'trainer') return 'trainer'
-    if (normalized === '2' || normalized === 'trainee' || normalized === 'member') return 'member'
-    return normalized
-  }
-  const normalizedUserRoles = userRoles.map((value) =>
-    normalizeRole(String(value)),
-  )
-  const hasRoleAccess = role
-    ? role.some((r) => normalizedUserRoles.includes(normalizeRole(String(r))))
-    : true
 
-  // prevent hydration mismatch
+  const effectiveRoles = role && role.length > 0 ? role : inheritedRoles
+  const hasRoleAccess =
+    effectiveRoles.length === 0 || effectiveRoles.some((value) => userRoles.includes(value))
+
+  // Prevent hydration mismatch: the session role is only known on the client.
   if (!isMounted) return null
-
   if (!hasRoleAccess) return null
 
   if (!children?.length) {
-    // Render as button with link if path exists
     return (
       <SidebarMenuButton
-        asChild // Use asChild for wrapping Link to maintain accessibility
+        asChild
         isActive={href ? pathname === href : false}
         className="data-[active=true]:bg-primary/15 data-[active=true]:text-foreground data-[active=true]:before:bg-primary hover:bg-muted focus-visible:ring-ring relative rounded-sm transition-colors focus-visible:ring-[3px] focus-visible:ring-offset-2 data-[active=true]:font-semibold data-[active=true]:before:absolute data-[active=true]:before:inset-y-1.5 data-[active=true]:before:start-0 data-[active=true]:before:w-1 data-[active=true]:before:rounded-full data-[active=true]:before:content-['']"
       >
@@ -150,7 +142,6 @@ function Tree({
     )
   }
 
-  // Group node: Collapsible with sub-items
   return (
     <SidebarMenuItem>
       <Collapsible
@@ -171,6 +162,7 @@ function Tree({
                 key={`${subItem.name}-${index}`}
                 item={subItem}
                 userRoles={userRoles}
+                inheritedRoles={effectiveRoles}
               />
             ))}
           </SidebarMenuSub>

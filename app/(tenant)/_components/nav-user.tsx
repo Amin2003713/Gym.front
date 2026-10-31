@@ -32,6 +32,7 @@ import {
 } from '@/components/ui/hover-card'
 import { useSidebar } from '@/components/ui/sidebar'
 import { Skeleton } from '@/components/ui/skeleton'
+import { useUserRoles } from '@/hooks/use-user-roles'
 import { useUserStore } from '@/store/user.store'
 import { ApiResponse } from '@/types/api-response.interface'
 import { PublicUser } from '@/types/user.interface'
@@ -44,6 +45,7 @@ export function NavUser({ isHeader, data: user, error }: NavUserProp) {
   const { isMobile } = useSidebar()
   const router = useRouter()
   const passkeysHref = '/users/passkeys'
+  const { isAdmin } = useUserRoles()
   const [, startTransition] = useTransition()
   const removeUserFromStore = useUserStore((state) => state.removeUser)
 
@@ -168,12 +170,14 @@ export function NavUser({ isHeader, data: user, error }: NavUserProp) {
               پشتیبانی و بازخورد
             </Link>
           </DropdownMenuItem>
-          <DropdownMenuItem asChild>
-            <Link href="/console/settings">
-              <BookText />
-              تنظیمات باشگاه
-            </Link>
-          </DropdownMenuItem>
+          {isAdmin && (
+            <DropdownMenuItem asChild>
+              <Link href="/console/settings">
+                <BookText />
+                تنظیمات باشگاه
+              </Link>
+            </DropdownMenuItem>
+          )}
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuItem className="cursor-pointer" onClick={handleSignOut}>
