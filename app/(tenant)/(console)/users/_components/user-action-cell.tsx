@@ -130,7 +130,7 @@ export const UserActionCell = ({ user, className }: UserActionCellProps) => {
         <UpdateUserSimSerialDialog
           userName={`${user.firstName} ${user.lastName}`}
           userId={user.id}
-          prevSimSerial={user.simSerial}
+          prevSimSerial={user.simSerial ?? null}
           open={isSimSerialOpen}
           onOpenChange={setIsSimSerialOpen}
         />

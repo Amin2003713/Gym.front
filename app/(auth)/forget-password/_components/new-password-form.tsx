@@ -64,6 +64,7 @@ function NewPasswordForm({
         <>
           <CodeVerificationInput
             phoneNumber={phoneNumber!}
+            domain=""
             name="code"
             formControl={form.control}
             expired={expired}

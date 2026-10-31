@@ -61,6 +61,9 @@ export interface SessionResponse {
   status: WorkoutSessionStatus | string
   type?: WorkoutSessionType | string
   title?: string | null
+  planTitle?: string | null
+  dayName?: string | null
+  dayNumber?: number | null
   startedAt?: string
   completedAt?: string | null
   exercises: SessionExerciseItem[]

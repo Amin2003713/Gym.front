@@ -28,6 +28,8 @@ export interface PublicUser extends SafeUser {
   gender: GenderEnum | null
   trainerId?: string | null
   membershipStatus?: 'active' | 'paused' | 'expired' | null
+  /** Legacy field kept optional so older admin screens still type-check. */
+  simSerial?: string | null
 }
 
 export interface UserSession extends User {}

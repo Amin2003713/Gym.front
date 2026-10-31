@@ -154,17 +154,25 @@ export function NavUser({ isHeader, data: user, error }: NavUserProp) {
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
-          <DropdownMenuItem>
+          <DropdownMenuItem
+            onSelect={() =>
+              window.dispatchEvent(new Event('hamowj:start-tour'))
+            }
+          >
             <MessageCircleQuestion />
             راهنمای سریع
           </DropdownMenuItem>
-          <DropdownMenuItem>
-            <MessageCircleMore />
-            ارسال بازخورد
+          <DropdownMenuItem asChild>
+            <Link href="/support-desk">
+              <MessageCircleMore />
+              پشتیبانی و بازخورد
+            </Link>
           </DropdownMenuItem>
-          <DropdownMenuItem>
-            <BookText />
-            لیست بروزرسانی ها
+          <DropdownMenuItem asChild>
+            <Link href="/console/settings">
+              <BookText />
+              تنظیمات باشگاه
+            </Link>
           </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />

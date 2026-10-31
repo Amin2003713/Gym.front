@@ -1,8 +1,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import React, { useActionState, useEffect, useMemo, useTransition } from 'react'
-import { toast } from '@/lib/toast'
+import { useActionState, useEffect, useMemo, useTransition } from 'react'
 
 import { updateUserAction } from '@/actions/user'
 import { UserForm } from '@/app/(tenant)/(console)/users/_components/user-form'
@@ -16,6 +15,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { PublicUser } from '@/types/user.interface'
+import { toast } from '@/lib/toast'
 
 type UpdateUserDialogProps = {
   user: PublicUser
@@ -52,17 +52,13 @@ export default function UpdateUserDialog({
   const defaultValues: Partial<UpdateUserModel> = useMemo(
     () => ({
       address: user.address,
-      birthDate: user.birthDate,
-      department: user.department!,
+      email: '',
       firstName: user.firstName,
       gender: user.gender,
-      isLeader: user.isLeader,
       lastName: user.lastName,
-      nationalCode: user.nationalCode,
-      personnelNumber: user.personnelNumber,
       phoneNumber: user.phoneNumber,
-      role: user.role,
-      userId: user.id,
+      role: user.role[0],
+      id: user.id,
       imageUrl: user.imageUrl,
     }),
     [user],

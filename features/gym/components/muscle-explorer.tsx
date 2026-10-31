@@ -96,7 +96,7 @@ export function MuscleExplorer() {
     const [equipment, setEquipment] = useState('')
     const [selectedExercise, setSelectedExercise] = useState<ExerciseListItem | null>(null)
 
-    useEffect(() => {s
+    useEffect(() => {
         let alive = true
         const tokenGender = genderFromToken(sessionUser?.accessToken)
         const sessionGender = normalizeGender(sessionUser?.gender)

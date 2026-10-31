@@ -1,7 +1,18 @@
 'use client'
 
-import { CheckCircle2, Plus, RefreshCw, Trash2 } from 'lucide-react'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import {
+  CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
+  Dumbbell,
+  Info,
+  Loader2,
+  Plus,
+  RefreshCw,
+  Trash2,
+  X,
+} from 'lucide-react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import {
   abandonWorkout,
@@ -9,31 +20,80 @@ import {
   completeWorkout,
   deleteLoggedSet,
   getWorkout,
+  getWorkoutExerciseDetail,
   logWorkoutSets,
   removeWorkoutExercise,
   searchExercises,
   updateLoggedSet,
+  type WorkoutExerciseDetail,
 } from '@/app/(tenant)/_api/workout-api'
 import {
-  CompleteSessionResponse,
-  ExerciseSearchItem,
-  LoggedSetItem,
-  SessionExerciseItem,
-  SessionResponse,
+  type CompleteSessionResponse,
+  type ExerciseSearchItem,
+  type LoggedSetItem,
+  type SessionExerciseItem,
+  type SessionResponse,
   WorkoutSessionStatus,
   WorkoutSessionType,
   normalizeSessionStatus,
   normalizeSessionType,
 } from '@/app/(tenant)/_model/workout.types'
+import BodyMapPanel from '@/app/(tenant)/_components/progress/body-map-panel'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { toast } from '@/lib/toast'
-import BodyMapPanel from '@/app/(tenant)/_components/progress/body-map-panel'
-import { muscleLoad } from '@/lib/muscle-mapping'
+import { muscleLoad, muscleSlugs } from '@/lib/muscle-mapping'
 
+const fa = (value: number) => (value ?? 0).toLocaleString('fa-IR')
 
+type Draft = { reps: string; weightKg: string; rir: string; isWarmup: boolean }
+
+const draftFor = (exercise: SessionExerciseItem): Draft => ({
+  reps: String(exercise.targetRepsMin ?? 10),
+  weightKg: '0',
+  rir: String(exercise.targetRir ?? 2),
+  isWarmup: false,
+})
+
+/** First usable preview image/GIF of an exercise, in variant order. */
+function previewUrl(detail?: WorkoutExerciseDetail | null): string | undefined {
+  for (const media of detail?.media ?? []) {
+    for (const variant of media.asset?.variants ?? []) {
+      if (variant.url && /preview|original|thumb/i.test(variant.variantName)) return variant.url
+    }
+  }
+  for (const media of detail?.media ?? []) {
+    for (const variant of media.asset?.variants ?? []) if (variant.url) return variant.url
+  }
+  return undefined
+}
+
+/**
+ * Muscles worked by one exercise. The catalog muscles win; the free-text target/body part is the
+ * fallback so a session still shows a body map when the detail request failed.
+ */
+function muscleLevels(
+  detail: WorkoutExerciseDetail | null | undefined,
+  exercise: SessionExerciseItem,
+): Record<string, number> {
+  const levels: Record<string, number> = {}
+
+  for (const muscle of detail?.muscles ?? []) {
+    for (const slug of muscleSlugs(muscle.code, muscle.name))
+      levels[slug] = Math.max(levels[slug] ?? 0, muscle.role === 1 ? 3 : 1)
+  }
+
+  if (Object.keys(levels).length > 0) return levels
+
+  return muscleLoad([exercise])
+}
+
+/**
+ * The session runner: one exercise per step. The media sits on top, the instructions open from a
+ * button, and the set form is always visible, so a member never scrolls a long list to find the
+ * next movement. Body-map highlight is per exercise and comes from the catalog muscle mapping.
+ */
 export function WorkoutSessionPanel({
   sessionId,
   onClosed,
@@ -44,127 +104,150 @@ export function WorkoutSessionPanel({
   const [session, setSession] = useState<SessionResponse | null>(null)
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState(false)
+  const [step, setStep] = useState(0)
+  const [drafts, setDrafts] = useState<Record<string, Draft>>({})
+  const [details, setDetails] = useState<Record<string, WorkoutExerciseDetail | null>>({})
+  const [showInstructions, setShowInstructions] = useState(false)
   const [search, setSearch] = useState('')
   const [searchResults, setSearchResults] = useState<ExerciseSearchItem[]>([])
-  const [drafts, setDrafts] = useState<
-    Record<
-      string,
-      { reps: string; weightKg: string; rir: string; isWarmup: boolean }
-    >
-  >({})
-  const [celebration, setCelebration] =
-    useState<CompleteSessionResponse | null>(null)
+  const [celebration, setCelebration] = useState<CompleteSessionResponse | null>(null)
+
   // Keep request IDs stable after a failed network request so retrying the same set is idempotent.
   const pendingRequestIds = useRef<Record<string, string>>({})
+  const requestedDetails = useRef(new Set<string>())
+
   const load = useCallback(async () => {
     setLoading(true)
     try {
-      const s = await getWorkout(sessionId)
-      setSession(s)
-    } catch (e) {
+      setSession(await getWorkout(sessionId))
+    } catch (error) {
       toast.error('دریافت جلسه تمرین ناموفق بود', {
-        description: e instanceof Error ? e.message : 'خطای ناشناخته',
+        description: error instanceof Error ? error.message : 'خطای ناشناخته',
       })
     } finally {
       setLoading(false)
     }
   }, [sessionId])
+
   useEffect(() => {
     // Started on the next tick so the first render paints before the loading state flips.
     const timer = window.setTimeout(() => void load(), 0)
-
     return () => window.clearTimeout(timer)
   }, [load])
 
-  const findExercises = async () => {
-    if (!search.trim()) return
-    try {
-      const r = await searchExercises({ query: search.trim() })
-      setSearchResults(r.items ?? [])
-    } catch (e) {
-      toast.error('جستجوی حرکت ناموفق بود', {
-        description: e instanceof Error ? e.message : 'خطای ناشناخته',
+  const exercises = useMemo(() => session?.exercises ?? [], [session])
+  const current: SessionExerciseItem | undefined = exercises[step]
+  const currentId = current?.exerciseId
+  const detail = currentId ? (details[currentId] ?? null) : null
+
+  // Land on the first exercise that still has no logged set — the member's actual next action.
+  useEffect(() => {
+    if (!exercises.length) return
+
+    setStep((currentStep) => {
+      if (currentStep > 0 && currentStep < exercises.length) return currentStep
+
+      const next = exercises.findIndex((exercise) => (exercise.sets?.length ?? 0) === 0)
+      return next === -1 ? 0 : next
+    })
+  }, [exercises])
+
+  useEffect(() => {
+    if (!currentId || requestedDetails.current.has(currentId)) return
+
+    requestedDetails.current.add(currentId)
+    let alive = true
+
+    void getWorkoutExerciseDetail(currentId)
+      .then((value) => {
+        if (alive) setDetails((old) => ({ ...old, [currentId]: value }))
       })
-    }
-  }
-  const addExercise = async (ex: ExerciseSearchItem) => {
-    setBusy(true)
-    try {
-      await addWorkoutExercise(sessionId, { exerciseId: ex.id })
-      toast.success('حرکت اضافه شد')
-      setSearchResults([])
-      setSearch('')
-      await load()
-    } catch (e) {
-      toast.error('افزودن حرکت ناموفق بود', {
-        description:
-          e instanceof Error ? e.message : 'ممکن است حرکت تکراری باشد.',
+      .catch(() => {
+        // A missing detail is not fatal: the step keeps its target and body-part fallback.
+        if (alive) setDetails((old) => ({ ...old, [currentId]: null }))
       })
-    } finally {
-      setBusy(false)
+
+    return () => {
+      alive = false
     }
-  }
-  const logSet = async (ex: SessionExerciseItem) => {
-    const d = drafts[ex.exerciseId] ?? {
-      reps: String(ex.targetRepsMin ?? 10),
-      weightKg: '0',
-      rir: '0',
-      isWarmup: false,
-    }
+  }, [currentId])
+
+  const draft = (exercise: SessionExerciseItem): Draft =>
+    drafts[exercise.exerciseId] ?? draftFor(exercise)
+
+  const updateDraft = (exercise: SessionExerciseItem, patch: Partial<Draft>) =>
+    setDrafts((old) => ({
+      ...old,
+      [exercise.exerciseId]: { ...(old[exercise.exerciseId] ?? draftFor(exercise)), ...patch },
+    }))
+
+  const inProgress =
+    normalizeSessionStatus(session?.status) === WorkoutSessionStatus.InProgress
+
+  const logSet = async (exercise: SessionExerciseItem) => {
+    const values = draft(exercise)
+
     if (
-      !Number.isFinite(Number(d.reps)) ||
-      Number(d.reps) < 0 ||
-      !Number.isFinite(Number(d.weightKg)) ||
-      Number(d.weightKg) < 0
-    )
-      return toast.error('تکرار و وزنه باید عدد معتبر باشند')
+      !Number.isFinite(Number(values.reps)) ||
+      Number(values.reps) < 0 ||
+      !Number.isFinite(Number(values.weightKg)) ||
+      Number(values.weightKg) < 0
+    ) {
+      toast.error('تکرار و وزنه باید عدد معتبر باشند')
+      return
+    }
+
     const setNumber =
-      (ex.sets?.reduce((max, s) => Math.max(max, s.setNumber), 0) ?? 0) + 1
-    const requestKey = `${ex.exerciseId}:${setNumber}`
+      (exercise.sets?.reduce((max, set) => Math.max(max, set.setNumber), 0) ?? 0) + 1
+    const requestKey = `${exercise.exerciseId}:${setNumber}`
     const clientRequestId =
       pendingRequestIds.current[requestKey] ??
       (typeof crypto !== 'undefined' && 'randomUUID' in crypto
         ? crypto.randomUUID()
-        : `${Date.now()}-${ex.exerciseId}-${setNumber}`)
+        : `${Date.now()}-${exercise.exerciseId}-${setNumber}`)
     pendingRequestIds.current[requestKey] = clientRequestId
+
     setBusy(true)
     try {
       await logWorkoutSets(sessionId, {
         sets: [
           {
-            exerciseId: ex.exerciseId,
-            ...(ex.planDayExerciseId
-              ? { planDayExerciseId: ex.planDayExerciseId }
+            exerciseId: exercise.exerciseId,
+            ...(exercise.planDayExerciseId
+              ? { planDayExerciseId: exercise.planDayExerciseId }
               : {}),
             setNumber,
-            reps: Number(d.reps),
-            weightKg: Number(d.weightKg),
-            ...(d.rir !== '' ? { rir: Number(d.rir) } : {}),
-            isWarmup: d.isWarmup,
+            reps: Number(values.reps),
+            weightKg: Number(values.weightKg),
+            ...(values.rir !== '' ? { rir: Number(values.rir) } : {}),
+            isWarmup: values.isWarmup,
             clientRequestId,
           },
         ],
       })
       delete pendingRequestIds.current[requestKey]
+      setDrafts((old) => ({
+        ...old,
+        [exercise.exerciseId]: { ...values, isWarmup: false },
+      }))
       toast.success('ست ثبت شد')
       await load()
-    } catch (e) {
+    } catch (error) {
       toast.error('ثبت ست ناموفق بود', {
-        description:
-          e instanceof Error
-            ? e.message
-            : 'در صورت retry از همان شناسه درخواست استفاده کنید.',
+        description: error instanceof Error ? error.message : undefined,
       })
     } finally {
       setBusy(false)
     }
   }
+
   const closeSession = async (mode: 'complete' | 'abandon') => {
     if (
       mode === 'abandon' &&
       !window.confirm('جلسه تمرین رها شود؟ پیشرفت برنامه ثبت نمی‌شود.')
     )
       return
+
     setBusy(true)
     try {
       if (mode === 'complete') {
@@ -174,39 +257,69 @@ export function WorkoutSessionPanel({
         await abandonWorkout(sessionId)
         toast.success('تمرین رها شد')
       }
+
       await load()
       if (mode === 'abandon') onClosed()
-    } catch (e) {
+    } catch (error) {
       toast.error(
-        mode === 'complete'
-          ? 'تکمیل تمرین ناموفق بود'
-          : 'رها کردن تمرین ناموفق بود',
-        { description: e instanceof Error ? e.message : 'خطای ناشناخته' },
+        mode === 'complete' ? 'تکمیل تمرین ناموفق بود' : 'رها کردن تمرین ناموفق بود',
+        { description: error instanceof Error ? error.message : 'خطای ناشناخته' },
       )
     } finally {
       setBusy(false)
     }
   }
-  const removeExtra = async (ex: SessionExerciseItem) => {
-    if (!window.confirm('این حرکت اضافی حذف شود؟')) return
+
+  const findExercises = async () => {
+    if (!search.trim()) return
+
     try {
-      await removeWorkoutExercise(sessionId, ex.exerciseId)
-      toast.success('حرکت حذف شد')
-      await load()
-    } catch (e) {
-      toast.error('حذف حرکت ناموفق بود', {
-        description:
-          e instanceof Error
-            ? e.message
-            : 'فقط حرکت اضافی بدون ست ثبت‌شده قابل حذف است.',
+      const result = await searchExercises({ query: search.trim() })
+      setSearchResults(result.items ?? [])
+    } catch (error) {
+      toast.error('جستجوی حرکت ناموفق بود', {
+        description: error instanceof Error ? error.message : undefined,
       })
     }
   }
+
+  const addExercise = async (exercise: ExerciseSearchItem) => {
+    setBusy(true)
+    try {
+      await addWorkoutExercise(sessionId, { exerciseId: exercise.id })
+      toast.success('حرکت اضافه شد')
+      setSearchResults([])
+      setSearch('')
+      await load()
+    } catch (error) {
+      toast.error('افزودن حرکت ناموفق بود', {
+        description: error instanceof Error ? error.message : undefined,
+      })
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const removeExtra = async (exercise: SessionExerciseItem) => {
+    if (!window.confirm('این حرکت اضافی حذف شود؟')) return
+
+    try {
+      await removeWorkoutExercise(sessionId, exercise.exerciseId)
+      toast.success('حرکت حذف شد')
+      await load()
+    } catch (error) {
+      toast.error('حذف حرکت ناموفق بود', {
+        description: error instanceof Error ? error.message : undefined,
+      })
+    }
+  }
+
   const editSet = async (set: LoggedSetItem) => {
     const reps = window.prompt('تعداد تکرار', String(set.reps))
     if (reps === null) return
     const weight = window.prompt('وزنه (کیلوگرم)', String(set.weightKg))
     if (weight === null) return
+
     try {
       await updateLoggedSet(set.setId, {
         reps: Number(reps),
@@ -216,377 +329,534 @@ export function WorkoutSessionPanel({
       })
       toast.success('ست ویرایش شد')
       await load()
-    } catch (e) {
+    } catch (error) {
       toast.error('ویرایش ست ناموفق بود', {
-        description: e instanceof Error ? e.message : 'خطای ناشناخته',
-      })
-    }
-  }
-  const deleteSet = async (set: LoggedSetItem) => {
-    if (!window.confirm('ست حذف شود؟')) return
-    try {
-      await deleteLoggedSet(set.setId)
-      toast.success('ست حذف شد')
-      await load()
-    } catch (e) {
-      toast.error('حذف ست ناموفق بود', {
-        description: e instanceof Error ? e.message : 'خطای ناشناخته',
+        description: error instanceof Error ? error.message : undefined,
       })
     }
   }
 
-  if (loading && !session)
+  const deleteSet = async (set: LoggedSetItem) => {
+    if (!window.confirm('ست حذف شود؟')) return
+
+    try {
+      await deleteLoggedSet(set.setId)
+      toast.success('ست حذف شد')
+      await load()
+    } catch (error) {
+      toast.error('حذف ست ناموفق بود', {
+        description: error instanceof Error ? error.message : undefined,
+      })
+    }
+  }
+
+  if (loading && !session) {
     return (
-      <Card>
-        <CardContent className="py-10 text-center">
-          در حال بارگذاری جلسه…
-        </CardContent>
-      </Card>
+      <div className="bg-card flex h-64 items-center justify-center gap-2 rounded-2xl border">
+        <Loader2 className="text-muted-foreground size-5 animate-spin" />
+        <span className="text-muted-foreground text-sm">در حال بارگذاری جلسه…</span>
+      </div>
     )
-  if (!session)
+  }
+
+  if (!session) {
     return (
-      <Card>
-        <CardContent className="py-10 text-center">
-          جلسه تمرین بارگذاری نشد.
-        </CardContent>
-      </Card>
+      <div className="bg-card text-muted-foreground rounded-2xl border p-8 text-center text-sm">
+        جلسه تمرین بارگذاری نشد.
+      </div>
     )
+  }
+
+  const image = previewUrl(detail)
+  const levels = current ? muscleLevels(detail, current) : {}
+  const currentSets = current?.sets ?? []
+  const isLast = step >= exercises.length - 1
+  const currentDraft = current ? draft(current) : null
+  const instructions = [...(detail?.instructions ?? [])].sort(
+    (a, b) => a.stepNumber - b.stepNumber,
+  )
+
   return (
     <div className="space-y-4" dir="rtl">
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <div>
-            <CardTitle>{session.title || 'جلسه تمرین'}</CardTitle>
-            <p className="text-muted-foreground mt-1 text-sm">
-              شناسه: <span dir="ltr">{session.id ?? session.sessionId}</span>
+      <section className="bg-card rounded-2xl border p-4 shadow-sm sm:p-5">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-muted-foreground text-xs">
+              {session.planTitle ?? 'جلسه تمرین'}
+              {session.dayName ? ` · ${session.dayName}` : ''}
             </p>
+            <h1 className="mt-1 truncate text-xl font-extrabold tracking-tight">
+              {session.title || 'جلسه تمرین'}
+            </h1>
+            <div className="mt-2 flex flex-wrap items-center gap-1.5">
+              <Badge variant="secondary">
+                {normalizeSessionType(session.type) === WorkoutSessionType.Planned
+                  ? 'برنامه‌ریزی‌شده'
+                  : normalizeSessionType(session.type) === WorkoutSessionType.Free
+                    ? 'آزاد'
+                    : 'تمرین'}
+              </Badge>
+              <Badge variant="outline">
+                {inProgress
+                  ? 'در جریان'
+                  : normalizeSessionStatus(session.status) === WorkoutSessionStatus.Completed
+                    ? 'تکمیل‌شده'
+                    : 'لغوشده'}
+              </Badge>
+              <span className="text-muted-foreground text-xs">
+                {fa(exercises.length)} حرکت · {fa(step + 1)} از {fa(Math.max(1, exercises.length))}
+              </span>
+            </div>
           </div>
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              onClick={() => void load()}
-              disabled={loading}
-            >
-              <RefreshCw className="ml-1 size-4" />
+
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" size="sm" onClick={() => void load()} disabled={loading}>
+              <RefreshCw className={`size-4 ${loading ? 'animate-spin' : ''}`} />
               تازه‌سازی
             </Button>
             <Button
+              size="sm"
               onClick={() => void closeSession('complete')}
-              disabled={
-                busy ||
-                normalizeSessionStatus(session.status) !== WorkoutSessionStatus.InProgress
-              }
+              disabled={busy || !inProgress}
             >
-              <CheckCircle2 className="ml-1 size-4" />
+              <CheckCircle2 className="size-4" />
               تکمیل تمرین
             </Button>
             <Button
-              variant="outline"
+              variant="ghost"
+              size="sm"
+              className="text-destructive"
               onClick={() => void closeSession('abandon')}
-              disabled={
-                busy || normalizeSessionStatus(session.status) !== WorkoutSessionStatus.InProgress
-              }
+              disabled={busy || !inProgress}
             >
               رها کردن
             </Button>
           </div>
-        </CardHeader>
-        <CardContent>
-          <Badge>
-            {normalizeSessionStatus(session.status) === WorkoutSessionStatus.InProgress
-              ? 'در جریان'
-              : normalizeSessionStatus(session.status) === WorkoutSessionStatus.Completed
-                ? 'تکمیل‌شده'
-                : normalizeSessionStatus(session.status) === WorkoutSessionStatus.Abandoned
-                  ? 'لغوشده'
-                  : '—'}
-          </Badge>{' '}
-          <Badge variant="secondary">
-            {normalizeSessionType(session.type) === WorkoutSessionType.Planned
-              ? 'برنامه‌ریزی‌شده'
-              : normalizeSessionType(session.type) === WorkoutSessionType.Free
-                ? 'آزاد'
-                : 'Workout'}
-          </Badge>
-        </CardContent>
-      </Card>
-      {session.exercises?.length > 0 && (() => {
-        const load = muscleLoad(session.exercises)
-        return Object.keys(load).length > 0 ? (
-          <Card>
-            <CardHeader><CardTitle>عضلات درگیر این جلسه</CardTitle></CardHeader>
-            <CardContent><BodyMapPanel body="male" palette="load" load={load}/></CardContent>
-          </Card>
-        ) : null
-      })()}
-      {celebration && (
-        <Card>
-          <CardContent className="space-y-2 p-4">
-            <h3 className="text-lg font-bold">آفرین! تمرین کامل شد 🎉</h3>
-            <p>
-              حجم کل: {celebration.totalVolumeKg.toLocaleString()} کیلوگرم ·{' '}
-              {celebration.totalSets} ست · {celebration.distinctExercises} حرکت
-              · {celebration.durationMinutes} دقیقه
-            </p>
-            {celebration.newPrs?.length > 0 && (
-              <div>
-                <p className="font-semibold">رکوردهای جدید</p>
-                {celebration.newPrs.map((pr) => (
-                  <p key={pr.exerciseId}>
-                    {pr.exerciseName ?? pr.exerciseId}: {pr.weightKg} کیلوگرم
-                    (e1RM: {pr.e1Rm})
-                  </p>
-                ))}
-              </div>
-            )}
-            {celebration.assignmentCompleted && (
-              <p className="font-semibold">برنامه تمرینی به پایان رسید.</p>
-            )}
-            <Button
-              onClick={() => {
-                setCelebration(null)
-                onClosed()
-              }}
-            >
-              بازگشت به فهرست
-            </Button>
-          </CardContent>
-        </Card>
-      )}
-      <Card>
-        <CardHeader>
-          <CardTitle>افزودن حرکت</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="flex gap-2">
-            <Input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="جستجوی نام حرکت"
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  e.preventDefault()
-                  void findExercises()
-                }
-              }}
-            />
-            <Button onClick={() => void findExercises()} disabled={busy}>
-              <Plus className="ml-1 size-4" />
-              جستجو
-            </Button>
+        </div>
+
+        {exercises.length > 1 && (
+          <div className="mt-4 flex gap-1.5 overflow-x-auto pb-1">
+            {exercises.map((exercise, index) => {
+              const done = (exercise.sets?.length ?? 0) > 0
+              const active = index === step
+
+              return (
+                <button
+                  key={`${exercise.exerciseId}-${index}`}
+                  type="button"
+                  onClick={() => setStep(index)}
+                  aria-current={active}
+                  title={exercise.exerciseName ?? 'حرکت'}
+                  className={`flex size-9 shrink-0 items-center justify-center rounded-full border text-xs font-bold transition-colors ${
+                    active
+                      ? 'border-primary bg-primary text-primary-foreground'
+                      : done
+                        ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400'
+                        : 'bg-background text-muted-foreground hover:border-primary'
+                  }`}
+                >
+                  {fa(index + 1)}
+                </button>
+              )
+            })}
           </div>
-          {searchResults.map((ex) => (
-            <div
-              key={ex.id}
-              className="flex items-center justify-between border-b py-2 text-sm"
-            >
-              <div>
-                <p className="font-medium">{ex.name}</p>
-                <p className="text-muted-foreground">
-                  {ex.category ?? 'بدون دسته‌بندی'} ·{' '}
-                  {ex.equipment ?? 'تجهیزات نامشخص'}
-                </p>
-              </div>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => void addExercise(ex)}
-                disabled={busy}
-              >
-                افزودن
-              </Button>
+        )}
+      </section>
+
+      {celebration && (
+        <section className="bg-card rounded-2xl border p-5 shadow-sm">
+          <h2 className="text-lg font-bold">آفرین! تمرین کامل شد 🎉</h2>
+          <p className="text-muted-foreground mt-2 text-sm leading-6">
+            حجم کل {fa(celebration.totalVolumeKg)} کیلوگرم · {fa(celebration.totalSets)} ست ·{' '}
+            {fa(celebration.distinctExercises)} حرکت · {fa(celebration.durationMinutes)} دقیقه
+          </p>
+          {celebration.newPrs?.length > 0 && (
+            <div className="mt-3 rounded-xl border p-3">
+              <p className="text-sm font-semibold">رکوردهای جدید</p>
+              <ul className="text-muted-foreground mt-1 space-y-1 text-xs">
+                {celebration.newPrs.map((pr) => (
+                  <li key={pr.exerciseId}>
+                    {pr.exerciseName ?? pr.exerciseId}: {fa(pr.weightKg)} کیلوگرم (e1RM{' '}
+                    {fa(pr.e1Rm)})
+                  </li>
+                ))}
+              </ul>
             </div>
-          ))}
-        </CardContent>
-      </Card>
-      {!session.exercises?.length ? (
-        <Card>
-          <CardContent className="text-muted-foreground py-10 text-center">
-            هنوز حرکتی در این جلسه نیست.
-          </CardContent>
-        </Card>
+          )}
+          <Button
+            className="mt-4"
+            onClick={() => {
+              setCelebration(null)
+              onClosed()
+            }}
+          >
+            بازگشت به فهرست
+          </Button>
+        </section>
+      )}
+
+      {!exercises.length ? (
+        <section className="bg-card flex flex-col items-center gap-3 rounded-2xl border border-dashed p-8 text-center">
+          <Dumbbell className="text-muted-foreground size-7" />
+          <p className="text-sm font-bold">هنوز حرکتی در این جلسه نیست</p>
+          <p className="text-muted-foreground max-w-sm text-xs leading-6">
+            از کتابخانه یک حرکت اضافه کن تا اولین ست را ثبت کنی.
+          </p>
+        </section>
       ) : (
-        session.exercises.map((ex) => (
-          <Card key={ex.exerciseId}>
-            <CardHeader className="flex flex-row items-start justify-between">
-              <div>
-                <CardTitle>{ex.exerciseName ?? ex.exerciseId}</CardTitle>
-                <p className="text-muted-foreground mt-1 text-sm">
-                  {ex.isPlanned ? 'حرکت برنامه‌ریزی‌شده' : 'حرکت اضافه'}
-                  {ex.targetSets ? ` · هدف ${ex.targetSets} ست` : ''}
-                  {ex.targetRepsMin
-                    ? ` · ${ex.targetRepsMin}–${ex.targetRepsMax ?? ex.targetRepsMin} تکرار`
-                    : ''}
-                </p>
-                {ex.suggestion && (
-                  <p className="text-muted-foreground mt-1 text-xs">
-                    پیشنهاد: {ex.suggestion.suggestedWeightKg ?? '—'} کیلوگرم ×{' '}
-                    {ex.suggestion.suggestedReps ?? '—'} تکرار
+        current && (
+          <section className="bg-card overflow-hidden rounded-2xl border shadow-sm">
+            <div className="grid gap-0 lg:grid-cols-[minmax(0,1fr)_19rem]">
+              <div className="min-w-0 border-b lg:border-b-0 lg:border-e">
+                {/* Media first: the movement itself is the instruction. */}
+                <div className="bg-muted/40 flex h-56 items-center justify-center overflow-hidden sm:h-72">
+                  {image ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={image}
+                      alt={current.exerciseName ?? 'حرکت'}
+                      loading="lazy"
+                      className="max-h-full max-w-full object-contain"
+                    />
+                  ) : (
+                    <div className="text-muted-foreground flex flex-col items-center gap-2">
+                      <Dumbbell className="size-8 opacity-50" />
+                      <span className="text-xs">رسانه‌ای برای این حرکت ثبت نشده است</span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="space-y-4 p-4 sm:p-5">
+                  <div className="flex flex-wrap items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <h2 className="text-lg font-extrabold tracking-tight">
+                        {detail?.name ?? current.exerciseName ?? 'حرکت'}
+                      </h2>
+                      <p className="text-muted-foreground mt-1 text-xs">
+                        {current.isPlanned ? 'حرکت برنامه' : 'حرکت اضافه'}
+                        {current.targetSets ? ` · ${fa(current.targetSets)} ست` : ''}
+                        {current.targetRepsMin
+                          ? ` · ${fa(current.targetRepsMin)}–${fa(current.targetRepsMax ?? current.targetRepsMin)} تکرار`
+                          : ''}
+                        {current.targetRir != null ? ` · RIR ${fa(current.targetRir)}` : ''}
+                      </p>
+                    </div>
+                    <div className="flex shrink-0 gap-1.5">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setShowInstructions(true)}
+                      >
+                        <Info className="size-4" />
+                        دستورالعمل
+                      </Button>
+                      {current.isExtra && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-destructive"
+                          onClick={() => void removeExtra(current)}
+                        >
+                          <Trash2 className="size-4" />
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+
+                  {current.suggestion && (
+                    <p className="bg-primary/5 text-muted-foreground rounded-xl border border-primary/20 px-3 py-2 text-xs leading-6">
+                      پیشنهاد امروز: {fa(current.suggestion.suggestedWeightKg ?? 0)} کیلوگرم ×{' '}
+                      {fa(current.suggestion.suggestedReps ?? 0)} تکرار
+                      {current.suggestion.reason ? ` · ${current.suggestion.reason}` : ''}
+                    </p>
+                  )}
+
+                  {currentSets.length > 0 && (
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="text-muted-foreground border-b text-xs">
+                            <th className="p-2 text-right font-medium">ست</th>
+                            <th className="p-2 text-right font-medium">تکرار</th>
+                            <th className="p-2 text-right font-medium">وزنه</th>
+                            <th className="p-2 text-right font-medium">نوع</th>
+                            <th className="p-2 text-right font-medium"> </th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {currentSets.map((set) => (
+                            <tr key={set.setId} className="border-b last:border-0">
+                              <td className="p-2 tabular-nums">{fa(set.setNumber)}</td>
+                              <td className="p-2 tabular-nums">{fa(set.reps)}</td>
+                              <td className="p-2 tabular-nums">{fa(set.weightKg)} kg</td>
+                              <td className="text-muted-foreground p-2 text-xs">
+                                {set.isWarmup ? 'گرم‌کردن' : 'اصلی'}
+                              </td>
+                              <td className="p-2">
+                                <div className="flex justify-end gap-1">
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => void editSet(set)}
+                                  >
+                                    ویرایش
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    className="text-destructive"
+                                    onClick={() => void deleteSet(set)}
+                                    aria-label="حذف ست"
+                                  >
+                                    <Trash2 className="size-3.5" />
+                                  </Button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+
+                  {currentDraft && (
+                    <form
+                      className="space-y-3 rounded-xl border p-3"
+                      onSubmit={(event) => {
+                        event.preventDefault()
+                        if (inProgress && !busy) void logSet(current)
+                      }}
+                    >
+                      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                        <label className="space-y-1 text-xs">
+                          <span className="text-muted-foreground">تکرار</span>
+                          <Input
+                            type="number"
+                            min="0"
+                            inputMode="numeric"
+                            value={currentDraft.reps}
+                            onChange={(event) =>
+                              updateDraft(current, { reps: event.target.value })
+                            }
+                          />
+                        </label>
+                        <label className="space-y-1 text-xs">
+                          <span className="text-muted-foreground">وزنه (kg)</span>
+                          <Input
+                            type="number"
+                            min="0"
+                            step="2.5"
+                            inputMode="decimal"
+                            value={currentDraft.weightKg}
+                            onChange={(event) =>
+                              updateDraft(current, { weightKg: event.target.value })
+                            }
+                          />
+                        </label>
+                        <label className="space-y-1 text-xs">
+                          <span className="text-muted-foreground">RIR</span>
+                          <Input
+                            type="number"
+                            min="0"
+                            max="10"
+                            value={currentDraft.rir}
+                            onChange={(event) =>
+                              updateDraft(current, { rir: event.target.value })
+                            }
+                          />
+                        </label>
+                        <label className="flex items-center gap-2 pt-5 text-xs">
+                          <input
+                            type="checkbox"
+                            checked={currentDraft.isWarmup}
+                            onChange={(event) =>
+                              updateDraft(current, { isWarmup: event.target.checked })
+                            }
+                          />
+                          ست گرم‌کردن
+                        </label>
+                      </div>
+
+                      <Button type="submit" disabled={busy || !inProgress}>
+                        <Plus className="size-4" />
+                        ثبت ست {fa(currentSets.length + 1)}
+                      </Button>
+                    </form>
+                  )}
+
+                  <div className="flex items-center justify-between gap-2 border-t pt-3">
+                    <Button
+                      variant="outline"
+                      disabled={step === 0}
+                      onClick={() => setStep((value) => Math.max(0, value - 1))}
+                    >
+                      <ChevronRight className="size-4" />
+                      حرکت قبلی
+                    </Button>
+                    {isLast ? (
+                      <Button
+                        onClick={() => void closeSession('complete')}
+                        disabled={busy || !inProgress}
+                      >
+                        <CheckCircle2 className="size-4" />
+                        پایان و تکمیل تمرین
+                      </Button>
+                    ) : (
+                      <Button onClick={() => setStep((value) => value + 1)}>
+                        حرکت بعدی
+                        <ChevronLeft className="size-4" />
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Body map: which muscles this step works, updated with the step. */}
+              <aside className="space-y-3 p-4 sm:p-5">
+                <div>
+                  <h3 className="text-sm font-bold">عضلات این حرکت</h3>
+                  <p className="text-muted-foreground mt-1 text-xs leading-5">
+                    نقشه با هر حرکت به‌روز می‌شود؛ عضلات اصلی پررنگ‌ترند.
+                  </p>
+                </div>
+                {Object.keys(levels).length > 0 ? (
+                  <BodyMapPanel body="male" palette="load" load={levels} />
+                ) : (
+                  <p className="text-muted-foreground text-xs">
+                    عضلانی برای این حرکت ثبت نشده است.
                   </p>
                 )}
-              </div>
-              {ex.isExtra && (
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => void removeExtra(ex)}
-                >
-                  <Trash2 className="ml-1 size-4" />
-                  حذف حرکت
-                </Button>
+                {detail?.muscles?.length ? (
+                  <div className="flex flex-wrap gap-1">
+                    {detail.muscles.map((muscle) => (
+                      <span
+                        key={`${muscle.code}-${muscle.role}`}
+                        className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+                          muscle.role === 1
+                            ? 'bg-primary/10 text-primary'
+                            : 'bg-muted text-muted-foreground'
+                        }`}
+                      >
+                        {muscle.name}
+                      </span>
+                    ))}
+                  </div>
+                ) : null}
+              </aside>
+            </div>
+          </section>
+        )
+      )}
+
+      {inProgress && (
+        <details className="bg-card rounded-2xl border p-4 shadow-sm">
+          <summary className="cursor-pointer text-sm font-semibold">
+            افزودن حرکت به این جلسه
+          </summary>
+          <div className="mt-3 space-y-3">
+            <div className="flex gap-2">
+              <Input
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder="جستجوی نام حرکت"
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter') {
+                    event.preventDefault()
+                    void findExercises()
+                  }
+                }}
+              />
+              <Button variant="outline" onClick={() => void findExercises()} disabled={busy}>
+                جستجو
+              </Button>
+            </div>
+            {searchResults.length > 0 && (
+              <ul className="divide-y rounded-xl border">
+                {searchResults.map((exercise) => (
+                  <li
+                    key={exercise.id}
+                    className="flex items-center justify-between gap-2 px-3 py-2 text-sm"
+                  >
+                    <div className="min-w-0">
+                      <p className="truncate font-medium">{exercise.name}</p>
+                      <p className="text-muted-foreground text-xs">
+                        {exercise.equipment ?? 'تجهیزات نامشخص'}
+                      </p>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => void addExercise(exercise)}
+                      disabled={busy}
+                    >
+                      افزودن
+                    </Button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </details>
+      )}
+
+      {showInstructions && current && (
+        <div
+          className="fixed inset-0 z-[120] flex items-center justify-center bg-black/50 p-3 backdrop-blur-[2px] sm:p-6"
+          role="presentation"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) setShowInstructions(false)
+          }}
+        >
+          <section
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="workout-instructions-title"
+            className="bg-card max-h-[90svh] w-full max-w-lg overflow-y-auto rounded-2xl border shadow-2xl"
+          >
+            <div className="flex items-center justify-between border-b p-4">
+              <h2 id="workout-instructions-title" className="font-bold">
+                دستورالعمل {detail?.name ?? current.exerciseName ?? 'حرکت'}
+              </h2>
+              <button
+                type="button"
+                onClick={() => setShowInstructions(false)}
+                aria-label="بستن"
+                className="hover:bg-muted rounded-lg p-2"
+              >
+                <X className="size-5" />
+              </button>
+            </div>
+
+            <div className="space-y-4 p-4 sm:p-5">
+              {image && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={image}
+                  alt={current.exerciseName ?? 'حرکت'}
+                  className="bg-muted/40 max-h-64 w-full rounded-xl object-contain"
+                />
               )}
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {ex.sets?.length > 0 && (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b text-right">
-                        <th className="p-2">ست</th>
-                        <th className="p-2">تکرار</th>
-                        <th className="p-2">وزنه</th>
-                        <th className="p-2">نوع</th>
-                        <th className="p-2">عملیات</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {ex.sets.map((s) => (
-                        <tr key={s.setId} className="border-b">
-                          <td className="p-2">{s.setNumber}</td>
-                          <td className="p-2">{s.reps}</td>
-                          <td className="p-2">{s.weightKg} kg</td>
-                          <td className="p-2">
-                            {s.isWarmup ? 'گرم‌کردن' : 'اصلی'}
-                          </td>
-                          <td className="p-2">
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => void editSet(s)}
-                            >
-                              ویرایش
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => void deleteSet(s)}
-                            >
-                              <Trash2 className="text-destructive size-3" />
-                            </Button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+
+              {instructions.length > 0 ? (
+                <ol className="list-decimal space-y-2 pe-5 text-sm leading-7">
+                  {instructions.map((item) => (
+                    <li key={item.stepNumber}>{item.text}</li>
+                  ))}
+                </ol>
+              ) : (
+                <p className="text-muted-foreground text-sm">
+                  دستورالعملی برای این حرکت ثبت نشده است.
+                </p>
+              )}
+
+              {Object.keys(levels).length > 0 && (
+                <div className="border-t pt-4">
+                  <BodyMapPanel body="male" palette="load" load={levels} />
                 </div>
               )}
-              <div className="grid gap-2 sm:grid-cols-4">
-                <label className="space-y-1 text-xs">
-                  <span>تکرار</span>
-                  <Input
-                    type="number"
-                    min="0"
-                    value={
-                      drafts[ex.exerciseId]?.reps ??
-                      String(ex.targetRepsMin ?? 10)
-                    }
-                    onChange={(e) =>
-                      setDrafts((old) => ({
-                        ...old,
-                        [ex.exerciseId]: {
-                          ...(old[ex.exerciseId] ?? {
-                            reps: String(ex.targetRepsMin ?? 10),
-                            weightKg: '0',
-                            rir: '0',
-                            isWarmup: false,
-                          }),
-                          reps: e.target.value,
-                        },
-                      }))
-                    }
-                  />
-                </label>
-                <label className="space-y-1 text-xs">
-                  <span>وزنه (کیلوگرم)</span>
-                  <Input
-                    type="number"
-                    min="0"
-                    step="2.50"
-                    value={drafts[ex.exerciseId]?.weightKg ?? '0'}
-                    onChange={(e) =>
-                      setDrafts((old) => ({
-                        ...old,
-                        [ex.exerciseId]: {
-                          ...(old[ex.exerciseId] ?? {
-                            reps: String(ex.targetRepsMin ?? 10),
-                            weightKg: '0',
-                            rir: '0',
-                            isWarmup: false,
-                          }),
-                          weightKg: e.target.value,
-                        },
-                      }))
-                    }
-                  />
-                </label>
-                <label className="space-y-1 text-xs">
-                  <span>RIR</span>
-                  <Input
-                    type="number"
-                    min="0"
-                    max="10"
-                    value={drafts[ex.exerciseId]?.rir ?? '0'}
-                    onChange={(e) =>
-                      setDrafts((old) => ({
-                        ...old,
-                        [ex.exerciseId]: {
-                          ...(old[ex.exerciseId] ?? {
-                            reps: String(ex.targetRepsMin ?? 10),
-                            weightKg: '0',
-                            rir: '0',
-                            isWarmup: false,
-                          }),
-                          rir: e.target.value === '' ? '0' : e.target.value,
-                        },
-                      }))
-                    }
-                  />
-                </label>
-                <label className="flex items-center gap-2 pt-5 text-sm">
-                  <input
-                    type="checkbox"
-                    checked={drafts[ex.exerciseId]?.isWarmup ?? false}
-                    onChange={(e) =>
-                      setDrafts((old) => ({
-                        ...old,
-                        [ex.exerciseId]: {
-                          ...(old[ex.exerciseId] ?? {
-                            reps: String(ex.targetRepsMin ?? 10),
-                            weightKg: '0',
-                            rir: '0',
-                            isWarmup: false,
-                          }),
-                          isWarmup: e.target.checked,
-                        },
-                      }))
-                    }
-                  />
-                  ست گرم‌کردن
-                </label>
-              </div>
-              <Button
-                onClick={() => void logSet(ex)}
-                disabled={
-                  busy ||
-                  session.status ==
-                    WorkoutSessionStatus.InProgress /* InProgress (numeric enum) */
-                }
-              >
-                ثبت ست جدید
-              </Button>
-            </CardContent>
-          </Card>
-        ))
+            </div>
+          </section>
+        </div>
       )}
     </div>
   )

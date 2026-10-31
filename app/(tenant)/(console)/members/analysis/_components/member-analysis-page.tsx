@@ -8,9 +8,9 @@ import {
   listCoachAssignments,
   bulkAssignPlan,
 } from '@/app/(tenant)/_api/assignment-api'
-import type {
-  CoachAssignmentItem,
+import {
   PlanAssignmentStatus,
+  type CoachAssignmentItem,
 } from '@/app/(tenant)/_model/assignment.types'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -24,10 +24,10 @@ import { listMyPlans, listPublicPlans } from '../../../plans/_api/plan-api'
 import type { PlanSummary } from '../../../plans/_model/plan.types'
 
 const statusLabel: Record<PlanAssignmentStatus, string> = {
-  Active: 'فعال',
-  Paused: 'متوقف',
-  Completed: 'تکمیل‌شده',
-  Cancelled: 'لغوشده',
+  [PlanAssignmentStatus.Active]: 'فعال',
+  [PlanAssignmentStatus.Paused]: 'متوقف',
+  [PlanAssignmentStatus.Completed]: 'تکمیل‌شده',
+  [PlanAssignmentStatus.Cancelled]: 'لغوشده',
 }
 
 interface MemberRow {
@@ -87,18 +87,23 @@ export function MemberAnalysisPage() {
   const rows = useMemo<MemberRow[]>(() => {
     const map = new Map<string, MemberRow>()
     const order: Record<PlanAssignmentStatus, number> = {
-      Active: 0,
-      Paused: 1,
-      Completed: 2,
-      Cancelled: 3,
+      [PlanAssignmentStatus.Active]: 0,
+      [PlanAssignmentStatus.Paused]: 1,
+      [PlanAssignmentStatus.Completed]: 2,
+      [PlanAssignmentStatus.Cancelled]: 3,
     }
     loads.forEach((a) => {
-      const existing = map.get(a.memberId)
+      const memberId = a.memberId ?? a.member?.userId
+      if (!memberId) return
+
+      const existing = map.get(memberId)
       if (!existing) {
-        map.set(a.memberId, {
-          memberId: a.memberId,
-          name: a.memberName || a.memberId,
-          email: a.memberEmail,
+        map.set(memberId, {
+          memberId,
+          name:
+            `${a.member?.firstName ?? ''} ${a.member?.lastName ?? ''}`.trim() ||
+            memberId,
+          email: a.member?.email,
           current: a,
           history: [a],
         })
@@ -142,9 +147,10 @@ export function MemberAnalysisPage() {
       : 0
     return {
       total: rows.length,
-      active: byStatus('Active'),
-      paused: byStatus('Paused') + byStatus('Cancelled'),
-      completed: byStatus('Completed'),
+      active: byStatus(PlanAssignmentStatus.Active),
+      paused:
+        byStatus(PlanAssignmentStatus.Paused) + byStatus(PlanAssignmentStatus.Cancelled),
+      completed: byStatus(PlanAssignmentStatus.Completed),
       avg,
     }
   }, [rows])
@@ -269,9 +275,9 @@ export function MemberAnalysisPage() {
                       {current ? (
                         <Badge
                           variant={
-                            current.status === 'Active'
+                            current.status === PlanAssignmentStatus.Active
                               ? 'default'
-                              : current.status === 'Completed'
+                              : current.status === PlanAssignmentStatus.Completed
                                 ? 'outline'
                                 : 'secondary'
                           }

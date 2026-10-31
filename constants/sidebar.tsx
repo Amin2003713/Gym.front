@@ -51,6 +51,7 @@ const SIDEBAR_OPTIONS: { tree: SidebarItem[] } = {
         { name: 'صف مربی', path: '/console/coach', icon: <MessagesSquare className="size-4" />, colorClass: 'text-[#788584]', role: [ApiUserRole.Admin, ApiUserRole.Trainer] },
         { name: 'اعضای باشگاه', path: '/members', icon: <Users className="size-4" />, colorClass: 'text-[#788584]', role: [ApiUserRole.Admin, ApiUserRole.Trainer] },
         { name: 'مربی‌ها و شاگردها', path: '/trainers', icon: <ShieldCheck className="size-4" />, colorClass: 'text-[#788584]', role: [ApiUserRole.Admin, ApiUserRole.Trainer] },
+        { name: 'گزارش مربی', path: '/trainers/overview', icon: <ChartNoAxesCombined className="size-4" />, colorClass: 'text-[#788584]', role: [ApiUserRole.Admin, ApiUserRole.Trainer] },
         { name: 'مدیریت کاربران', path: '/users', icon: <ShieldCheck className="size-4" />, colorClass: 'text-[#788584]', role: [ApiUserRole.Admin] },
       ],
     },
@@ -62,6 +63,7 @@ const SIDEBAR_OPTIONS: { tree: SidebarItem[] } = {
       children: [
         { name: 'مالی و اشتراک', path: '/billing', icon: <Wallet className="size-4" />, colorClass: 'text-[#788584]', role: [ApiUserRole.Admin, ApiUserRole.Trainer] },
         { name: 'کمدهای هوشمند', path: '/lockers', icon: <LockKeyhole className="size-4" />, colorClass: 'text-[#788584]', role: [ApiUserRole.Admin, ApiUserRole.Trainer] },
+        { name: 'مرکز پشتیبانی', path: '/support-desk', icon: <LifeBuoy className="size-4" />, colorClass: 'text-[#788584]', role: [ApiUserRole.Admin, ApiUserRole.Trainer] },
       ],
     },
     {

@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { StepperFormActions } from '@/app/(auth)/signup/_components/signup-form'
+import { StepperFormActions } from '@/app/(auth)/signup/_components/stepper-form-actions'
 import { SignupValues, StepFormProps } from '@/app/(auth)/signup/_types/signup.interface'
 import { CustomFormField } from '@/components/ui/custom-form-field'
 import { Form } from '@/components/ui/form'

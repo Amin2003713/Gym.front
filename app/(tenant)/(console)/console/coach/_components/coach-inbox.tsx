@@ -1,15 +1,15 @@
 'use client'
 
-import { Inbox, Loader2, MessageCircle } from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
+import { Inbox, Loader2, MessageCircle, RefreshCw } from 'lucide-react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 
-import { listCoachConversations } from '@/app/(tenant)/_api/coach-api'
-import { useGetUsers } from '@/app/(tenant)/_api/use-get-users'
+import { listCoachQueue } from '@/app/(tenant)/console/_api/coach-queue-api'
 import { CoachChat } from '@/app/(tenant)/_components/coach/coach-chat'
 import {
   CoachConversationStatus,
   type CoachConversationSummary,
 } from '@/app/(tenant)/_model/coach'
+import { Button } from '@/components/ui/button'
 import { toast } from '@/lib/toast'
 
 const fa = (value: number) => (value ?? 0).toLocaleString('fa-IR')
@@ -22,59 +22,82 @@ const activityFmt = new Intl.DateTimeFormat('fa-IR', {
 })
 
 /**
- * The coach queue: every human conversation of the gym, open ones first. AI threads stay private to
- * the member, so they never show up here. Replies are the same chat component the member uses.
+ * Staff-facing coach queue. The API already limits staff to human requests, so this screen
+ * is the gym's inbox: open requests first, newest activity next. The member name comes with
+ * each row (no extra users request), and the list refreshes while the page is open.
  */
 export function CoachInbox() {
   const [threads, setThreads] = useState<CoachConversationSummary[]>([])
   const [activeId, setActiveId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
-  const { users } = useGetUsers()
+  const [refreshing, setRefreshing] = useState(false)
 
-  const names = useMemo(
-    () => new Map(users.map((user) => [user.id, `${user.firstName} ${user.lastName}`.trim()])),
-    [users],
-  )
+  const load = useCallback(async (showSpinner = false) => {
+    if (showSpinner) setRefreshing(true)
 
-  useEffect(() => {
-    let cancelled = false
-
-    void listCoachConversations()
-      .then((rows) => {
-        if (cancelled) return
-
-        const sorted = [...rows].sort((a, b) => {
-          if (a.status !== b.status) return a.status - b.status
-          return (b.lastMessageAt ?? '').localeCompare(a.lastMessageAt ?? '')
-        })
-
-        setThreads(sorted)
-        setActiveId((current) => current ?? sorted[0]?.id ?? null)
-      })
-      .catch((error: unknown) => {
-        if (!cancelled)
-          toast.error('دریافت صف مربی ناموفق بود', {
-            description: error instanceof Error ? error.message : undefined,
-          })
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false)
+    try {
+      const rows = await listCoachQueue()
+      const sorted = [...rows].sort((a, b) => {
+        const openA = a.status === CoachConversationStatus.Open ? 0 : 1
+        const openB = b.status === CoachConversationStatus.Open ? 0 : 1
+        if (openA !== openB) return openA - openB
+        return (b.lastMessageAt ?? '').localeCompare(a.lastMessageAt ?? '')
       })
 
-    return () => {
-      cancelled = true
+      setThreads(sorted)
+      // Keep the selection when it still exists; otherwise open the first request.
+      setActiveId((current) =>
+        current && sorted.some((row) => row.id === current)
+          ? current
+          : (sorted.find((row) => row.status === CoachConversationStatus.Open)?.id ??
+            sorted[0]?.id ??
+            null),
+      )
+    } catch (error) {
+      toast.error('دریافت صف مربی ناموفق بود', {
+        description: error instanceof Error ? error.message : undefined,
+      })
+    } finally {
+      setLoading(false)
+      setRefreshing(false)
     }
   }, [])
 
-  const open = threads.filter((thread) => thread.status === CoachConversationStatus.Open)
+  useEffect(() => {
+    void load()
+  }, [load])
+
+  // A request that arrives while the coach is on the page should not need a manual refresh.
+  useEffect(() => {
+    const timer = window.setInterval(() => void load(), 20_000)
+    return () => window.clearInterval(timer)
+  }, [load])
+
+  const openCount = useMemo(
+    () =>
+      threads.filter((thread) => thread.status === CoachConversationStatus.Open)
+        .length,
+    [threads],
+  )
 
   return (
-    <div className="space-y-4 p-3 sm:p-5 lg:p-7">
-      <header className="space-y-1">
-        <h1 className="text-2xl font-extrabold tracking-tight">صف مربی</h1>
-        <p className="text-muted-foreground text-sm leading-6">
-          درخواست‌های انسانی اعضا؛ بازها اول. گفتگوهای هوش مصنوعی خصوصی عضو می‌ماند.
-        </p>
+    <div className="space-y-4" dir="rtl">
+      <header className="flex flex-wrap items-start justify-between gap-3">
+        <div className="space-y-1">
+          <h1 className="text-2xl font-extrabold tracking-tight">صف مربی</h1>
+          <p className="text-muted-foreground text-sm leading-6">
+            درخواست‌های انسانی اعضا؛ بازها اول. گفتگوهای هوش مصنوعی خصوصی عضو می‌ماند.
+          </p>
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => void load(true)}
+          disabled={refreshing}
+        >
+          <RefreshCw className={`size-4 ${refreshing ? 'animate-spin' : ''}`} />
+          بروزرسانی
+        </Button>
       </header>
 
       {loading ? (
@@ -101,13 +124,14 @@ export function CoachInbox() {
                   <button
                     type="button"
                     onClick={() => setActiveId(thread.id)}
+                    aria-current={activeId === thread.id}
                     className={`w-full px-4 py-3 text-right transition-colors ${
                       activeId === thread.id ? 'bg-primary/10' : 'hover:bg-muted/50'
                     }`}
                   >
                     <div className="flex items-center justify-between gap-2">
                       <span className="truncate text-sm font-semibold">
-                        {names.get(thread.memberUserId) ?? 'عضو'}
+                        {thread.memberName || 'عضو'}
                       </span>
                       <span
                         className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold ${
@@ -119,7 +143,9 @@ export function CoachInbox() {
                         {isOpen ? 'باز' : 'بسته'}
                       </span>
                     </div>
-                    <p className="text-muted-foreground mt-1 truncate text-xs">{thread.title}</p>
+                    <p className="text-muted-foreground mt-1 truncate text-xs">
+                      {thread.title}
+                    </p>
                     <p className="text-muted-foreground/70 mt-1 flex items-center gap-1 text-[10px]">
                       <MessageCircle className="size-3" />
                       {fa(thread.messageCount)}
@@ -135,7 +161,12 @@ export function CoachInbox() {
 
           <section className="overflow-hidden rounded-2xl border bg-card shadow-sm">
             {activeId ? (
-              <CoachChat conversationId={activeId} staff />
+              <CoachChat
+                key={activeId}
+                conversationId={activeId}
+                staff
+                onClosed={() => void load()}
+              />
             ) : (
               <div className="text-muted-foreground flex h-64 items-center justify-center text-xs">
                 یک گفتگو را انتخاب کن.
@@ -145,8 +176,10 @@ export function CoachInbox() {
         </div>
       )}
 
-      {open.length > 0 && (
-        <p className="text-muted-foreground text-xs">{fa(open.length)} درخواست باز منتظر پاسخ است.</p>
+      {openCount > 0 && (
+        <p className="text-muted-foreground text-xs">
+          {fa(openCount)} درخواست باز منتظر پاسخ است.
+        </p>
       )}
     </div>
   )

@@ -168,3 +168,27 @@ export const getNextSession = (assignmentId: string) =>
   readData<NextSessionResponse>(
     `${BASE}/assignments/${encodeURIComponent(assignmentId)}/next-session`,
   )
+
+/**
+ * Detail of one exercise for the session runner: Persian instructions, the mapped muscles and
+ * the media used as the step's demo. Details are cached by the caller per exercise id.
+ */
+export interface WorkoutExerciseDetail {
+  id: string
+  name: string
+  instructions: Array<{ stepNumber: number; text: string }>
+  muscles: Array<{ code: string; name: string; role: number }>
+  media?: Array<{
+    role: number
+    order: number
+    isPrimary: boolean
+    asset?: {
+      variants?: Array<{ variantName: string; url?: string | null }>
+    } | null
+  }>
+}
+
+export const getWorkoutExerciseDetail = (exerciseId: string) =>
+  readData<WorkoutExerciseDetail>(
+    `exercise/exercise/${encodeURIComponent(exerciseId)}?languageCode=fa`,
+  )

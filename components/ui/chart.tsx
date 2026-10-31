@@ -244,8 +244,8 @@ function ChartTooltipContent<TValue extends ValueType, TName extends NameType>({
                     {item.value && (
                       <span className="text-foreground font-mono font-medium tabular-nums">
                         {!!valueFormatter
-                          ? valueFormatter(item.(value ?? 0).toLocaleString())
-                          : item.(value ?? 0).toLocaleString()}
+                          ? valueFormatter((item.value ?? 0).toLocaleString())
+                          : (item.value ?? 0).toLocaleString()}
                       </span>
                     )}
                   </div>

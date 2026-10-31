@@ -344,7 +344,7 @@ function Muscles() {
                 <ChartNotice/>
             </Panel>
 
-            <MuscleExplorer load={muscleLoad}/>
+            <MuscleExplorer/>
         </div>
     )
 }

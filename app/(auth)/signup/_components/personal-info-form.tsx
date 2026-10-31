@@ -28,7 +28,7 @@ function PersonalInfoForm({ form }: StepFormProps) {
     processedSignupState.current = signupState
 
     if (!signupState.isSuccess && signupState.error) {
-      toast.error(signupState.error.detail, {
+      toast.error(signupState.error.detail ?? 'خطا در ثبت‌نام', {
         duration: 5000,
         position: 'top-right',
       })

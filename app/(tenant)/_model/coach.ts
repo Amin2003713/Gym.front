@@ -29,6 +29,8 @@ export interface CoachConversationSummary {
   kind: CoachConversationKind
   status: CoachConversationStatus
   memberUserId: string
+  /** Filled for staff queues so a coach sees who is asking without a second request. */
+  memberName?: string | null
   coachUserId: string | null
   title: string
   lastMessageAt: string | null

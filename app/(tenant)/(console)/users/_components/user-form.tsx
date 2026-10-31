@@ -2,14 +2,7 @@ import { PlusCircleIcon, XIcon } from 'lucide-react'
 import Image from 'next/image'
 import { FieldValues, UseFormReturn } from 'react-hook-form'
 
-import { useGetDepartments } from '@/app/(tenant)/_api/use-get-departments'
-import { AutoComplete, Option } from '@/components/ui/autoComplete'
-import { Button } from '@/components/ui/button'
-import {
-  CustomFormField,
-  CustomTextareaField,
-} from '@/components/ui/custom-form-field'
-import { DatePickerField } from '@/components/ui/date-picker-field'
+import { CustomFormField } from '@/components/ui/custom-form-field'
 import { DialogClose, DialogFooter } from '@/components/ui/dialog'
 import { FileUploadFormField } from '@/components/ui/file-upload-form-field'
 import SelectFormField from '@/components/ui/select-form-field'
@@ -24,38 +17,21 @@ type UserFormProps<TForm> = {
   submitText: string
 }
 
+/**
+ * The gym user form. It only renders fields the API stores: identity, phone (which is also the
+ * username), one role, gender and the optional avatar. HR-template fields (department, national
+ * code, personnel number, …) are deliberately absent — the backend has no such contract.
+ */
 export function UserForm<TForm extends FieldValues>({
   form,
   isPending,
   loadingText,
   submitText,
 }: UserFormProps<TForm>) {
-  const { departments, isLoading } = useGetDepartments()
-
   const roleOptions = Object.entries(USER_ROLES).map(([value, label]) => ({
-    label,
-    id: value,
+    value: Number(value) as ApiUserRole,
+    title: label,
   }))
-
-  const handleChangeRoles = (value: Option[] | null) => {
-    form.setValue(
-      'role',
-      value?.map((v) => Number(v.id) as ApiUserRole),
-      {
-        shouldDirty: true,
-        shouldTouch: true,
-        shouldValidate: true,
-      },
-    )
-  }
-
-  const handleChangeDepartment = (value: Option | null) => {
-    form.setValue('department', value, {
-      shouldDirty: true,
-      shouldTouch: true,
-      shouldValidate: true,
-    })
-  }
 
   return (
     <>
@@ -66,63 +42,25 @@ export function UserForm<TForm extends FieldValues>({
           name="lastName"
           label="نام خانوادگی"
         />
-        <div className="flex flex-col gap-1">
-          <AutoComplete
-            multiSelect
-            options={roleOptions}
-            label="انتخاب نقش"
-            placeholder="نقش کاربر مورد نظر را انتخاب کنید"
-            value={roleOptions.filter((role) =>
-              (form.watch('role') ?? []).map(String).includes(role.id),
-            )}
-            onValueChange={handleChangeRoles}
-            ariaInvalid={!!form.formState.errors['role']?.message}
-          />
-          <span className="text-destructive-foreground">
-            {form.formState.errors['role'] && (
-              <p className="text-destructive-foreground text-sm">
-                {form.formState.errors['role']?.message as string}
-              </p>
-            )}
-          </span>
-        </div>
-        <div className="flex flex-col gap-1">
-          <AutoComplete
-            options={departments}
-            isLoading={isLoading}
-            placeholder="بخش/دپارتمان مورد نظر را انتخاب کنید"
-            value={form.watch('department')}
-            onValueChange={handleChangeDepartment}
-            label="بخش"
-            ariaInvalid={!!form.formState.errors['department']?.message}
-          />
-          <span className="text-destructive-foreground">
-            {form.formState.errors['department'] && (
-              <p className="text-destructive-foreground text-sm">
-                {form.formState.errors['department']?.message as string}
-              </p>
-            )}
-          </span>
-        </div>
+        <CustomFormField
+          control={form.control}
+          name="email"
+          type="email"
+          dir="ltr"
+          label="ایمیل"
+        />
         <CustomFormField
           control={form.control}
           name="phoneNumber"
-          label="شماره تماس"
+          dir="ltr"
+          label="شماره همراه (نام کاربری)"
         />
-        <CustomFormField
+        <SelectFormField
+          name="role"
           control={form.control}
-          name="nationalCode"
-          label="کدملی"
-        />
-        <CustomFormField
-          control={form.control}
-          name="personnelNumber"
-          label="کد پرسنلی"
-        />
-        <DatePickerField
-          control={form.control}
-          name="birthDate"
-          label="تاریخ تولد"
+          options={roleOptions}
+          label="نقش کاربر"
+          className="!col-span-12 md:!col-span-6"
         />
         <SelectFormField
           name="gender"
@@ -132,34 +70,18 @@ export function UserForm<TForm extends FieldValues>({
             title,
           }))}
           label="جنسیت"
-          className="!col-span-6 md:!col-span-6"
-        />
-        <SelectFormField
-          name="isLeader"
-          control={form.control}
-          options={[
-            { value: true, title: 'فعال' },
-            { value: false, title: 'غیرفعال' },
-          ]}
-          label="درج ماموریت"
-          className="!col-span-6 md:!col-span-6"
-        />
-        <CustomTextareaField
-          control={form.control}
-          name="address"
-          label="آدرس"
-          className="!col-span-12 [&_textarea]:resize-none"
+          className="!col-span-12 md:!col-span-6"
         />
         {form.watch('imageUrl') ? (
           <div className="relative !col-span-12 mx-auto size-14 border p-0.5">
-            <Button
-              variant="secondary"
-              size="icon"
+            <button
+              type="button"
               onClick={() => form.setValue('imageUrl', null)}
-              className="absolute -top-1 -right-1 size-4 cursor-pointer rounded-full"
+              aria-label="حذف تصویر"
+              className="bg-secondary absolute -top-1 -right-1 flex size-5 items-center justify-center rounded-full"
             >
-              <XIcon />
-            </Button>
+              <XIcon className="size-3" />
+            </button>
             <Image
               className="aspect-square"
               src={form.watch('imageUrl')}
@@ -181,16 +103,21 @@ export function UserForm<TForm extends FieldValues>({
         )}
       </div>
       <DialogFooter className="flex shrink-0 flex-row">
-        <Button
-          isLoading={isPending}
-          loadingText={loadingText}
-          className="flex-1"
+        <button
+          type="submit"
+          disabled={isPending}
+          className="bg-primary text-primary-foreground inline-flex min-h-10 flex-1 items-center justify-center gap-2 rounded-lg px-4 text-sm font-semibold disabled:opacity-60"
         >
-          {submitText}
-          <PlusCircleIcon />
-        </Button>
+          {isPending ? loadingText : submitText}
+          <PlusCircleIcon className="size-4" />
+        </button>
         <DialogClose asChild>
-          <Button variant="destructive">انصراف</Button>
+          <button
+            type="button"
+            className="border-destructive/40 text-destructive inline-flex min-h-10 items-center justify-center rounded-lg border px-4 text-sm font-semibold"
+          >
+            انصراف
+          </button>
         </DialogClose>
       </DialogFooter>
     </>

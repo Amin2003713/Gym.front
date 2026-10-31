@@ -1,33 +1,40 @@
 'use client'
 
-import { Archive, Eye, Plus, RefreshCw, Search, UserPlus } from 'lucide-react'
+import { Archive, Eye, Pencil, Plus, RefreshCw, Search, UserPlus, X } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
+import { useAppLocale } from '@/hooks/use-app-locale'
 import { useUserRoles } from '@/hooks/use-user-roles'
 import { toast } from '@/lib/toast'
-import { useAppLocale } from '@/hooks/use-app-locale'
 
 import { archivePlan, getPlan, listMyPlans, listPublicPlans } from './_api/plan-api'
 import { PlanFormDialog } from './_components/plan-form-dialog'
-import type { PlanDetail, PlanGoal, PlanLevel, PlanSummary } from './_model/plan.types'
+import type {
+  PlanDetail,
+  PlanGoal,
+  PlanLevel,
+  PlanSummary,
+} from './_model/plan.types'
 
-const goalLabels: Record<PlanGoal, string> = {
-  GetStronger: 'افزایش قدرت',
-  BuildMuscle: 'عضله‌سازی',
-  LoseWeight: 'کاهش وزن',
-  Endurance: 'استقامت',
-  Fitness: 'تناسب اندام',
-  Mobility: 'تحرک',
+const fa = (value: number) => (value ?? 0).toLocaleString('fa-IR')
+
+const GOAL_LABELS: Record<PlanGoal, { fa: string; en: string }> = {
+  GetStronger: { fa: 'افزایش قدرت', en: 'Strength' },
+  BuildMuscle: { fa: 'عضله‌سازی', en: 'Muscle gain' },
+  LoseWeight: { fa: 'کاهش وزن', en: 'Weight loss' },
+  Endurance: { fa: 'استقامت', en: 'Endurance' },
+  Fitness: { fa: 'تناسب اندام', en: 'Fitness' },
+  Mobility: { fa: 'تحرک', en: 'Mobility' },
 }
-const levelLabels: Record<PlanLevel, string> = {
-  Beginner: 'مبتدی',
-  Intermediate: 'متوسط',
-  Advanced: 'پیشرفته',
+
+const LEVEL_LABELS: Record<PlanLevel, { fa: string; en: string }> = {
+  Beginner: { fa: 'مبتدی', en: 'Beginner' },
+  Intermediate: { fa: 'متوسط', en: 'Intermediate' },
+  Advanced: { fa: 'پیشرفته', en: 'Advanced' },
 }
 
 export default function PlansPage() {
@@ -39,17 +46,27 @@ export default function PlansPage() {
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [catalog, setCatalog] = useState(isTraineeOnly)
-  const [goal, setGoal] = useState('')
-  const [level, setLevel] = useState('')
+  const [goal, setGoal] = useState<PlanGoal | ''>('')
+  const [level, setLevel] = useState<PlanLevel | ''>('')
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editing, setEditing] = useState<PlanSummary | null>(null)
   const [detail, setDetail] = useState<PlanDetail | null>(null)
   const [cursor, setCursor] = useState<string | null>(null)
   const [nextCursor, setNextCursor] = useState<string | null>(null)
 
+  const goalText = useCallback(
+    (value: PlanGoal) => GOAL_LABELS[value]?.[locale] ?? value,
+    [locale],
+  )
+  const levelText = useCallback(
+    (value: PlanLevel) => LEVEL_LABELS[value]?.[locale] ?? value,
+    [locale],
+  )
+
   const load = useCallback(async () => {
     const sequence = ++requestSequence.current
     setLoading(true)
+
     try {
       if (!catalog) {
         const result = await listMyPlans(1, 30)
@@ -57,61 +74,82 @@ export default function PlansPage() {
         setPlans(Array.isArray(result) ? result : [])
         setNextCursor(null)
       } else {
-        const result = await listPublicPlans({ goal: goal as never, level: level as never, cursor, pageSize: 20 })
-        if (sequence !== requestSequence.current) return
-        const rows = Array.isArray(result) ? [...result] : [...(result.items ?? result.results ?? [])]
-        setPlans(current => {
-          if (!cursor) return rows
-          const seen = new Set(current.map(item => item.id))
-          return [...current, ...rows.filter(item => !seen.has(item.id))]
+        const result = await listPublicPlans({
+          goal,
+          level,
+          cursor,
+          pageSize: 20,
         })
-        setNextCursor(Array.isArray(result) ? null : result.nextCursor ?? null)
+        if (sequence !== requestSequence.current) return
+
+        const rows = Array.isArray(result)
+          ? [...result]
+          : [...(result.items ?? result.results ?? [])]
+
+        setPlans((current) => {
+          if (!cursor) return rows
+          const seen = new Set(current.map((item) => item.id))
+          return [...current, ...rows.filter((item) => !seen.has(item.id))]
+        })
+        setNextCursor(Array.isArray(result) ? null : (result.nextCursor ?? null))
       }
-    } catch (e) {
-      if (sequence === requestSequence.current) toast.error('دریافت برنامه‌ها ناموفق بود', { description: e instanceof Error ? e.message : 'خطای ناشناخته' })
-    } finally { if (sequence === requestSequence.current) setLoading(false) }
-  }, [catalog, goal, level, cursor])
+    } catch (error) {
+      if (sequence === requestSequence.current)
+        toast.error('دریافت برنامه‌ها ناموفق بود', {
+          description: error instanceof Error ? error.message : 'خطای ناشناخته',
+        })
+    } finally {
+      if (sequence === requestSequence.current) setLoading(false)
+    }
+  }, [catalog, cursor, goal, level])
 
   useEffect(() => {
     void load()
   }, [load])
 
-  const filtered = useMemo(
-    () =>
-      plans.filter((plan) =>
-        `${plan.title} ${plan.goal} ${plan.level} ${plan.visibility}`
-          .toLocaleLowerCase()
-          .includes(search.toLocaleLowerCase().trim()),
-      ),
-    [plans, search],
-  )
+  const filtered = useMemo(() => {
+    const term = search.trim().toLocaleLowerCase()
+    if (!term) return plans
+
+    return plans.filter((plan) =>
+      `${plan.title} ${goalText(plan.goal)} ${levelText(plan.level)} ${plan.visibility}`
+        .toLocaleLowerCase()
+        .includes(term),
+    )
+  }, [goalText, levelText, plans, search])
+
+  const filtersActive = clauseHasValue(goal) || clauseHasValue(level) || !!search.trim()
 
   const showCreate = () => {
     setEditing(null)
     setDialogOpen(true)
   }
+
   const showEdit = (plan: PlanSummary) => {
     setEditing(plan)
     setDialogOpen(true)
   }
+
   const showDetail = async (plan: PlanSummary) => {
     try {
       setDetail(await getPlan(plan.id))
-    } catch (e) {
+    } catch (error) {
       toast.error('دریافت جزئیات ناموفق بود', {
-        description: e instanceof Error ? e.message : 'خطای ناشناخته',
+        description: error instanceof Error ? error.message : 'خطای ناشناخته',
       })
     }
   }
+
   const doArchive = async (plan: PlanSummary) => {
     if (!window.confirm(`برنامه «${plan.title}» بایگانی شود؟`)) return
+
     try {
       await archivePlan(plan.id)
       toast.success('برنامه بایگانی شد')
       await load()
-    } catch (e) {
+    } catch (error) {
       toast.error('بایگانی برنامه ناموفق بود', {
-        description: e instanceof Error ? e.message : 'خطای ناشناخته',
+        description: error instanceof Error ? error.message : 'خطای ناشناخته',
       })
     }
   }
@@ -121,7 +159,7 @@ export default function PlansPage() {
       <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
         <div>
           <h1 className="text-2xl font-bold">برنامه‌های تمرینی</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
+          <p className="text-muted-foreground mt-1 text-sm">
             {canManage
               ? 'ساخت، مدیریت و مرور برنامه‌های تمرینی'
               : 'مرور برنامه‌های عمومی و برنامه‌های تخصیص‌یافته به شما'}
@@ -129,27 +167,43 @@ export default function PlansPage() {
         </div>
         <div className="flex flex-wrap gap-2">
           <Button variant="outline" onClick={() => void load()} disabled={loading}>
-            <RefreshCw className={`ml-2 size-4 ${loading ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`size-4 ${loading ? 'animate-spin' : ''}`} />
             بروزرسانی
           </Button>
           {canManage && (
             <Button onClick={showCreate}>
-              <Plus className="ml-2 size-4" />
+              <Plus className="size-4" />
               برنامه جدید
             </Button>
           )}
-          {isAdmin && <Button variant="outline"><UserPlus className="ml-2 size-4" /> تخصیص در بخش تخصیص‌ها</Button>}
+          {isAdmin && (
+            <Button variant="outline" asChild>
+              <a href="/assignments">
+                <UserPlus className="size-4" />
+                تخصیص در بخش تخصیص‌ها
+              </a>
+            </Button>
+          )}
         </div>
       </div>
 
       <Card>
-        <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <CardTitle>فهرست برنامه‌ها</CardTitle>
-          <div className="flex flex-wrap gap-2">
+        <CardHeader className="flex flex-col gap-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <CardTitle className="flex items-center gap-2">
+              فهرست برنامه‌ها
+              <span className="text-muted-foreground text-xs font-normal" aria-live="polite">
+                {fa(filtered.length)} برنامه
+              </span>
+            </CardTitle>
+
             {canManage && (
-              <>
+              <div className="flex gap-1 rounded-lg border p-1" role="tablist" aria-label="منبع برنامه‌ها">
                 <Button
-                  variant={catalog ? 'default' : 'outline'}
+                  size="sm"
+                  role="tab"
+                  aria-selected={catalog}
+                  variant={catalog ? 'default' : 'ghost'}
                   onClick={() => {
                     setCatalog(true)
                     setCursor(null)
@@ -158,7 +212,10 @@ export default function PlansPage() {
                   کاتالوگ عمومی
                 </Button>
                 <Button
-                  variant={!catalog ? 'default' : 'outline'}
+                  size="sm"
+                  role="tab"
+                  aria-selected={!catalog}
+                  variant={!catalog ? 'default' : 'ghost'}
                   onClick={() => {
                     setCatalog(false)
                     setCursor(null)
@@ -166,65 +223,108 @@ export default function PlansPage() {
                 >
                   برنامه‌های من
                 </Button>
-              </>
+              </div>
             )}
-            <div className="relative">
-              <Search className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="relative min-w-52 flex-1 sm:max-w-xs">
+              <Search className="text-muted-foreground pointer-events-none absolute end-3 top-1/2 size-4 -translate-y-1/2" />
               <Input
-                className="pr-9"
-                placeholder="جستجوی عنوان"
+                className="pe-9"
+                placeholder="جستجوی عنوان…"
+                aria-label="جستجوی برنامه"
                 value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                onChange={(event) => setSearch(event.target.value)}
               />
             </div>
+
             {catalog && (
               <>
                 <select
-                  className="h-10 rounded-md border bg-background px-3"
+                  className="bg-background h-10 rounded-md border px-3 text-sm"
+                  aria-label={locale === 'en' ? 'Goal' : 'هدف'}
                   value={goal}
-                  onChange={(e) => {
-                    setGoal(e.target.value)
+                  onChange={(event) => {
+                    setGoal(event.target.value as PlanGoal | '')
                     setCursor(null)
                   }}
                 >
                   <option value="">{locale === 'en' ? 'All goals' : 'همه هدف‌ها'}</option>
-                  {Object.entries(goalLabels).map(([value, label]) => (
+                  {Object.keys(GOAL_LABELS).map((value) => (
                     <option key={value} value={value}>
-                      {locale === 'en' ? ({ GetStronger: 'Strength', BuildMuscle: 'Muscle gain', LoseWeight: 'Weight loss', Endurance: 'Endurance', Fitness: 'Fitness', Mobility: 'Mobility' } as const)[value as PlanGoal] : label}
+                      {goalText(value as PlanGoal)}
                     </option>
                   ))}
                 </select>
+
                 <select
-                  className="h-10 rounded-md border bg-background px-3"
+                  className="bg-background h-10 rounded-md border px-3 text-sm"
+                  aria-label={locale === 'en' ? 'Level' : 'سطح'}
                   value={level}
-                  onChange={(e) => {
-                    setLevel(e.target.value)
+                  onChange={(event) => {
+                    setLevel(event.target.value as PlanLevel | '')
                     setCursor(null)
                   }}
                 >
                   <option value="">{locale === 'en' ? 'All levels' : 'همه سطح‌ها'}</option>
-                  {Object.entries(levelLabels).map(([value, label]) => (
+                  {Object.keys(LEVEL_LABELS).map((value) => (
                     <option key={value} value={value}>
-                      {locale === 'en' ? ({ Beginner: 'Beginner', Intermediate: 'Intermediate', Advanced: 'Advanced' } as const)[value as PlanLevel] : label}
+                      {levelText(value as PlanLevel)}
                     </option>
                   ))}
                 </select>
               </>
             )}
+
+            {filtersActive && (
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => {
+                  setSearch('')
+                  setGoal('')
+                  setLevel('')
+                  setCursor(null)
+                }}
+              >
+                <X className="size-4" />
+                {locale === 'en' ? 'Clear' : 'پاک کردن'}
+              </Button>
+            )}
           </div>
         </CardHeader>
+
         <CardContent>
-          {loading ? (
-            <div className="py-12 text-center text-muted-foreground">در حال دریافت برنامه‌ها…</div>
+          {loading && plans.length === 0 ? (
+            <div className="space-y-2" aria-busy="true">
+              {[0, 1, 2, 3].map((key) => (
+                <div key={key} className="bg-muted/50 h-12 animate-pulse rounded-lg" />
+              ))}
+            </div>
           ) : filtered.length === 0 ? (
-            <div className="py-12 text-center text-muted-foreground">برنامه‌ای پیدا نشد.</div>
+            <div className="text-muted-foreground py-12 text-center text-sm">
+              {search.trim() || filtersActive
+                ? 'برنامه‌ای با این فیلترها پیدا نشد.'
+                : 'هنوز برنامه‌ای ثبت نشده است.'}
+            </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[850px] text-sm">
+              <table className="w-full min-w-[880px] text-sm">
+                <caption className="sr-only">فهرست برنامه‌های تمرینی</caption>
                 <thead>
-                  <tr className="border-b text-right text-muted-foreground">
-                    {['عنوان', 'هدف', 'سطح', 'مدت', 'دسترسی', 'نسخه', 'وضعیت', 'عملیات'].map((header) => (
-                      <th key={header} className="p-3 font-medium">
+                  <tr className="text-muted-foreground border-b text-right">
+                    {[
+                      'عنوان',
+                      locale === 'en' ? 'Goal' : 'هدف',
+                      locale === 'en' ? 'Level' : 'سطح',
+                      'مدت',
+                      'دسترسی',
+                      'نسخه',
+                      'وضعیت',
+                      'عملیات',
+                    ].map((header) => (
+                      <th key={header} scope="col" className="p-3 font-medium">
                         {header}
                       </th>
                     ))}
@@ -232,21 +332,21 @@ export default function PlansPage() {
                 </thead>
                 <tbody>
                   {filtered.map((plan) => (
-                    <tr key={plan.id} className="border-b last:border-0 hover:bg-muted/30">
+                    <tr key={plan.id} className="hover:bg-muted/30 border-b last:border-0">
                       <td className="p-3 font-medium">{plan.title}</td>
-                      <td className="p-3">{locale === 'en' ? ({ GetStronger: 'Strength', BuildMuscle: 'Muscle gain', LoseWeight: 'Weight loss', Endurance: 'Endurance', Fitness: 'Fitness', Mobility: 'Mobility' } as const)[plan.goal] : goalLabels[plan.goal]}</td>
-                      <td className="p-3">{locale === 'en' ? ({ Beginner: 'Beginner', Intermediate: 'Intermediate', Advanced: 'Advanced' } as const)[plan.level] : levelLabels[plan.level]}</td>
-                      <td className="p-3">
+                      <td className="p-3">{goalText(plan.goal)}</td>
+                      <td className="p-3">{levelText(plan.level)}</td>
+                      <td className="p-3 tabular-nums">
                         {plan.durationType === 'Sessions'
-                          ? `${plan.totalSessions ?? '—'} جلسه`
-                          : `${plan.durationWeeks ?? '—'} هفته`}
+                          ? `${fa(plan.totalSessions ?? 0)} جلسه`
+                          : `${fa(plan.durationWeeks ?? 0)} هفته`}
                       </td>
                       <td className="p-3">
                         <Badge variant={plan.visibility === 'Public' ? 'default' : 'secondary'}>
                           {plan.visibility === 'Public' ? 'عمومی' : 'خصوصی'}
                         </Badge>
                       </td>
-                      <td className="p-3">{plan.currentVersion}</td>
+                      <td className="p-3 tabular-nums">{fa(plan.currentVersion)}</td>
                       <td className="p-3">
                         <Badge variant={plan.isArchived ? 'secondary' : 'outline'}>
                           {plan.isArchived ? 'بایگانی' : 'فعال'}
@@ -254,7 +354,13 @@ export default function PlansPage() {
                       </td>
                       <td className="p-3">
                         <div className="flex items-center gap-1">
-                          <Button size="icon" variant="ghost" title="جزئیات" onClick={() => void showDetail(plan)}>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            title="جزئیات"
+                            aria-label={`جزئیات ${plan.title}`}
+                            onClick={() => void showDetail(plan)}
+                          >
                             <Eye className="size-4" />
                           </Button>
                           {canManage && !catalog && (
@@ -263,19 +369,21 @@ export default function PlansPage() {
                                 size="icon"
                                 variant="ghost"
                                 title="ویرایش"
+                                aria-label={`ویرایش ${plan.title}`}
                                 disabled={plan.isArchived}
                                 onClick={() => showEdit(plan)}
                               >
-                                <Plus className="size-4" />
+                                <Pencil className="size-4" />
                               </Button>
                               <Button
                                 size="icon"
                                 variant="ghost"
                                 title="بایگانی"
+                                aria-label={`بایگانی ${plan.title}`}
                                 disabled={plan.isArchived}
                                 onClick={() => void doArchive(plan)}
                               >
-                                <Archive className="size-4 text-destructive" />
+                                <Archive className="text-destructive size-4" />
                               </Button>
                             </>
                           )}
@@ -287,10 +395,15 @@ export default function PlansPage() {
               </table>
             </div>
           )}
+
           {catalog && nextCursor && (
             <div className="mt-4 flex justify-center">
-              <Button variant="outline" onClick={() => setCursor(nextCursor)} disabled={loading}>
-                {locale === 'en' ? 'Load more' : 'نمایش بیشتر'}
+              <Button
+                variant="outline"
+                onClick={() => setCursor(nextCursor)}
+                disabled={loading}
+              >
+                {loading ? 'در حال بارگذاری…' : locale === 'en' ? 'Load more' : 'نمایش بیشتر'}
               </Button>
             </div>
           )}
@@ -305,32 +418,46 @@ export default function PlansPage() {
           onSaved={() => void load()}
         />
       )}
+
       {detail && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-label={`جزئیات ${detail.title}`}
           onClick={() => setDetail(null)}
         >
           <div
-            className="max-h-[85vh] w-full max-w-2xl overflow-y-auto rounded-lg bg-background p-5"
-            onClick={(e) => e.stopPropagation()}
+            className="bg-background max-h-[85vh] w-full max-w-2xl overflow-y-auto rounded-2xl p-5"
+            onClick={(event) => event.stopPropagation()}
           >
-            <div className="mb-4 flex items-center justify-between">
+            <div className="mb-4 flex items-center justify-between gap-2">
               <h2 className="text-lg font-bold">{detail.title}</h2>
-              <Button variant="outline" onClick={() => setDetail(null)}>
+              <Button variant="outline" size="sm" onClick={() => setDetail(null)}>
                 بستن
               </Button>
             </div>
-            <p className="mb-4 text-sm text-muted-foreground">{detail.description || 'بدون توضیحات'}</p>
+            <p className="text-muted-foreground mb-4 text-sm">
+              {detail.description || 'بدون توضیحات'}
+            </p>
+            {detail.days.length === 0 && (
+              <p className="text-muted-foreground text-sm">روزی برای این برنامه ثبت نشده است.</p>
+            )}
             {detail.days.map((day) => (
               <div key={day.dayNumber} className="mb-3 rounded-lg border p-3">
                 <h3 className="font-semibold">
-                  {day.dayNumber}. {day.name}
+                  {fa(day.dayNumber)}. {day.name}
                 </h3>
-                <ul className="mt-2 list-inside list-disc space-y-1 text-sm">
+                <ul className="mt-2 space-y-1 text-sm">
                   {day.exercises.map((exercise) => (
-                    <li key={exercise.id}>
-                      {exercise.exerciseName || exercise.exerciseId} — {exercise.targetSets ?? '—'} ست ×{' '}
-                      {exercise.targetRepsMin ?? '—'}–{exercise.targetRepsMax ?? '—'} تکرار
+                    <li key={exercise.id} className="flex justify-between gap-2">
+                      <span className="truncate">
+                        {exercise.exerciseName || exercise.exerciseId}
+                      </span>
+                      <span className="text-muted-foreground shrink-0 tabular-nums">
+                        {fa(exercise.targetSets ?? 0)} ست × {fa(exercise.targetRepsMin ?? 0)}–
+                        {fa(exercise.targetRepsMax ?? 0)}
+                      </span>
                     </li>
                   ))}
                 </ul>
@@ -339,10 +466,16 @@ export default function PlansPage() {
           </div>
         </div>
       )}
-      <p className="text-xs text-muted-foreground">
-        مالک و مربی: ساخت/ویرایش/بایگانی و تخصیص. شاگرد: مشاهده کاتالوگ عمومی و برنامه‌های خود.
-        {isTrainer ? '' : ''}
+
+      <p className="text-muted-foreground text-xs leading-5">
+        مالک و مربی: ساخت، ویرایش، بایگانی و تخصیص. شاگرد: مشاهده کاتالوگ عمومی و برنامه‌های
+        خود.
+        {isTrainer ? ' برنامه‌های شما فقط توسط خودتان و مدیر قابل ویرایش است.' : ''}
       </p>
     </div>
   )
+}
+
+function clauseHasValue(value: string) {
+  return value.trim().length > 0
 }

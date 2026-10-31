@@ -3,7 +3,9 @@
 import { Dumbbell, LoaderCircle, Pencil, X } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 
+import BodyMapPanel from '@/app/(tenant)/_components/progress/body-map-panel'
 import { toast } from '@/lib/toast'
+import { muscleSlugs } from '@/lib/muscle-mapping'
 
 import { exerciseApi } from '../_api/exercise-api'
 import { mapExerciseMediaAssets, type ExerciseAsset } from '../_model/exercise-assets'
@@ -88,6 +90,15 @@ export default function ExerciseDetailDialog({
     ),
   )
 
+  // Highlight what this exercise trains: primary muscles weigh more than secondary ones.
+  const muscleLevels: Record<string, number> = {}
+
+  for (const muscle of detail?.muscles ?? []) {
+    for (const slug of muscleSlugs(muscle.code, muscle.name)) {
+      muscleLevels[slug] = Math.max(muscleLevels[slug] ?? 0, muscle.role === 1 ? 3 : 1)
+    }
+  }
+
   return (
     <div
       className="fixed inset-0 z-[110] flex items-center justify-center bg-black/50 p-3 backdrop-blur-[2px] sm:p-6"
@@ -171,6 +182,11 @@ export default function ExerciseDetailDialog({
                         </span>
                       ))}
                     </div>
+                    {muscleLevels.length > 0 && (
+                      <div className="mt-3">
+                        <BodyMapPanel body="male" palette="load" load={muscleLevels} />
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

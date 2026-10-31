@@ -26,7 +26,8 @@ function RequestCodeForm({ onSuccess }: ForgetPasswordType) {
 
   const onSubmitForm = (data: ForgetPasswordModel) => {
     startTransition(() => {
-      action({ phoneNumber: data.userName })
+      // The activation-code action needs the tenant domain; this flow has no tenant yet.
+      action({ phoneNumber: data.userName, domain: '' })
     })
   }
 

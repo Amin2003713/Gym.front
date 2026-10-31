@@ -10,9 +10,11 @@ import {
   type AssignmentListItem,
   type AssignmentPlanDay,
 } from '@/app/(tenant)/_model/assignment.types'
+import BodyMapPanel from '@/app/(tenant)/_components/progress/body-map-panel'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { toast } from '@/lib/toast'
+import { muscleLoad } from '@/lib/muscle-mapping'
 
 const fa = (value: number) => (value ?? 0).toLocaleString('fa-IR')
 
@@ -166,25 +168,44 @@ export function MemberPlan() {
 }
 
 function PlanDayRow({ day }: { day: AssignmentPlanDay }) {
+  // Every slot already carries its muscle tags, so the day's body map needs no extra request.
+  const load = muscleLoad(day.exercises.map((exercise) => ({
+    bodyPart: exercise.bodyPart,
+    target: exercise.target,
+  })))
+
   return (
     <li className="bg-muted/40 rounded-xl p-3">
-      <p className="text-xs font-bold">
-        روز {fa(day.dayNumber)} · {day.name}
-      </p>
-      <ul className="mt-2 space-y-1">
-        {day.exercises.map((exercise) => (
-          <li
-            key={exercise.slot.id}
-            className="flex items-center justify-between gap-2 text-xs"
-          >
-            <span className="truncate">{exercise.exerciseName ?? 'حرکت'}</span>
-            <span className="text-muted-foreground shrink-0 tabular-nums">
-              {fa(exercise.slot.targetSets)} ×{' '}
-              {repsLabel(exercise.slot.targetRepsMin, exercise.slot.targetRepsMax)}
-            </span>
-          </li>
-        ))}
-      </ul>
+      <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_8rem]">
+        <div className="min-w-0">
+          <p className="text-xs font-bold">
+            روز {fa(day.dayNumber)} · {day.name}
+          </p>
+          <ul className="mt-2 space-y-1">
+            {day.exercises.map((exercise) => (
+              <li
+                key={exercise.slot.id}
+                className="flex items-center justify-between gap-2 text-xs"
+              >
+                <span className="truncate">{exercise.exerciseName ?? 'حرکت'}</span>
+                <span className="text-muted-foreground shrink-0 tabular-nums">
+                  {fa(exercise.slot.targetSets)} ×{' '}
+                  {repsLabel(exercise.slot.targetRepsMin, exercise.slot.targetRepsMax)}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        {Object.keys(load).length > 0 && (
+          <div className="border-t pt-2 sm:border-s sm:border-t-0 sm:pt-0 sm:ps-3">
+            <p className="text-muted-foreground text-[10px] font-semibold">
+              عضلات این روز
+            </p>
+            <BodyMapPanel body="male" palette="load" load={load} />
+          </div>
+        )}
+      </div>
     </li>
   )
 }
