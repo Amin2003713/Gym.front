@@ -43,7 +43,9 @@ function useSessionRoles(): ApiUserRole[] {
   const values = Array.isArray(raw) ? raw : raw ? [raw] : []
 
   return values
-    .map((value) => normalizeApiUserRole(value as string | number | null | undefined))
+    .map((value) =>
+      normalizeApiUserRole(value as string | number | null | undefined),
+    )
     .filter((role): role is ApiUserRole => role !== null)
 }
 
@@ -61,17 +63,20 @@ export function MainSidebar({ data: user, error, ...props }: MainSidebarProps) {
         <Link
           href="/"
           aria-label="هم‌اوج؛ داشبورد"
-          className="focus-visible:ring-ring flex flex-col items-center gap-2 rounded-lg outline-none focus-visible:ring-[3px] focus-visible:ring-offset-2"
+          className="focus-visible:ring-ring flex flex-row items-center gap-3 rounded-lg outline-none focus-visible:ring-[3px] focus-visible:ring-offset-2"
         >
-          <span className="bg-foreground text-background flex size-12 items-center justify-center rounded-lg">
+          <span className="bg-foreground text-background flex size-12 shrink-0 items-center justify-center rounded-lg">
             <HamOwjBrand className="size-9" />
           </span>
-          <span className="text-center font-extrabold tracking-tight">هم‌اوج</span>
-          <span
-            dir="ltr"
-            className="text-muted-foreground text-center text-xs font-semibold"
-          >
-            HamOwj
+
+          <span className="flex min-w-0 flex-col items-start">
+            <span className="font-extrabold tracking-tight">هم‌اوج</span>
+            <span
+              dir="ltr"
+              className="text-muted-foreground text-xs font-semibold"
+            >
+              HamOwj
+            </span>
           </span>
         </Link>
       </div>
@@ -81,7 +86,11 @@ export function MainSidebar({ data: user, error, ...props }: MainSidebarProps) {
           <SidebarGroupContent>
             <SidebarMenu>
               {SIDEBAR_OPTIONS.tree.map((item, index) => (
-                <Tree key={`${item.name}-${index}`} item={item} userRoles={userRoles} />
+                <Tree
+                  key={`${item.name}-${index}`}
+                  item={item}
+                  userRoles={userRoles}
+                />
               ))}
             </SidebarMenu>
           </SidebarGroupContent>
@@ -111,7 +120,8 @@ function Tree({
 
   const effectiveRoles = role && role.length > 0 ? role : inheritedRoles
   const hasRoleAccess =
-    effectiveRoles.length === 0 || effectiveRoles.some((value) => userRoles.includes(value))
+    effectiveRoles.length === 0 ||
+    effectiveRoles.some((value) => userRoles.includes(value))
 
   // Prevent hydration mismatch: the session role is only known on the client.
   if (!isMounted) return null
