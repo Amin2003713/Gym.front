@@ -17,15 +17,15 @@ import { useEffect, useMemo, useState } from 'react'
 import { listMyAssignments } from '@/app/(tenant)/_api/assignment-api'
 import { getTrainingHome, upsertMeasurement } from '@/app/(tenant)/_api/training-api'
 import { getNextSession } from '@/app/(tenant)/_api/workout-api'
-import BodyMapPanel from '@/app/(tenant)/_components/progress/body-map-panel'
 import { GamificationSection } from '@/app/(tenant)/_components/gamification/gamification-section'
 import { MemberChecklist } from '@/app/(tenant)/_components/onboarding/member-checklist'
-import { MUSCLE_LABEL } from '@/app/(tenant)/_model/muscle-labels'
+import BodyMapPanel from '@/app/(tenant)/_components/progress/body-map-panel'
 import {
   PlanAssignmentStatus,
   type AssignmentListItem,
   type AssignmentPlanDay,
 } from '@/app/(tenant)/_model/assignment.types'
+import { MUSCLE_LABEL } from '@/app/(tenant)/_model/muscle-labels'
 import type {
   MemberHome as MemberHomeData,
   WeeklyActivityDay,
