@@ -112,7 +112,10 @@ export type ListExercisesFilter = {
   mechanic?: string
   force?: string
   exerciseType?: string
+  /** Single muscle id; kept for callers that select one muscle. */
   muscleId?: string
+  /** Comma-separated muscle ids - the API filters through ExerciseMuscle in the database. */
+  muscleIds?: string
   languageCode?: string
 }
 

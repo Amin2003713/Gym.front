@@ -1,6 +1,7 @@
 'use client'
 
-import { Archive, Eye, Pencil, Plus, RefreshCw, Search, UserPlus, X } from 'lucide-react'
+import { Archive, Download, Eye, Pencil, Plus, RefreshCw, Search, UserPlus, X } from 'lucide-react'
+import { useRouter } from 'next/navigation'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { Badge } from '@/components/ui/badge'
@@ -11,9 +12,14 @@ import { useAppLocale } from '@/hooks/use-app-locale'
 import { useUserRoles } from '@/hooks/use-user-roles'
 import { toast } from '@/lib/toast'
 
-import { archivePlan, getPlan, listMyPlans, listPublicPlans } from './_api/plan-api'
+import {
+  archivePlan,
+  downloadPlanPdf,
+  getPlan,
+  listMyPlans,
+  listPublicPlans,
+} from './_api/plan-api'
 import { PlanDetailDialog } from './_components/plan-detail-dialog'
-import { PlanFormDialog } from './_components/plan-form-dialog'
 import { GOAL_LABELS, LEVEL_LABELS } from './_model/plan-labels'
 import type {
   PlanDetail,
@@ -27,6 +33,7 @@ const fa = (value: number) => (value ?? 0).toLocaleString('fa-IR')
 export default function PlansPage() {
   const { canManage, isTraineeOnly, isAdmin, isTrainer } = useUserRoles()
   const locale = useAppLocale()
+  const router = useRouter()
   const requestSequence = useRef(0)
 
   const [plans, setPlans] = useState<PlanSummary[]>([])
@@ -35,8 +42,6 @@ export default function PlansPage() {
   const [catalog, setCatalog] = useState(isTraineeOnly)
   const [goal, setGoal] = useState<PlanGoal | ''>('')
   const [level, setLevel] = useState<PlanLevel | ''>('')
-  const [dialogOpen, setDialogOpen] = useState(false)
-  const [editing, setEditing] = useState<PlanSummary | null>(null)
   const [detail, setDetail] = useState<PlanDetail | null>(null)
   const [cursor, setCursor] = useState<string | null>(null)
   const [nextCursor, setNextCursor] = useState<string | null>(null)
@@ -91,7 +96,8 @@ export default function PlansPage() {
   }, [catalog, cursor, goal, level])
 
   useEffect(() => {
-    void load()
+    const timer = setTimeout(() => void load(), 0)
+    return () => clearTimeout(timer)
   }, [load])
 
   const filtered = useMemo(() => {
@@ -107,14 +113,18 @@ export default function PlansPage() {
 
   const filtersActive = clauseHasValue(goal) || clauseHasValue(level) || !!search.trim()
 
-  const showCreate = () => {
-    setEditing(null)
-    setDialogOpen(true)
-  }
+  const showCreate = () => router.push('/plans/new')
 
-  const showEdit = (plan: PlanSummary) => {
-    setEditing(plan)
-    setDialogOpen(true)
+  const showEdit = (plan: PlanSummary) => router.push(`/plans/${plan.id}/edit`)
+
+  const downloadPdf = async (plan: PlanSummary) => {
+    try {
+      await downloadPlanPdf(plan.id, plan.title)
+    } catch (error) {
+      toast.error('دریافت PDF ناموفق بود', {
+        description: error instanceof Error ? error.message : 'خطای ناشناخته',
+      })
+    }
   }
 
   const showDetail = async (plan: PlanSummary) => {
@@ -350,6 +360,15 @@ export default function PlansPage() {
                           >
                             <Eye className="size-4" />
                           </Button>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            title="دانلود PDF"
+                            aria-label={`دانلود PDF ${plan.title}`}
+                            onClick={() => void downloadPdf(plan)}
+                          >
+                            <Download className="size-4" />
+                          </Button>
                           {canManage && !catalog && (
                             <>
                               <Button
@@ -396,15 +415,6 @@ export default function PlansPage() {
           )}
         </CardContent>
       </Card>
-
-      {canManage && (
-        <PlanFormDialog
-          open={dialogOpen}
-          plan={editing}
-          onOpenChange={setDialogOpen}
-          onSaved={() => void load()}
-        />
-      )}
 
       {detail && <PlanDetailDialog plan={detail} onClose={() => setDetail(null)} />}
 

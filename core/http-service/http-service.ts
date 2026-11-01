@@ -6,7 +6,6 @@ import { API_URL } from '@/configs/global'
 import { ApiError } from '@/types/http-errors.interface'
 
 import { errorHandler, networkErrorStrategy } from './http-error-strategies'
-import { cwd } from 'process'
 
 const normalizeHost = (value: string): string =>
   value
@@ -194,4 +193,28 @@ const deleteData = async <TModel>(
   return await apiBase(url, options)
 }
 
-export { createData, readData, updateData, deleteData }
+const readBlob = async (
+  url: string,
+  otherConfigs?: Omit<AxiosRequestConfig, 'method' | 'responseType'>,
+): Promise<Blob> => {
+  const session = await (typeof window !== 'undefined' ? getSession() : auth())
+  const baseURL = await getBaseURL()
+  const fullURL = `${baseURL.baseURL}/api/${url}`
+
+  const response = await httpService(fullURL, {
+    method: 'GET',
+    responseType: 'blob',
+    ...otherConfigs,
+    headers: {
+      ...otherConfigs?.headers,
+      ...(baseURL.tenant && { 'X-Tenant': baseURL.tenant }),
+      ...(session?.user?.accessToken && {
+        Authorization: `Bearer ${session.user.accessToken}`,
+      }),
+    },
+  })
+
+  return response.data as Blob
+}
+
+export { createData, readData, updateData, deleteData, readBlob }

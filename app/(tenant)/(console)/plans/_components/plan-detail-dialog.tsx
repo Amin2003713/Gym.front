@@ -51,7 +51,7 @@ export function PlanDetailDialog({
       ...new Set(
         plan.days.flatMap((day) =>
           day.exercises
-            .map((item) => item.slot?.exerciseId)
+            .map((item) => item.exerciseId)
             .filter((id): id is string => Boolean(id)),
         ),
       ),

@@ -1,7 +1,11 @@
-import { ProgressStatsPage } from './_components/progress-stats-page'
+import { redirect } from 'next/navigation'
 
-export const metadata = { title: 'آمار و پیشرفت' }
+/**
+ * The coach progress view now lives inside Trainers/Overview. The old URL stays valid so bookmarks
+ * and any surviving links land on the merged page instead of a 404.
+ */
+export const metadata = { title: 'پیشرفت شاگرد' }
 
 export default function Page() {
-  return <ProgressStatsPage />
+  redirect('/trainers/overview')
 }

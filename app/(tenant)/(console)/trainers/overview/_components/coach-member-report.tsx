@@ -30,8 +30,10 @@ import type { SessionResponse, WorkoutListItem } from '@/app/(tenant)/_model/wor
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
-import { toast } from '@/lib/toast'
 import { muscleSlugs } from '@/lib/muscle-mapping'
+import { toast } from '@/lib/toast'
+
+import { MemberProgressPanel } from './member-progress-panel'
 
 const fa = (value: number) => (value ?? 0).toLocaleString('fa-IR')
 
@@ -89,7 +91,9 @@ export function CoachMemberReport() {
   }, [])
 
   useEffect(() => {
-    void load()
+    // Deferred one tick so the first render is not re-entered by the load's own setState calls.
+    const timer = setTimeout(() => void load(), 0)
+    return () => clearTimeout(timer)
   }, [load])
 
   const members = useMemo(() => {
@@ -130,17 +134,13 @@ export function CoachMemberReport() {
   const selected = members.find((member) => member.id === selectedId) ?? null
 
   useEffect(() => {
-    if (!selectedId) {
-      setSummary(null)
-      setMeasurements([])
-      setSessions([])
-      return
-    }
+    if (!selectedId) return
 
     let cancelled = false
-    setLoadingMember(true)
+    const timer = setTimeout(() => {
+      setLoadingMember(true)
 
-    void (async () => {
+      void (async () => {
       try {
         const [summaryResult, measurementRows, workoutPage] = await Promise.all([
           getMeasurementSummary(selectedId).catch(() => null),
@@ -174,10 +174,12 @@ export function CoachMemberReport() {
       } finally {
         if (!cancelled) setLoadingMember(false)
       }
-    })()
+      })()
+    }, 0)
 
     return () => {
       cancelled = true
+      clearTimeout(timer)
     }
   }, [selectedId])
 
@@ -499,6 +501,8 @@ export function CoachMemberReport() {
                   </div>
                 )}
               </section>
+
+              <MemberProgressPanel memberId={selected.id} memberName={selected.name} />
             </>
           )}
         </div>

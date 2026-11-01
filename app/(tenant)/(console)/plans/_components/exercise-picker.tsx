@@ -3,9 +3,10 @@
 import { ChevronUp, LoaderCircle, RefreshCw, Search } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
-import { exerciseApi } from '../../exercises/_api/exercise-api'
-import type { ExerciseListItem } from '../../exercises/_model/exercise.types'
 import { useAppLocale } from '@/hooks/use-app-locale'
+
+import { exerciseApi, exerciseThumbUrl } from '../../exercises/_api/exercise-api'
+import type { ExerciseListItem } from '../../exercises/_model/exercise.types'
 
 const PAGE_SIZE = 20
 const SEARCH_DEBOUNCE_MS = 400
@@ -23,18 +24,24 @@ interface ExercisePickerProps {
   valueLabel?: string | null
   onSelect: (selection: ExercisePickerSelection | null) => void
   placeholder?: string
+  /**
+   * Selected body-map muscle ids. They are sent to the exercise API, which filters through its
+   * ExerciseMuscle relation in the database - no muscle name is ever stored or matched here.
+   */
+  muscleIds?: string[]
 }
 
 /**
- * Dropdown that lists exercises from the real exercise API with a search box,
- * equipment filter and infinite scroll; picking an item selects it instead of
- * asking the user to paste an exercise GUID.
+ * Dropdown that lists exercises from the real exercise API with a search box, muscle filter and
+ * infinite scroll. Each row shows the catalog thumbnail so the coach recognises the movement
+ * before opening it.
  */
 export default function ExercisePicker({
   value,
   valueLabel,
   onSelect,
   placeholder = 'انتخاب حرکت…',
+  muscleIds = [],
 }: ExercisePickerProps) {
   const locale = useAppLocale()
   const [open, setOpen] = useState(false)
@@ -46,54 +53,77 @@ export default function ExercisePicker({
   const [loading, setLoading] = useState(false)
   const [loadingMore, setLoadingMore] = useState(false)
   const [error, setError] = useState('')
+  const [reloadKey, setReloadKey] = useState(0)
   const listRef = useRef<HTMLDivElement | null>(null)
   const requestIdRef = useRef(0)
+
+  const fetchPage = useCallback(
+    (pageNumber: number, search: string) =>
+      exerciseApi.list({
+        pageNumber,
+        pageSize: PAGE_SIZE,
+        search: search || undefined,
+        languageCode: locale,
+        muscleIds: muscleIds.length ? muscleIds.join(',') : undefined,
+      }),
+    [locale, muscleIds],
+  )
 
   // Debounce the search box inside the dropdown.
   useEffect(() => {
     const timer = setTimeout(() => {
+      setLoading(true)
+      setError('')
       setDebouncedQuery(query)
-      setPage(1)
     }, SEARCH_DEBOUNCE_MS)
     return () => clearTimeout(timer)
   }, [query])
 
-  const load = useCallback(
-    async (pageNumber: number) => {
-      const requestId = ++requestIdRef.current
-      if (pageNumber === 1) setLoading(true)
-      else setLoadingMore(true)
-      setError('')
-      try {
-        const result = await exerciseApi.list({
-          pageNumber,
-          pageSize: PAGE_SIZE,
-          search: debouncedQuery.trim() || undefined,
-          languageCode: locale,
-        })
-        if (requestId !== requestIdRef.current) return
-        setPageCount(result.pageCount ?? 0)
-        setItems((previous) =>
-          pageNumber === 1 ? (result.results ?? []) : [...previous, ...(result.results ?? [])],
-        )
-        setPage(pageNumber)
-      } catch (e) {
-        if (requestId !== requestIdRef.current) return
-        setError((e as { message?: string }).message || 'دریافت حرکات ناموفق بود.')
-      } finally {
-        if (requestId === requestIdRef.current) {
-          setLoading(false)
-          setLoadingMore(false)
-        }
-      }
-    },
-    [debouncedQuery, locale],
-  )
-
+  // First page for the current search/filter. Results are applied after the await, so the effect
+  // itself never writes state synchronously.
   useEffect(() => {
     if (!open) return
-    void load(1)
-  }, [open, load])
+    const requestId = ++requestIdRef.current
+    let cancelled = false
+
+    void (async () => {
+      try {
+        const result = await fetchPage(1, debouncedQuery.trim())
+        if (cancelled || requestId !== requestIdRef.current) return
+        setItems(result.results ?? [])
+        setPageCount(result.pageCount ?? 0)
+        setPage(1)
+        setError('')
+      } catch (e) {
+        if (cancelled || requestId !== requestIdRef.current) return
+        setError((e as { message?: string }).message || 'دریافت حرکات ناموفق بود.')
+      } finally {
+        if (!cancelled && requestId === requestIdRef.current) setLoading(false)
+      }
+    })()
+
+    return () => {
+      cancelled = true
+    }
+  }, [open, debouncedQuery, fetchPage, reloadKey])
+
+  const loadNextPage = useCallback(async () => {
+    const nextPage = page + 1
+    const requestId = ++requestIdRef.current
+    setLoadingMore(true)
+    try {
+      const result = await fetchPage(nextPage, debouncedQuery.trim())
+      if (requestId !== requestIdRef.current) return
+      setItems((previous) => [...previous, ...(result.results ?? [])])
+      setPageCount(result.pageCount ?? 0)
+      setPage(nextPage)
+    } catch (e) {
+      if (requestId !== requestIdRef.current) return
+      setError((e as { message?: string }).message || 'دریافت حرکات ناموفق بود.')
+    } finally {
+      if (requestId === requestIdRef.current) setLoadingMore(false)
+    }
+  }, [debouncedQuery, fetchPage, page])
 
   // Infinite scroll: near the bottom, load the next page.
   const handleScroll = useCallback(() => {
@@ -101,9 +131,9 @@ export default function ExercisePicker({
     if (!node || loadingMore || loading) return
     if (page >= pageCount) return
     if (node.scrollTop + node.clientHeight >= node.scrollHeight - SCROLL_THRESHOLD_PX) {
-      void load(page + 1)
+      void loadNextPage()
     }
-  }, [load, loading, loadingMore, page, pageCount])
+  }, [loadNextPage, loading, loadingMore, page, pageCount])
 
   const selected = value
     ? {
@@ -111,14 +141,28 @@ export default function ExercisePicker({
       }
     : null
 
+  const openPicker = () => {
+    setLoading(true)
+    setError('')
+    setOpen(true)
+  }
+
   const close = () => {
     setOpen(false)
+    setLoading(false)
+    setLoadingMore(false)
     setQuery('')
     setDebouncedQuery('')
     setItems([])
     setPage(1)
     setPageCount(0)
     setError('')
+  }
+
+  const retry = () => {
+    setLoading(true)
+    setError('')
+    setReloadKey((key) => key + 1)
   }
 
   const clear = (event: React.MouseEvent) => {
@@ -133,7 +177,7 @@ export default function ExercisePicker({
     <div className="relative w-full">
       <button
         type="button"
-        onClick={() => (open ? close() : setOpen(true))}
+        onClick={() => (open ? close() : openPicker())}
         className="border-input bg-background flex h-10 w-full items-center justify-between gap-2 rounded-md border px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
         aria-haspopup="listbox"
         aria-expanded={open}
@@ -178,7 +222,7 @@ export default function ExercisePicker({
             ref={listRef}
             role="listbox"
             onScroll={handleScroll}
-            className="max-h-72 overflow-y-auto p-1"
+            className="max-h-80 overflow-y-auto p-1"
           >
             {loading ? (
               <div className="flex items-center justify-center py-8">
@@ -189,33 +233,51 @@ export default function ExercisePicker({
                 <p>{error}</p>
                 <button
                   type="button"
-                  onClick={() => void load(1)}
+                  onClick={retry}
                   className="text-primary inline-flex items-center gap-1 text-xs"
                 >
                   <RefreshCw className="size-3" /> تلاش دوباره
                 </button>
               </div>
             ) : items.length === 0 ? (
-              <p className="text-muted-foreground py-8 text-center text-sm">حرکتی پیدا نشد.</p>
+              <p className="text-muted-foreground py-8 text-center text-sm">
+                {muscleIds.length > 0
+                  ? 'برای عضلات انتخاب‌شده حرکتی پیدا نشد؛ جستجو را بازتر کنید.'
+                  : 'حرکتی پیدا نشد.'}
+              </p>
             ) : (
-              items.map((item) => (
-                <button
-                  key={item.id}
-                  type="button"
-                  role="option"
-                  aria-selected={item.id === value}
-                  onClick={() => {
-                    onSelect({ id: item.id, name: item.name })
-                    close()
-                  }}
-                  className={rowClass}
-                >
-                  <span className="min-w-0 flex-1 truncate font-medium">{item.name}</span>
-                  <span className="text-muted-foreground shrink-0 text-xs">
-                    {[item.category, item.equipment, item.target].filter(Boolean).join(' · ') || item.exerciseType || ''}
-                  </span>
-                </button>
-              ))
+              items.map((item) => {
+                const thumb = exerciseThumbUrl(item.cover)
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    role="option"
+                    aria-selected={item.id === value}
+                    onClick={() => {
+                      onSelect({ id: item.id, name: item.name })
+                      close()
+                    }}
+                    className={rowClass}
+                  >
+                    <span className="bg-muted flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-md">
+                      {thumb ? (
+                        // Remote catalog thumbnail (already sized for lists).
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={thumb} alt="" className="size-10 object-cover" />
+                      ) : (
+                        <span className="text-muted-foreground text-[10px]">—</span>
+                      )}
+                    </span>
+                    <span className="min-w-0 flex-1 truncate font-medium">{item.name}</span>
+                    <span className="text-muted-foreground shrink-0 text-xs">
+                      {[item.category, item.equipment, item.target].filter(Boolean).join(' · ') ||
+                        item.exerciseType ||
+                        ''}
+                    </span>
+                  </button>
+                )
+              })
             )}
 
             {loadingMore && (
