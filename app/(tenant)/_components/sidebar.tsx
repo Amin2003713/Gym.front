@@ -63,7 +63,7 @@ export function MainSidebar({ data: user, error, ...props }: MainSidebarProps) {
         <Link
           href="/"
           aria-label="هم‌اوج؛ داشبورد"
-          className="focus-visible:ring-ring flex flex-row items-center gap-3 rounded-lg outline-none focus-visible:ring-[3px] focus-visible:ring-offset-2"
+          className="focus-visible:ring-ring flex flex-row items-center gap-3 rounded-lg betwee outline-none focus-visible:ring-[3px] focus-visible:ring-offset-2"
         >
           <span className="bg-foreground text-background flex size-12 shrink-0 items-center justify-center rounded-lg">
             <HamOwjBrand className="size-9" />
