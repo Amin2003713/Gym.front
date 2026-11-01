@@ -8,6 +8,7 @@ import { getWorkout, listMyWorkouts } from '@/app/(tenant)/_api/workout-api'
 import { buildMuscleStats, type WorkoutMuscleStats } from '@/app/(tenant)/_model/muscle-balance'
 import {
   normalizeSessionStatus,
+  WorkoutSessionStatus,
   type SessionResponse,
   type WorkoutListItem,
 } from '@/app/(tenant)/_model/workout.types'
@@ -24,6 +25,19 @@ const emptyStats: WorkoutMuscleStats = {
 
 /** Resolved exercise metadata, cached across renders and range changes. */
 const META_CACHE = new Map<string, ExerciseListItem | null>()
+
+/**
+ * Finished sessions never change (the API only allows edits while a session is open), so their
+ * detail stays for the tab's lifetime: switching ranges or refreshing rebuilds the report without
+ * re-downloading the same sessions.
+ */
+const SESSION_CACHE = new Map<string, SessionResponse>()
+
+/** Hard cap on detail requests per report, so a long history cannot fan out without bound. */
+const MAX_SESSION_DETAILS = 120
+
+/** Detail requests allowed in flight at once - a range switch must not flood the network. */
+const DETAIL_CONCURRENCY = 6
 
 function cutForRange(range: BalanceRangeKey, nowMs: number): number | null {
   if (range === 'all') return null
@@ -47,6 +61,42 @@ async function resolveMetadata(ids: string[], languageCode: string): Promise<Map
   }
   for (const [id, value] of result) META_CACHE.set(id, value)
   return result
+}
+
+/**
+ * Loads session details with a bounded fan-out, reusing the cache and keeping the input order so
+ * the charts stay chronological. One unavailable session is skipped instead of sinking the report.
+ */
+async function loadSessionDetails(ids: string[]): Promise<SessionResponse[]> {
+  const rows: Array<SessionResponse | null> = new Array(ids.length).fill(null)
+  let next = 0
+
+  const worker = async () => {
+    while (next < ids.length) {
+      const index = next++
+      const id = ids[index]
+      const cached = SESSION_CACHE.get(id)
+
+      if (cached) {
+        rows[index] = cached
+        continue
+      }
+
+      try {
+        const session = await getWorkout(id)
+        SESSION_CACHE.set(id, session)
+        rows[index] = session
+      } catch {
+        // A single dropped session must not sink the whole report.
+      }
+    }
+  }
+
+  await Promise.all(
+    Array.from({ length: Math.min(DETAIL_CONCURRENCY, ids.length) }, worker),
+  )
+
+  return rows.filter((row): row is SessionResponse => row !== null)
 }
 
 export interface UseMuscleBalanceResult {
@@ -97,8 +147,8 @@ export function useMuscleBalance(options?: { memberId?: string | null }): UseMus
         const items = Array.isArray(shape) ? shape : shape.items ?? shape.results ?? []
         const nextCursor = Array.isArray(shape) ? null : shape.nextCursor ?? null
         const windowed = items.filter((item) => {
-          const status = normalizeSessionStatus(item.status)
-          if (status !== undefined && status !== 1 /* Completed */) return false
+          // Completed = 2 (workout.types.ts); in-progress and abandoned rows are not history.
+          if (normalizeSessionStatus(item.status) !== WorkoutSessionStatus.Completed) return false
           const start = item.startedAt ? new Date(item.startedAt).getTime() : undefined
           return start !== undefined && (cutoff === null || start >= cutoff)
         })
@@ -112,15 +162,12 @@ export function useMuscleBalance(options?: { memberId?: string | null }): UseMus
       }
       setListItems(collected)
 
-      // 2) Details per session to recover per-exercise sets.
-      const details = await Promise.all(
-        collected.slice(0, 120).map((item) =>
-          getWorkout(item.sessionId ?? item.id)
-            .then((session) => session)
-            .catch(() => null as unknown as SessionResponse),
-        ),
+      // 2) Details per session to recover per-exercise sets (bounded fan-out, cached, ordered).
+      const fullSessions = await loadSessionDetails(
+        collected
+          .slice(0, MAX_SESSION_DETAILS)
+          .map((item) => item.sessionId ?? item.id),
       )
-      const fullSessions = details.filter(Boolean) as SessionResponse[]
 
       // 3) Metadata for every distinct exercise, then the stats.
       const ids = Array.from(

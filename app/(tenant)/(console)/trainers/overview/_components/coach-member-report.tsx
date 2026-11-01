@@ -26,7 +26,12 @@ import {
   type CoachAssignmentItem,
 } from '@/app/(tenant)/_model/assignment.types'
 import type { BodyMeasurement, MeasurementSummary } from '@/app/(tenant)/_model/training.types'
-import type { SessionResponse, WorkoutListItem } from '@/app/(tenant)/_model/workout.types'
+import {
+  normalizeSessionStatus,
+  WorkoutSessionStatus,
+  type SessionResponse,
+  type WorkoutListItem,
+} from '@/app/(tenant)/_model/workout.types'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -155,8 +160,13 @@ export function CoachMemberReport() {
           : (workoutPage.items ?? workoutPage.results ?? [])
 
         // The list only carries headers; the body map needs the exercises, so fetch a bounded set.
+        // Only finished sessions are history - in-progress and abandoned rows are skipped.
+        const finished = items.filter(
+          (item) =>
+            normalizeSessionStatus(item.status) === WorkoutSessionStatus.Completed,
+        )
         const loaded = await Promise.all(
-          items.slice(0, 6).map((item) =>
+          finished.slice(0, 6).map((item) =>
             getWorkout(item.id ?? '').catch(() => null),
           ),
         )

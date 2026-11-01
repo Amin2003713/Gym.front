@@ -161,7 +161,7 @@ export function MemberHome() {
     : 0
 
   return (
-    <main dir="rtl" className="mx-auto w-full max-w-[1440px] space-y-5">
+    <div className="space-y-5">
       <section className="bg-card relative overflow-hidden rounded-2xl border p-5 shadow-sm sm:p-7">
         <div className="bg-primary/10 pointer-events-none absolute -top-16 -left-10 size-48 rounded-full blur-3xl" />
         <div className="relative flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
@@ -377,7 +377,7 @@ export function MemberHome() {
           </Link>
         </Button>
       </DashboardPanel>
-    </main>
+    </div>
   )
 }
 

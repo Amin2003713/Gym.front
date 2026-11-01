@@ -1,6 +1,6 @@
 'use client'
 
-import { Award, Dumbbell, Target, Timer } from 'lucide-react'
+import { Award, Dumbbell, Repeat2, Target, Timer } from 'lucide-react'
 import { useMemo } from 'react'
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 
@@ -9,6 +9,8 @@ import type { SessionResponse } from '@/app/(tenant)/_model/workout.types'
 
 const fa = (n: number) => n.toLocaleString('fa-IR')
 const dateFmt = new Intl.DateTimeFormat('fa-IR', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+/** Axis ticks stay day-granular so a long range never stacks overlapping times. */
+const dayFmt = new Intl.DateTimeFormat('fa-IR', { month: 'short', day: 'numeric' })
 
 const tooltipStyle = {
   backgroundColor: 'var(--popover)',
@@ -61,17 +63,37 @@ export default function OverviewTab({
     [sessions],
   )
 
-  const metals = [
-    { title: 'جلسات تمرین', value: fa(stats.totals.sessions), detail: 'در بازه انتخاب‌شده از API واقعی', icon: Dumbbell },
+  const reps = useMemo(
+    () =>
+      sessions.reduce(
+        (sum, session) =>
+          sum +
+          (session.exercises ?? []).reduce(
+            (total, exercise) =>
+              total +
+              (exercise.sets ?? []).reduce(
+                (setSum, set) => setSum + (set.reps || 0),
+                0,
+              ),
+            0,
+          ),
+        0,
+      ),
+    [sessions],
+  )
+
+  const cards = [
+    { title: 'جلسات تمرین', value: fa(stats.totals.sessions), detail: 'در بازه انتخاب‌شده', icon: Dumbbell },
     { title: 'زمان تمرین', value: `${fa(Math.round(minutes))} دقیقه`, detail: 'شروع تا پایان جلسه', icon: Timer },
     { title: 'ست‌های مؤثر', value: fa(stats.totals.sets), detail: 'مجموع ست‌های ثبت‌شده', icon: Target },
     { title: 'حجم تمرین', value: `${fa(Math.round(stats.totals.volumeKg))} kg`, detail: 'وزنه × تکرار همه ست‌ها', icon: Award },
+    { title: 'تکرار کل', value: fa(reps), detail: 'مجموع تکرارهای ثبت‌شده', icon: Repeat2 },
   ]
 
   return (
     <div className="space-y-5">
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        {metals.map(({ title, value, detail, icon: Icon }) => (
+      <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 xl:grid-cols-5">
+        {cards.map(({ title, value, detail, icon: Icon }) => (
           <div key={title} className="rounded-lg border bg-card p-4 shadow-sm">
             <div className="flex items-start justify-between gap-3">
               <div>
@@ -100,7 +122,7 @@ export default function OverviewTab({
               </div>
             ) : (
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={chartData} margin={{ top: 10, right: 8, left: -15, bottom: 0 }}>
+                <AreaChart data={chartData} margin={{ top: 10, right: 8, left: 0, bottom: 0 }}>
                   <defs>
                     <linearGradient id="volumeFillReal" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="0%" stopColor="var(--chart-1)" stopOpacity={0.32}/>
@@ -110,9 +132,11 @@ export default function OverviewTab({
                   <CartesianGrid stroke="var(--border)" strokeDasharray="4 5" vertical={false}/>
                   <XAxis dataKey="date" tickLine={false} axisLine={false}
                          tick={{ fontSize: 10, fill: 'var(--muted-foreground)' }} tickMargin={10}
-                         tickFormatter={(value: string) => (value ? dateFmt.format(new Date(value)) : '')}/>
+                         minTickGap={28}
+                         tickFormatter={(value: string) => (value ? dayFmt.format(new Date(value)) : '')}/>
                   <YAxis tickLine={false} axisLine={false}
-                         tick={{ fontSize: 10, fill: 'var(--muted-foreground)' }} tickMargin={8}/>
+                         tick={{ fontSize: 10, fill: 'var(--muted-foreground)' }} tickMargin={8}
+                         width={44}/>
                   <Tooltip contentStyle={tooltipStyle}
                            labelStyle={{ color: 'var(--popover-foreground)', fontWeight: 700, marginBottom: 6 }}
                            itemStyle={{ color: 'var(--primary)' }}/>
@@ -131,24 +155,24 @@ export default function OverviewTab({
           <p className="text-muted-foreground mt-1 text-sm">آخرین جلسات ثبت‌شده از API تمرین</p>
         </div>
         <div className="overflow-x-auto p-4 sm:p-5">
-          <table className="w-full min-w-[520px] text-right text-sm">
+          <table className="w-full text-right text-xs sm:text-sm">
             <thead>
             <tr className="border-b text-xs text-muted-foreground">
               <th className="pb-3 font-medium">جلسه</th>
               <th className="pb-3 font-medium">تاریخ</th>
               <th className="pb-3 font-medium">مدت</th>
-              <th className="pb-3 font-medium">حرکات</th>
+              <th className="hidden pb-3 font-medium sm:table-cell">حرکات</th>
             </tr>
             </thead>
             <tbody>
             {sessions.slice(0, 5).map((session) => (
               <tr key={session.id} className="border-b last:border-0">
-                <td className="py-3.5 font-semibold">{session.title || 'جلسه تمرین'}</td>
-                <td className="text-muted-foreground py-3.5">
+                <td className="max-w-32 truncate py-2.5 font-semibold sm:max-w-none sm:py-3.5">{session.title || 'جلسه تمرین'}</td>
+                <td className="text-muted-foreground py-2.5 sm:py-3.5">
                   {session.startedAt ? dateFmt.format(new Date(session.startedAt)) : '—'}
                 </td>
-                <td className="py-3.5">{duration(session) ? `${fa(duration(session)!)} دقیقه` : '—'}</td>
-                <td className="py-3.5">{fa(session.exercises?.length ?? 0)}</td>
+                <td className="py-2.5 sm:py-3.5">{duration(session) ? `${fa(duration(session)!)} دقیقه` : '—'}</td>
+                <td className="hidden py-2.5 sm:table-cell sm:py-3.5">{fa(session.exercises?.length ?? 0)}</td>
               </tr>
             ))}
             {!sessions.length && (

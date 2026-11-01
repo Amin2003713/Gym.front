@@ -302,8 +302,14 @@ export function MemberMeasurements() {
           trend?.change !== null &&
           trend?.change !== undefined && (
             <p className="text-muted-foreground mt-2 text-xs">
-              از {fa(Number(trend.first))}
-              {trend.latest !== null ? fa(Number(trend.latest)) : '—'}{' '}
+              {fa(Number(trend.first))}
+              {trend.firstDate
+                ? ` (${dateFmt.format(new Date(`${trend.firstDate}T12:00:00`))})`
+                : ''}{' '}
+              → {trend.latest !== null ? fa(Number(trend.latest)) : '—'}
+              {trend.latestDate
+                ? ` (${dateFmt.format(new Date(`${trend.latestDate}T12:00:00`))})`
+                : ''}{' '}
               {metricMeta.unit}
               {' · '}
               <span
