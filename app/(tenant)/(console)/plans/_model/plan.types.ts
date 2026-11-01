@@ -1,9 +1,29 @@
-export type PlanVisibility = 'Private' | 'Public'
-export type PlanDurationType = 'Sessions' | 'Weeks'
-export type PlanGoal = 'GetStronger' | 'BuildMuscle' | 'LoseWeight' | 'Endurance' | 'Fitness' | 'Mobility'
-export type PlanLevel = 'Beginner' | 'Intermediate' | 'Advanced'
+/**
+ * Plan enums mirror Domain.Plans.Enums. They travel over the wire - and are stored in the database -
+ * as their integer value, so the API, the schema and every screen agree on one representation.
+ */
+export const PlanVisibility = { Private: 0, Public: 1 } as const
+export type PlanVisibility = (typeof PlanVisibility)[keyof typeof PlanVisibility]
+
+export const PlanDurationType = { Sessions: 0, Weeks: 1 } as const
+export type PlanDurationType = (typeof PlanDurationType)[keyof typeof PlanDurationType]
+
+export const PlanGoal = {
+  GetStronger: 0,
+  BuildMuscle: 1,
+  LoseWeight: 2,
+  Endurance: 3,
+  Fitness: 4,
+  Mobility: 5,
+} as const
+export type PlanGoal = (typeof PlanGoal)[keyof typeof PlanGoal]
+
+export const PlanLevel = { Beginner: 0, Intermediate: 1, Advanced: 2 } as const
+export type PlanLevel = (typeof PlanLevel)[keyof typeof PlanLevel]
+
 /** Mirrors Domain.Plans.Enums.PlanExerciseType. */
-export type PlanExerciseType = 'Standard' | 'Timed' | 'Superset'
+export const PlanExerciseType = { Standard: 0, Timed: 1, Superset: 2 } as const
+export type PlanExerciseType = (typeof PlanExerciseType)[keyof typeof PlanExerciseType]
 
 export interface PlanExerciseInput {
   exerciseId: string

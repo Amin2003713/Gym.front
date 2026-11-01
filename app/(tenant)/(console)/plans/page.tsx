@@ -27,6 +27,7 @@ import type {
   PlanLevel,
   PlanSummary,
 } from './_model/plan.types'
+import { PlanDurationType, PlanVisibility } from './_model/plan.types'
 
 const fa = (value: number) => (value ?? 0).toLocaleString('fa-IR')
 
@@ -47,11 +48,11 @@ export default function PlansPage() {
   const [nextCursor, setNextCursor] = useState<string | null>(null)
 
   const goalText = useCallback(
-    (value: PlanGoal) => GOAL_LABELS[value]?.[locale] ?? value,
+    (value: PlanGoal) => GOAL_LABELS[value]?.[locale] ?? String(value),
     [locale],
   )
   const levelText = useCallback(
-    (value: PlanLevel) => LEVEL_LABELS[value]?.[locale] ?? value,
+    (value: PlanLevel) => LEVEL_LABELS[value]?.[locale] ?? String(value),
     [locale],
   )
 
@@ -243,14 +244,14 @@ export default function PlansPage() {
                   aria-label={locale === 'en' ? 'Goal' : 'هدف'}
                   value={goal}
                   onChange={(event) => {
-                    setGoal(event.target.value as PlanGoal | '')
+                    setGoal(event.target.value === '' ? '' : (Number(event.target.value) as PlanGoal))
                     setCursor(null)
                   }}
                 >
                   <option value="">{locale === 'en' ? 'All goals' : 'همه هدف‌ها'}</option>
                   {Object.keys(GOAL_LABELS).map((value) => (
                     <option key={value} value={value}>
-                      {goalText(value as PlanGoal)}
+                      {goalText(Number(value) as PlanGoal)}
                     </option>
                   ))}
                 </select>
@@ -260,14 +261,16 @@ export default function PlansPage() {
                   aria-label={locale === 'en' ? 'Level' : 'سطح'}
                   value={level}
                   onChange={(event) => {
-                    setLevel(event.target.value as PlanLevel | '')
+                    setLevel(
+                      event.target.value === '' ? '' : (Number(event.target.value) as PlanLevel),
+                    )
                     setCursor(null)
                   }}
                 >
                   <option value="">{locale === 'en' ? 'All levels' : 'همه سطح‌ها'}</option>
                   {Object.keys(LEVEL_LABELS).map((value) => (
                     <option key={value} value={value}>
-                      {levelText(value as PlanLevel)}
+                      {levelText(Number(value) as PlanLevel)}
                     </option>
                   ))}
                 </select>
@@ -334,13 +337,13 @@ export default function PlansPage() {
                       <td className="p-3">{goalText(plan.goal)}</td>
                       <td className="p-3">{levelText(plan.level)}</td>
                       <td className="p-3 tabular-nums">
-                        {plan.durationType === 'Sessions'
+                        {plan.durationType === PlanDurationType.Sessions
                           ? `${fa(plan.totalSessions ?? 0)} جلسه`
                           : `${fa(plan.durationWeeks ?? 0)} هفته`}
                       </td>
                       <td className="p-3">
-                        <Badge variant={plan.visibility === 'Public' ? 'default' : 'secondary'}>
-                          {plan.visibility === 'Public' ? 'عمومی' : 'خصوصی'}
+                        <Badge variant={plan.visibility === PlanVisibility.Public ? 'default' : 'secondary'}>
+                          {plan.visibility === PlanVisibility.Public ? 'عمومی' : 'خصوصی'}
                         </Badge>
                       </td>
                       <td className="p-3 tabular-nums">{fa(plan.currentVersion)}</td>
@@ -427,6 +430,6 @@ export default function PlansPage() {
   )
 }
 
-function clauseHasValue(value: string) {
-  return value.trim().length > 0
+function clauseHasValue(value: string | number) {
+  return String(value).trim().length > 0
 }

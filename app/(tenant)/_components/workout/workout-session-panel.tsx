@@ -27,6 +27,7 @@ import {
   updateLoggedSet,
   type WorkoutExerciseDetail,
 } from '@/app/(tenant)/_api/workout-api'
+import BodyMapPanel from '@/app/(tenant)/_components/progress/body-map-panel'
 import {
   type CompleteSessionResponse,
   type ExerciseSearchItem,
@@ -38,14 +39,21 @@ import {
   normalizeSessionStatus,
   normalizeSessionType,
 } from '@/app/(tenant)/_model/workout.types'
-import BodyMapPanel from '@/app/(tenant)/_components/progress/body-map-panel'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { toast } from '@/lib/toast'
 import { muscleLoad, muscleSlugs } from '@/lib/muscle-mapping'
+import { toast } from '@/lib/toast'
+
+import { RestTimer } from './rest-timer'
 
 const fa = (value: number) => (value ?? 0).toLocaleString('fa-IR')
+
+/**
+ * The session payload carries the prescription (sets/reps/RIR) but not the day's rest target, so a
+ * logged set starts the house-default countdown; the member can extend or skip it.
+ */
+const DEFAULT_REST_SECONDS = 90
 
 type Draft = { reps: string; weightKg: string; rir: string; isWarmup: boolean }
 
@@ -111,6 +119,7 @@ export function WorkoutSessionPanel({
   const [search, setSearch] = useState('')
   const [searchResults, setSearchResults] = useState<ExerciseSearchItem[]>([])
   const [celebration, setCelebration] = useState<CompleteSessionResponse | null>(null)
+  const [rest, setRest] = useState<{ key: string; seconds: number } | null>(null)
 
   // Keep request IDs stable after a failed network request so retrying the same set is idempotent.
   const pendingRequestIds = useRef<Record<string, string>>({})
@@ -119,7 +128,17 @@ export function WorkoutSessionPanel({
   const load = useCallback(async () => {
     setLoading(true)
     try {
-      setSession(await getWorkout(sessionId))
+      const next = await getWorkout(sessionId)
+      setSession(next)
+
+      // Land on the first exercise that still has no logged set - the member's actual next action.
+      setStep((currentStep) => {
+        const rows = next.exercises ?? []
+        if (currentStep > 0 && currentStep < rows.length) return currentStep
+
+        const open = rows.findIndex((exercise) => (exercise.sets?.length ?? 0) === 0)
+        return open === -1 ? 0 : open
+      })
     } catch (error) {
       toast.error('دریافت جلسه تمرین ناموفق بود', {
         description: error instanceof Error ? error.message : 'خطای ناشناخته',
@@ -139,18 +158,6 @@ export function WorkoutSessionPanel({
   const current: SessionExerciseItem | undefined = exercises[step]
   const currentId = current?.exerciseId
   const detail = currentId ? (details[currentId] ?? null) : null
-
-  // Land on the first exercise that still has no logged set — the member's actual next action.
-  useEffect(() => {
-    if (!exercises.length) return
-
-    setStep((currentStep) => {
-      if (currentStep > 0 && currentStep < exercises.length) return currentStep
-
-      const next = exercises.findIndex((exercise) => (exercise.sets?.length ?? 0) === 0)
-      return next === -1 ? 0 : next
-    })
-  }, [exercises])
 
   useEffect(() => {
     if (!currentId || requestedDetails.current.has(currentId)) return
@@ -231,6 +238,7 @@ export function WorkoutSessionPanel({
         [exercise.exerciseId]: { ...values, isWarmup: false },
       }))
       toast.success('ست ثبت شد')
+      setRest({ key: requestKey, seconds: DEFAULT_REST_SECONDS })
       await load()
     } catch (error) {
       toast.error('ثبت ست ناموفق بود', {
@@ -682,6 +690,14 @@ export function WorkoutSessionPanel({
                         ثبت ست {fa(currentSets.length + 1)}
                       </Button>
                     </form>
+                  )}
+
+                  {rest && (
+                    <RestTimer
+                      key={rest.key}
+                      seconds={rest.seconds}
+                      onDone={() => setRest(null)}
+                    />
                   )}
 
                   <div className="flex items-center justify-between gap-2 border-t pt-3">

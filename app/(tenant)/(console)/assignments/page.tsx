@@ -3,13 +3,6 @@
 import { RefreshCw, UserPlus } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import { useUserRoles } from '@/hooks/use-user-roles'
-import { toast } from '@/lib/toast'
-
 import {
   changeAssignmentStatus,
   listCoachAssignments,
@@ -20,12 +13,21 @@ import {
   type AssignmentListItem,
   type CoachAssignmentItem,
 } from '@/app/(tenant)/_model/assignment.types'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { useUserRoles } from '@/hooks/use-user-roles'
+import { toast } from '@/lib/toast'
+
+
+import { listMyPlans, listPublicPlans } from '../plans/_api/plan-api'
+import type { PlanSummary } from '../plans/_model/plan.types'
+import { PlanVisibility } from '../plans/_model/plan.types'
 
 import { AssignmentTable } from './_components/assignment-table'
 import { BulkAssignDialog } from './_components/bulk-assign-dialog'
 import { EnrollPlanDialog } from './_components/enroll-plan-dialog'
-import { listMyPlans, listPublicPlans } from '../plans/_api/plan-api'
-import type { PlanSummary } from '../plans/_model/plan.types'
 
 const statusLabel: Record<PlanAssignmentStatus, string> = {
   [PlanAssignmentStatus.Active]: 'فعال',
@@ -95,11 +97,13 @@ export default function AssignmentsPage() {
   }, [coachView, searchTerm, status])
 
   useEffect(() => {
-    void load()
+    // Deferred so the loader's synchronous state updates happen outside the effect body.
+    const timer = setTimeout(() => void load(), 0)
+    return () => clearTimeout(timer)
   }, [load])
 
   const publicPlans = useMemo(
-    () => plans.filter((plan) => plan.visibility === 'Public' && !plan.isArchived),
+    () => plans.filter((plan) => plan.visibility === PlanVisibility.Public && !plan.isArchived),
     [plans],
   )
 

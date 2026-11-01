@@ -14,6 +14,7 @@ import { exerciseApi } from '../../exercises/_api/exercise-api'
 import type { ExerciseListItem } from '../../exercises/_model/exercise.types'
 import { planGoalText, planLevelText } from '../_model/plan-labels'
 import type { PlanDetail, PlanExerciseDetail } from '../_model/plan.types'
+import { PlanDurationType, PlanVisibility } from '../_model/plan.types'
 
 const fa = (value: number) => (value ?? 0).toLocaleString('fa-IR')
 
@@ -63,8 +64,11 @@ export function PlanDetailDialog({
     if (exerciseIds.length === 0) return
 
     let alive = true
-    setLoadingExercises(true)
-    setExercisesFailed(false)
+    // Deferred one tick so the render-facing flags are set from a callback, not the effect body.
+    const timer = setTimeout(() => {
+      setLoadingExercises(true)
+      setExercisesFailed(false)
+    }, 0)
 
     void exerciseApi
       .byIds(exerciseIds, 'fa')
@@ -81,6 +85,7 @@ export function PlanDetailDialog({
 
     return () => {
       alive = false
+      clearTimeout(timer)
     }
   }, [exerciseIds])
 
@@ -164,12 +169,12 @@ export function PlanDetailDialog({
                 {planLevelText(plan.level, locale)}
               </Badge>
               <Badge
-                variant={plan.visibility === 'Public' ? 'default' : 'outline'}
+                variant={plan.visibility === PlanVisibility.Public ? 'default' : 'outline'}
               >
-                {plan.visibility === 'Public' ? 'عمومی' : 'خصوصی'}
+                {plan.visibility === PlanVisibility.Public ? 'عمومی' : 'خصوصی'}
               </Badge>
               <span className="text-muted-foreground text-xs">
-                {plan.durationType === 'Sessions'
+                {plan.durationType === PlanDurationType.Sessions
                   ? `${fa(plan.totalSessions ?? 0)} جلسه`
                   : `${fa(plan.durationWeeks ?? 0)} هفته`}
                 {' · '}

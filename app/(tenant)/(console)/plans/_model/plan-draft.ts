@@ -1,14 +1,16 @@
 import { MUSCLES, type MuscleSlug } from '@/lib/muscles'
 
-import type {
-  PlanDayDetail,
-  PlanDetail,
+import {
   PlanDurationType,
   PlanExerciseType,
   PlanGoal,
   PlanLevel,
   PlanVisibility,
-  PlanWriteRequest,
+  type PlanDayDetail,
+  type PlanDetail,
+  type PlanExerciseDetail,
+  type PlanExerciseInput,
+  type PlanWriteRequest,
 } from './plan.types'
 
 /** Body-map muscles a coach can target on a day, in body order. */
@@ -18,6 +20,9 @@ export type ExerciseDraft = {
   key: string
   exerciseId: string
   name: string
+  /** Second movement of a superset. Empty for every other exercise type. */
+  exerciseId2: string
+  name2: string
   type: PlanExerciseType
   sets: string
   repsMin: string
@@ -26,7 +31,6 @@ export type ExerciseDraft = {
   durationSeconds: string
   restSeconds: string
   notes: string
-  supersetGroup: string
 }
 
 export type DayDraft = {
@@ -58,7 +62,6 @@ const MAX_RIR = 10
 const MAX_REST_SECONDS = 600
 const MIN_DURATION_SECONDS = 5
 const MAX_DURATION_SECONDS = 3600
-const MAX_SUPERSET_GROUP = 20
 
 let sequence = 0
 const nextKey = () => `draft-${++sequence}`
@@ -67,7 +70,9 @@ export const blankExercise = (): ExerciseDraft => ({
   key: nextKey(),
   exerciseId: '',
   name: '',
-  type: 'Standard',
+  exerciseId2: '',
+  name2: '',
+  type: PlanExerciseType.Standard,
   sets: '3',
   repsMin: '8',
   repsMax: '12',
@@ -75,7 +80,6 @@ export const blankExercise = (): ExerciseDraft => ({
   durationSeconds: '45',
   restSeconds: '90',
   notes: '',
-  supersetGroup: '',
 })
 
 export const blankDay = (index: number): DayDraft => ({
@@ -88,12 +92,12 @@ export const blankDay = (index: number): DayDraft => ({
 export const blankDraft = (): PlanDraft => ({
   title: '',
   description: '',
-  visibility: 'Private',
-  durationType: 'Sessions',
+  visibility: PlanVisibility.Private,
+  durationType: PlanDurationType.Sessions,
   totalSessions: '12',
   durationWeeks: '4',
-  goal: 'BuildMuscle',
-  level: 'Beginner',
+  goal: PlanGoal.BuildMuscle,
+  level: PlanLevel.Beginner,
   assignedMemberUserId: null,
   assignedMemberName: null,
   days: [blankDay(0)],
@@ -124,36 +128,64 @@ const dayToDraft = (day: PlanDayDetail, index: number): DayDraft => ({
   muscles: (day.targetMuscleCodes ?? []).filter((code): code is MuscleSlug =>
     (MUSCLES as readonly string[]).includes(code),
   ),
-  exercises: day.exercises.length
-    ? [...day.exercises]
-        .sort((a, b) => a.orderIndex - b.orderIndex)
-        .map((exercise) => ({
-          key: nextKey(),
-          exerciseId: exercise.exerciseId,
-          name: exercise.exerciseName ?? '',
-          type: exercise.exerciseType ?? 'Standard',
-          sets: String(exercise.targetSets ?? 3),
-          repsMin: exercise.targetRepsMin == null ? '' : String(exercise.targetRepsMin),
-          repsMax: exercise.targetRepsMax == null ? '' : String(exercise.targetRepsMax),
-          rir: exercise.targetRir == null ? '' : String(exercise.targetRir),
-          durationSeconds:
-            exercise.targetDurationSeconds == null ? '45' : String(exercise.targetDurationSeconds),
-          restSeconds: String(exercise.restSeconds ?? 90),
-          notes: exercise.notes ?? '',
-          supersetGroup: exercise.supersetGroup == null ? '' : String(exercise.supersetGroup),
-        }))
-    : [blankExercise()],
+  exercises: draftsFromSlots(day.exercises.length ? day.exercises : []),
 })
+
+/**
+ * The API stores a superset as one slot per movement sharing a group number. The builder shows a
+ * superset as ONE form, so two slots of the same group fold into a single draft here.
+ */
+const draftsFromSlots = (slots: PlanExerciseDetail[]): ExerciseDraft[] => {
+  const drafts: ExerciseDraft[] = []
+  const supersets = new Map<number, ExerciseDraft>()
+
+  for (const slot of [...slots].sort((a, b) => a.orderIndex - b.orderIndex)) {
+    const draft: ExerciseDraft = {
+      key: nextKey(),
+      exerciseId: slot.exerciseId,
+      name: slot.exerciseName ?? '',
+      exerciseId2: '',
+      name2: '',
+      type: slot.exerciseType ?? PlanExerciseType.Standard,
+      sets: String(slot.targetSets ?? 3),
+      repsMin: slot.targetRepsMin == null ? '' : String(slot.targetRepsMin),
+      repsMax: slot.targetRepsMax == null ? '' : String(slot.targetRepsMax),
+      rir: slot.targetRir == null ? '' : String(slot.targetRir),
+      durationSeconds: slot.targetDurationSeconds == null ? '45' : String(slot.targetDurationSeconds),
+      restSeconds: String(slot.restSeconds ?? 90),
+      notes: slot.notes ?? '',
+    }
+
+    if (draft.type !== PlanExerciseType.Superset || slot.supersetGroup == null) {
+      drafts.push(draft)
+      continue
+    }
+
+    const paired = supersets.get(slot.supersetGroup)
+
+    if (paired) {
+      paired.exerciseId2 = draft.exerciseId
+      paired.name2 = draft.name
+      continue
+    }
+
+    supersets.set(slot.supersetGroup, draft)
+    drafts.push(draft)
+  }
+
+  return drafts.length ? drafts : [blankExercise()]
+}
 
 /** Validation mirrors the server validators; the server stays the source of truth. */
 export const validateDetails = (draft: PlanDraft): string | null => {
   if (!draft.title.trim()) return 'عنوان برنامه الزامی است.'
 
-  const duration = draft.durationType === 'Sessions' ? draft.totalSessions : draft.durationWeeks
+  const duration =
+    draft.durationType === PlanDurationType.Sessions ? draft.totalSessions : draft.durationWeeks
   if (!Number(duration) || Number(duration) < 1) return 'مدت برنامه را وارد کنید.'
 
   // Privacy rule, mirrored by the domain and the server validator.
-  if (draft.visibility === 'Private' && !draft.assignedMemberUserId)
+  if (draft.visibility === PlanVisibility.Private && !draft.assignedMemberUserId)
     return 'برای برنامه خصوصی انتخاب شاگرد الزامی است.'
 
   if (draft.days.length > MAX_DAYS_UI || draft.days.length > MAX_DAYS)
@@ -179,20 +211,6 @@ export const validateExercises = (draft: PlanDraft): string | null => {
       const problem = validateExercise(exercise)
       if (problem) return `${day.name}: ${problem}`
     }
-
-    const groups = new Map<string, number>()
-    for (const exercise of day.exercises) {
-      if (!exercise.supersetGroup.trim()) continue
-      groups.set(exercise.supersetGroup.trim(), (groups.get(exercise.supersetGroup.trim()) ?? 0) + 1)
-    }
-
-    for (const [group, count] of groups) {
-      if (count < 2) return `سوپرست «${group}» به حداقل دو حرکت نیاز دارد.`
-    }
-
-    const grouped = day.exercises.filter((exercise) => exercise.supersetGroup.trim())
-    if (grouped.some((exercise) => exercise.type !== 'Superset') && grouped.length > 0)
-      return `همه اعضای یک سوپرست باید نوع «سوپرست» داشته باشند.`
   }
 
   return null
@@ -209,9 +227,13 @@ const validateExercise = (exercise: ExerciseDraft): string | null => {
   if (!Number.isFinite(rest) || rest < 0 || rest > MAX_REST_SECONDS)
     return 'استراحت باید بین ۰ تا ۶۰۰ ثانیه باشد.'
 
-  if (exercise.type === 'Timed') {
+  if (exercise.type === PlanExerciseType.Timed) {
     const duration = Number(exercise.durationSeconds)
-    if (!Number.isFinite(duration) || duration < MIN_DURATION_SECONDS || duration > MAX_DURATION_SECONDS)
+    if (
+      !Number.isFinite(duration) ||
+      duration < MIN_DURATION_SECONDS ||
+      duration > MAX_DURATION_SECONDS
+    )
       return 'مدت حرکت زمان‌دار باید بین ۵ تا ۳۶۰۰ ثانیه باشد.'
     return null
   }
@@ -219,10 +241,10 @@ const validateExercise = (exercise: ExerciseDraft): string | null => {
   if (Number(exercise.rir) > MAX_RIR || Number(exercise.rir) < 0)
     return 'RIR باید بین ۰ تا ۱۰ باشد.'
 
-  if (exercise.type === 'Superset') {
-    const group = Number(exercise.supersetGroup)
-    if (!Number.isInteger(group) || group < 1 || group > MAX_SUPERSET_GROUP)
-      return 'شماره سوپرست باید بین ۱ تا ۲۰ باشد.'
+  if (exercise.type === PlanExerciseType.Superset) {
+    if (!exercise.exerciseId2) return 'حرکت دوم سوپرست را انتخاب کنید.'
+    if (exercise.exerciseId2 === exercise.exerciseId)
+      return 'دو حرکت سوپرست باید متفاوت باشند.'
     if (!exercise.repsMin.trim() || !exercise.repsMax.trim())
       return 'حرکت سوپرست به بازه تکرار نیاز دارد.'
   }
@@ -238,7 +260,7 @@ export const draftToPayload = (draft: PlanDraft): PlanWriteRequest => ({
   description: draft.description.trim() || null,
   visibility: draft.visibility,
   durationType: draft.durationType,
-  ...(draft.durationType === 'Sessions'
+  ...(draft.durationType === PlanDurationType.Sessions
     ? { totalSessions: numberOrNull(draft.totalSessions) }
     : { durationWeeks: numberOrNull(draft.durationWeeks) }),
   goal: draft.goal,
@@ -247,25 +269,50 @@ export const draftToPayload = (draft: PlanDraft): PlanWriteRequest => ({
   days: draft.days.map((day) => ({
     name: day.name.trim(),
     targetMuscleCodes: day.muscles,
-    exercises: day.exercises.map((exercise, index) => exerciseToInput(exercise, index)),
+    exercises: expandExercises(day.exercises),
   })),
 })
 
-const exerciseToInput = (exercise: ExerciseDraft, index: number) => {
-  const timed = exercise.type === 'Timed'
+/**
+ * One draft out, one or two slots in: a superset keeps its single form in the builder and is
+ * expanded to two slots that share a 1-based group number, which is the contract the API stores.
+ */
+const expandExercises = (exercises: ExerciseDraft[]): PlanExerciseInput[] => {
+  const rows: PlanExerciseInput[] = []
+
+  exercises.forEach((exercise, index) => {
+    if (exercise.type !== PlanExerciseType.Superset) {
+      rows.push(exerciseToInput(exercise, exercise.exerciseId, rows.length + 1, null))
+      return
+    }
+
+    const group = index + 1
+    rows.push(exerciseToInput(exercise, exercise.exerciseId, rows.length + 1, group))
+    rows.push(exerciseToInput(exercise, exercise.exerciseId2, rows.length + 1, group))
+  })
+
+  return rows
+}
+
+const exerciseToInput = (
+  exercise: ExerciseDraft,
+  exerciseId: string,
+  orderIndex: number,
+  supersetGroup: number | null,
+): PlanExerciseInput => {
+  const timed = exercise.type === PlanExerciseType.Timed
 
   return {
-    exerciseId: exercise.exerciseId,
+    exerciseId,
     // 1-based inside the day, matching the server's OrderIndex rule.
-    orderIndex: index + 1,
+    orderIndex,
     targetSets: Number(exercise.sets),
     targetRepsMin: timed ? null : numberOrNull(exercise.repsMin),
     targetRepsMax: timed ? null : numberOrNull(exercise.repsMax),
     targetRir: timed ? null : numberOrNull(exercise.rir),
     restSeconds: Number(exercise.restSeconds),
     notes: exercise.notes.trim() || null,
-    supersetGroup:
-      exercise.type === 'Superset' ? Number(exercise.supersetGroup) : null,
+    supersetGroup,
     exerciseType: exercise.type,
     targetDurationSeconds: timed ? numberOrNull(exercise.durationSeconds) : null,
   }

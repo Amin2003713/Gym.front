@@ -7,21 +7,69 @@ import { useEffect, useState } from 'react'
 
 import { listMyAssignments } from '@/app/(tenant)/_api/assignment-api'
 import { startWorkout } from '@/app/(tenant)/_api/workout-api'
+import BodyMapPanel from '@/app/(tenant)/_components/progress/body-map-panel'
 import type {
   AssignmentListItem,
   AssignmentPlanDay,
 } from '@/app/(tenant)/_model/assignment.types'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
-import { toast } from '@/lib/toast'
-import BodyMapPanel from '@/app/(tenant)/_components/progress/body-map-panel'
 import { muscleLoad } from '@/lib/muscle-mapping'
+import { toast } from '@/lib/toast'
 
 const fa = (value: number) => (value ?? 0).toLocaleString('fa-IR')
 
 const repsLabel = (min: number | null, max: number | null) => {
   if (min && max && min !== max) return `${fa(min)}–${fa(max)}`
   return min ? fa(min) : max ? fa(max) : '—'
+}
+
+type PlanSlotExercise = AssignmentPlanDay['exercises'][number]
+
+/** One line of the day: a single movement, or a superset shown as the two movements it joins. */
+type PlanRow = {
+  key: string
+  names: string[]
+  /** The slot whose prescription the row prints (the superset's first movement). */
+  slot: PlanSlotExercise['slot']
+  isSuperset: boolean
+}
+
+/**
+ * A superset is stored as two slots sharing a group number; the member reads it as one entry that
+ * names both movements back to back, never as two unrelated rows tagged with the same reference.
+ */
+const foldSupersets = (exercises: PlanSlotExercise[]): PlanRow[] => {
+  const rows: PlanRow[] = []
+  const groups = new Map<number, PlanRow>()
+
+  for (const exercise of exercises) {
+    const name = exercise.exerciseName ?? 'حرکت'
+    const group = exercise.slot.supersetGroup
+
+    if (group == null) {
+      rows.push({ key: exercise.slot.id, names: [name], slot: exercise.slot, isSuperset: false })
+      continue
+    }
+
+    const paired = groups.get(group)
+
+    if (paired) {
+      paired.names.push(name)
+      continue
+    }
+
+    const row: PlanRow = {
+      key: exercise.slot.id,
+      names: [name],
+      slot: exercise.slot,
+      isSuperset: true,
+    }
+    groups.set(group, row)
+    rows.push(row)
+  }
+
+  return rows
 }
 
 /**
@@ -178,28 +226,30 @@ export function PlanRun({ assignmentId }: { assignmentId: string }) {
                 ) : null
               })()}
               <ul className="mt-3 space-y-1.5">
-                {day.exercises.map((exercise) => (
+                {foldSupersets(day.exercises).map((row) => (
                   <li
-                    key={exercise.slot.id}
+                    key={row.key}
                     className="bg-muted/40 flex items-center justify-between gap-2 rounded-lg px-3 py-2 text-xs"
                   >
-                    <span className="truncate">{exercise.exerciseName ?? 'حرکت'}</span>
-                    <span className="text-muted-foreground flex shrink-0 items-center gap-2 tabular-nums">
-                      {exercise.slot.supersetGroup !== null && (
-                        <span className="border-primary/40 text-primary rounded border px-1 text-[10px]">
-                          سوپر
+                    <span className="min-w-0">
+                      <span className="block truncate font-medium">{row.names.join(' + ')}</span>
+                      {row.isSuperset && (
+                        <span className="text-primary text-[10px]">
+                          سوپرست · پشت سر هم، با استراحت مشترک
                         </span>
                       )}
+                    </span>
+                    <span className="text-muted-foreground flex shrink-0 items-center gap-2 tabular-nums">
                       <span>
-                        {fa(exercise.slot.targetSets)} ×{' '}
-                        {repsLabel(exercise.slot.targetRepsMin, exercise.slot.targetRepsMax)}
+                        {fa(row.slot.targetSets)} ×{' '}
+                        {repsLabel(row.slot.targetRepsMin, row.slot.targetRepsMax)}
                       </span>
-                      {exercise.slot.targetRir !== null && (
-                        <span className="text-[10px]">RIR {exercise.slot.targetRir}</span>
+                      {row.slot.targetRir !== null && (
+                        <span className="text-[10px]">RIR {row.slot.targetRir}</span>
                       )}
                       <span className="inline-flex items-center gap-0.5 text-[10px]">
                         <Timer className="size-3" />
-                        {fa(exercise.slot.restSeconds)}s
+                        {fa(row.slot.restSeconds)}s
                       </span>
                     </span>
                   </li>

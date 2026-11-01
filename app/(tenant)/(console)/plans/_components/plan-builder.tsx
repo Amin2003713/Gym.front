@@ -27,7 +27,13 @@ import {
   validateExercises,
 } from '../_model/plan-draft'
 import { GOAL_LABELS, LEVEL_LABELS } from '../_model/plan-labels'
-import type { PlanGoal, PlanLevel, PlanVisibility } from '../_model/plan.types'
+import {
+  PlanDurationType,
+  PlanExerciseType,
+  PlanVisibility,
+  type PlanGoal,
+  type PlanLevel,
+} from '../_model/plan.types'
 
 import ExerciseEditor from './exercise-editor'
 import { MemberRecoveryMap } from './member-recovery-map'
@@ -321,10 +327,10 @@ function DetailsStep({
         <select
           className={fieldClass}
           value={draft.visibility}
-          onChange={(event) => onChange({ visibility: event.target.value as PlanVisibility })}
+          onChange={(event) => onChange({ visibility: Number(event.target.value) as PlanVisibility })}
         >
-          <option value="Private">خصوصی</option>
-          <option value="Public">عمومی</option>
+          <option value={PlanVisibility.Private}>خصوصی</option>
+          <option value={PlanVisibility.Public}>عمومی</option>
         </select>
       </label>
 
@@ -333,7 +339,7 @@ function DetailsStep({
         <select
           className={fieldClass}
           value={draft.goal}
-          onChange={(event) => onChange({ goal: event.target.value as PlanGoal })}
+          onChange={(event) => onChange({ goal: Number(event.target.value) as PlanGoal })}
         >
           {Object.entries(GOAL_LABELS).map(([value, label]) => (
             <option key={value} value={value}>
@@ -348,7 +354,7 @@ function DetailsStep({
         <select
           className={fieldClass}
           value={draft.level}
-          onChange={(event) => onChange({ level: event.target.value as PlanLevel })}
+          onChange={(event) => onChange({ level: Number(event.target.value) as PlanLevel })}
         >
           {Object.entries(LEVEL_LABELS).map(([value, label]) => (
             <option key={value} value={value}>
@@ -363,14 +369,16 @@ function DetailsStep({
         <select
           className={fieldClass}
           value={draft.durationType}
-          onChange={(event) => onChange({ durationType: event.target.value as PlanDraft['durationType'] })}
+          onChange={(event) =>
+            onChange({ durationType: Number(event.target.value) as PlanDurationType })
+          }
         >
-          <option value="Sessions">جلسه</option>
-          <option value="Weeks">هفته</option>
+          <option value={PlanDurationType.Sessions}>جلسه</option>
+          <option value={PlanDurationType.Weeks}>هفته</option>
         </select>
       </label>
 
-      {draft.durationType === 'Sessions' ? (
+      {draft.durationType === PlanDurationType.Sessions ? (
         <label className="space-y-1 text-sm">
           <span>تعداد جلسات *</span>
           <Input
@@ -393,7 +401,7 @@ function DetailsStep({
       )}
 
       <div className="space-y-1 text-sm sm:col-span-2">
-        <span>شاگرد {draft.visibility === 'Private' ? '*' : '(اختیاری)'}</span>
+        <span>شاگرد {draft.visibility === PlanVisibility.Private ? '*' : '(اختیاری)'}</span>
         <MemberPicker
           valueLabel={draft.assignedMemberName ?? null}
           onSelect={(member) =>
@@ -404,7 +412,7 @@ function DetailsStep({
           }
           placeholder="انتخاب شاگرد…"
         />
-        {draft.visibility === 'Private' && (
+        {draft.visibility === PlanVisibility.Private && (
           <p className="text-muted-foreground text-xs leading-5">
             برنامه خصوصی فقط با انتخاب شاگرد ساخته و ذخیره می‌شود؛ سرور هم همین قاعده را
             بررسی می‌کند.
@@ -587,6 +595,9 @@ function ExercisesStep({
             }`}
           >
             {index + 1}. {exercise.name || 'حرکت جدید'}
+            {exercise.type === PlanExerciseType.Superset && exercise.name2
+              ? ` + ${exercise.name2}`
+              : ''}
           </button>
         ))}
         <Button type="button" size="sm" variant="outline" onClick={addExercise}>
@@ -596,8 +607,9 @@ function ExercisesStep({
       </div>
 
       {currentExercise && (
-        <div className="rounded-lg border p-3 sm:p-4">
-          <div className="mb-3 flex items-center justify-between">
+        <div className="grid gap-4 rounded-lg border p-3 sm:p-4 lg:grid-cols-[minmax(0,1fr)_19rem]">
+          <div className="min-w-0">
+            <div className="mb-3 flex items-center justify-between">
             <h3 className="text-sm font-semibold">
               حرکت {activeExercise + 1} از {day.exercises.length}
             </h3>
@@ -618,13 +630,19 @@ function ExercisesStep({
             muscleIds={muscleIds}
             onChange={(patch) => onExerciseChange(activeDay, activeExercise, patch)}
           />
+          </div>
+
+          {/* The map sits beside the inputs and stays in view while the coach edits. */}
+          <aside className="space-y-3 lg:border-r lg:border-border lg:pr-3">
+            <PlanCoverageMap rows={coverageRows} targetMuscles={targetMuscles} />
+            {memberId && <MemberRecoveryMap memberId={memberId} />}
+          </aside>
         </div>
       )}
 
-      <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_21rem]">
+      {!currentExercise && (
         <PlanCoverageMap rows={coverageRows} targetMuscles={targetMuscles} />
-        {memberId && <MemberRecoveryMap memberId={memberId} />}
-      </div>
+      )}
     </div>
   )
 }
@@ -639,7 +657,9 @@ function ReviewStep({
   targetMuscles: string[]
 }) {
   const duration =
-    draft.durationType === 'Weeks' ? `${draft.durationWeeks} هفته` : `${draft.totalSessions} جلسه`
+    draft.durationType === PlanDurationType.Weeks
+      ? `${draft.durationWeeks} هفته`
+      : `${draft.totalSessions} جلسه`
 
   return (
     <div className="space-y-4">
@@ -650,7 +670,7 @@ function ReviewStep({
         </div>
         <div className="flex justify-between gap-2">
           <dt className="text-muted-foreground">دسترسی</dt>
-          <dd>{draft.visibility === 'Private' ? 'خصوصی' : 'عمومی'}</dd>
+          <dd>{draft.visibility === PlanVisibility.Private ? 'خصوصی' : 'عمومی'}</dd>
         </div>
         <div className="flex justify-between gap-2">
           <dt className="text-muted-foreground">شاگرد</dt>
@@ -679,7 +699,13 @@ function ReviewStep({
               عضلات هدف: {day.muscles.map((slug) => MUSCLE_LABEL[slug] ?? slug).join('، ') || '—'}
             </div>
             <div className="mt-1 text-xs">
-              {day.exercises.map((exercise) => exercise.name || 'بدون حرکت').join(' · ')}
+              {day.exercises
+                .map((exercise) =>
+                  exercise.type === PlanExerciseType.Superset && exercise.name2
+                    ? `${exercise.name || 'بدون حرکت'} + ${exercise.name2}`
+                    : exercise.name || 'بدون حرکت',
+                )
+                .join(' · ')}
             </div>
           </li>
         ))}

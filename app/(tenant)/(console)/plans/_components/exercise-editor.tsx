@@ -7,15 +7,16 @@ import { Input } from '@/components/ui/input'
 import { exerciseApi, exerciseCoverUrl } from '../../exercises/_api/exercise-api'
 import type { ExerciseDetail } from '../../exercises/_model/exercise.types'
 import type { ExerciseDraft } from '../_model/plan-draft'
+import { PlanExerciseType } from '../_model/plan.types'
 
 import ExercisePicker, { type ExercisePickerSelection } from './exercise-picker'
 
 const REST_OPTIONS = [30, 45, 60, 75, 90, 120, 150, 180, 240, 300]
 
 const TYPE_LABELS: Array<{ value: ExerciseDraft['type']; label: string; hint: string }> = [
-  { value: 'Standard', label: 'ست و تکرار', hint: 'ست × تکرار، با RIR اختیاری.' },
-  { value: 'Timed', label: 'زمان‌دار', hint: 'ست × مدت ثانیه؛ بدون تکرار.' },
-  { value: 'Superset', label: 'سوپرست', hint: 'دو حرکت یا بیشتر، پشت سر هم و با استراحت مشترک.' },
+  { value: PlanExerciseType.Standard, label: 'ست و تکرار', hint: 'ست × تکرار، با RIR اختیاری.' },
+  { value: PlanExerciseType.Timed, label: 'زمان‌دار', hint: 'ست × مدت ثانیه؛ بدون تکرار.' },
+  { value: PlanExerciseType.Superset, label: 'سوپرست', hint: 'دو حرکت در یک فرم، پشت سر هم و با استراحت مشترک.' },
 ]
 
 interface ExerciseEditorProps {
@@ -54,21 +55,21 @@ export default function ExerciseEditor({ exercise, muscleIds, onChange }: Exerci
 
   const detail = resolved?.id === exercise.exerciseId ? resolved.detail : null
   const cover = detail?.media?.length ? exerciseCoverUrl(detail.media[0]) : undefined
-  const timed = exercise.type === 'Timed'
-  const superset = exercise.type === 'Superset'
+  const timed = exercise.type === PlanExerciseType.Timed
+  const superset = exercise.type === PlanExerciseType.Superset
 
   const select = (selection: ExercisePickerSelection | null) =>
     onChange({ exerciseId: selection?.id ?? '', name: selection?.name ?? '' })
 
   return (
     <div className="space-y-3">
-      <div className="grid gap-3 sm:grid-cols-[6rem_minmax(0,1fr)]">
-        <div className="bg-muted flex h-24 w-24 items-center justify-center overflow-hidden rounded-lg border">
+      <div className="grid gap-3 sm:grid-cols-[3.5rem_minmax(0,1fr)]">
+        <div className="bg-muted flex h-14 w-14 items-center justify-center overflow-hidden rounded-md border">
           {cover ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={cover} alt={`تصویر ${exercise.name}`} className="h-24 w-24 object-contain" />
+            <img src={cover} alt={`تصویر ${exercise.name}`} className="h-14 w-14 object-contain" />
           ) : (
-            <span className="text-muted-foreground text-[10px]">بدون تصویر</span>
+            <span className="text-muted-foreground text-[9px]">—</span>
           )}
         </div>
 
@@ -87,6 +88,23 @@ export default function ExerciseEditor({ exercise, muscleIds, onChange }: Exerci
           )}
         </label>
       </div>
+
+      {superset && (
+        <label className="min-w-0 space-y-1 text-sm">
+          <span>حرکت دوم سوپرست *</span>
+          <ExercisePicker
+            value={exercise.exerciseId2 || null}
+            valueLabel={exercise.name2 || null}
+            muscleIds={muscleIds}
+            onSelect={(selection) =>
+              onChange({ exerciseId2: selection?.id ?? '', name2: selection?.name ?? '' })
+            }
+          />
+          <span className="text-muted-foreground block text-xs">
+            دو حرکت پشت سر هم و با استراحت مشترک انجام می‌شوند.
+          </span>
+        </label>
+      )}
 
       <fieldset className="space-y-2">
         <legend className="text-sm font-semibold">نوع حرکت</legend>
@@ -184,18 +202,7 @@ export default function ExerciseEditor({ exercise, muscleIds, onChange }: Exerci
           </label>
         )}
 
-        {superset && (
-          <label className="space-y-1 text-sm">
-            <span>شماره سوپرست *</span>
-            <Input
-              type="number"
-              min={1}
-              max={20}
-              value={exercise.supersetGroup}
-              onChange={(event) => onChange({ supersetGroup: event.target.value })}
-            />
-          </label>
-        )}
+
 
         <label className="space-y-1 text-sm sm:col-span-2">
           <span>یادداشت مربی</span>

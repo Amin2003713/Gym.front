@@ -22,6 +22,7 @@ import { toast } from '@/lib/toast'
 
 import { listMyPlans, listPublicPlans } from '../../../plans/_api/plan-api'
 import type { PlanSummary } from '../../../plans/_model/plan.types'
+import { PlanVisibility } from '../../../plans/_model/plan.types'
 
 const statusLabel: Record<PlanAssignmentStatus, string> = {
   [PlanAssignmentStatus.Active]: 'فعال',
@@ -365,7 +366,7 @@ export function MemberAnalysisPage() {
                 .filter((plan) => !plan.isArchived)
                 .map((plan) => (
                   <option key={plan.id} value={plan.id}>
-                    {plan.title} ({plan.visibility === 'Public' ? 'عمومی' : 'خصوصی'})
+                    {plan.title} ({plan.visibility === PlanVisibility.Public ? 'عمومی' : 'خصوصی'})
                   </option>
                 ))}
             </select>
