@@ -1,5 +1,6 @@
 'use client'
 
+
 import { Plus, Trash2 } from 'lucide-react'
 import { useSession } from 'next-auth/react'
 import { useEffect, useMemo, useState } from 'react'
@@ -7,6 +8,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
+import { PersianDateInput } from '@/components/ui/persian-date-input'
 import { toast } from '@/lib/toast'
 
 import {
@@ -79,10 +81,17 @@ export function MeasurementHealthPage() {
   const [cNotes, setCNotes] = useState('')
 
   useEffect(() => {
-    setEntries(listMeasurements(userId))
-    setConditions(listConditions(userId))
-    const savedTab = window.localStorage.getItem(tabKey)
-    if (savedTab === 'conditions') setTab('conditions')
+    // Deferred a tick so the restored tab and stored rows don't cascade into the first render.
+    const timer = window.setTimeout(() => {
+      setEntries(listMeasurements(userId))
+      setConditions(listConditions(userId))
+
+      const savedTab = window.localStorage.getItem(tabKey)
+
+      if (savedTab === 'conditions') setTab('conditions')
+    }, 0)
+
+    return () => window.clearTimeout(timer)
   }, [userId])
 
   const changeTab = (next: 'measurements' | 'conditions') => {
@@ -91,8 +100,13 @@ export function MeasurementHealthPage() {
   }
 
   const nowIso = () => new Date().toISOString().slice(0, 10)
+
   useEffect(() => {
-    if (!measuredAt) setMeasuredAt(nowIso())
+    if (measuredAt) return
+
+    const timer = window.setTimeout(() => setMeasuredAt(nowIso()), 0)
+
+    return () => window.clearTimeout(timer)
   }, [measuredAt])
 
   const resetForm = () => {
@@ -203,7 +217,7 @@ export function MeasurementHealthPage() {
               <form className="grid gap-3 sm:grid-cols-3" onSubmit={addOrUpdateMeasurement}>
                 <label className="space-y-1 text-sm">
                   <span>تاریخ *</span>
-                  <Input type="date" value={measuredAt} onChange={(e) => setMeasuredAt(e.target.value)} required />
+                  <PersianDateInput value={measuredAt} onValueChange={setMeasuredAt} />
                 </label>
                 {MEASUREMENT_FIELDS.map((f) => (
                   <label key={f.key} className="space-y-1 text-sm">

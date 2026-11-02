@@ -7,14 +7,29 @@ import {
   Flame,
   Play,
   Scale,
+  Sparkles,
   Timer,
+  TrendingUp,
   Trophy,
   Users,
 } from 'lucide-react'
 import Link from 'next/link'
 import { useEffect, useMemo, useState } from 'react'
+import {
+  Line,
+  LineChart as MiniLineChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts'
 
 import { listMyAssignments } from '@/app/(tenant)/_api/assignment-api'
+import {
+  enrollInPlan,
+  listPublicPlanCatalog,
+  type PlanSummary,
+} from '@/app/(tenant)/_api/member-plan-api'
 import { getTrainingHome, upsertMeasurement } from '@/app/(tenant)/_api/training-api'
 import { getNextSession } from '@/app/(tenant)/_api/workout-api'
 import { GamificationSection } from '@/app/(tenant)/_components/gamification/gamification-section'
@@ -37,6 +52,7 @@ import {
   DashboardPanel,
   DashboardStat,
 } from '@/features/gym/components/dashboard-kit'
+import { useConfirm } from '@/lib/confirm'
 import { muscleLoad } from '@/lib/muscle-mapping'
 import { toast } from '@/lib/toast'
 
@@ -72,6 +88,9 @@ export function MemberHome() {
   const [weight, setWeight] = useState('')
   const [savingWeight, setSavingWeight] = useState(false)
   const [version, setVersion] = useState(0)
+  const [publicPlan, setPublicPlan] = useState<PlanSummary | null>(null)
+  const [enrolling, setEnrolling] = useState(false)
+  const { confirm } = useConfirm()
 
   useEffect(() => {
     let cancelled = false
@@ -111,9 +130,57 @@ export function MemberHome() {
     }
   }, [version])
 
+  // No active plan: offer the first public plan. Home must never block on this read.
+  useEffect(() => {
+    if (loading || assignment) return
+
+    let cancelled = false
+
+    void (async () => {
+      try {
+        const catalog = await listPublicPlanCatalog(1)
+
+        if (!cancelled) setPublicPlan(catalog[0] ?? null)
+      } catch {
+        // The plans page still shows the full catalog; Home keeps working without it.
+      }
+    })()
+
+    return () => {
+      cancelled = true
+    }
+  }, [assignment, loading])
+
   const reload = () => {
     setLoading(true)
     setVersion((current) => current + 1)
+  }
+
+  const enrollPublicPlan = async () => {
+    if (!publicPlan) return
+
+    const ok = await confirm({
+      title: `ثبت‌نام در «${publicPlan.title}»؟`,
+      description:
+        'این برنامه جای برنامه فعال بعدی را می‌گیرد؛ تاریخچه و ست‌های ثبت‌شده پاک نمی‌شوند.',
+      confirmText: 'ثبت‌نام',
+    })
+
+    if (!ok) return
+
+    setEnrolling(true)
+
+    try {
+      await enrollInPlan(publicPlan.id)
+      toast.success('در برنامه ثبت‌نام شدی')
+      reload()
+    } catch (error) {
+      toast.error('ثبت‌نام ناموفق بود', {
+        description: error instanceof Error ? error.message : undefined,
+      })
+    } finally {
+      setEnrolling(false)
+    }
   }
 
   const saveWeight = async () => {
@@ -212,6 +279,28 @@ export function MemberHome() {
         )}
       </section>
 
+      {!assignment && publicPlan && (
+        <section className="bg-card flex flex-wrap items-center justify-between gap-3 rounded-2xl border p-4 shadow-sm">
+          <div className="min-w-0">
+            <p className="text-primary flex items-center gap-1 text-[11px] font-bold">
+              <Sparkles className="size-3.5" aria-hidden /> برنامه پیشنهادی باشگاه
+            </p>
+            <p className="mt-1 truncate text-sm font-bold">{publicPlan.title}</p>
+            <p className="text-muted-foreground mt-0.5 text-[11px] leading-5">
+              برنامه فعالی نداری؛ می‌توانی همین حالا در این برنامه ثبت‌نام کنی.
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <Button asChild size="sm" variant="outline">
+              <Link href="/plan">همه برنامه‌ها</Link>
+            </Button>
+            <Button size="sm" onClick={() => void enrollPublicPlan()} disabled={enrolling}>
+              {enrolling ? 'در حال ثبت‌نام…' : 'ثبت‌نام'}
+            </Button>
+          </div>
+        </section>
+      )}
+
       <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <DashboardStat
           label="زنجیره تمرین"
@@ -247,6 +336,35 @@ export function MemberHome() {
               : 'امروز وزن را ثبت کن'
           }
           icon={Scale}
+        />
+        <DashboardStat
+          label="رکورد ۳۰ روز"
+          value={`${fa(home?.personalRecords ?? 0)} حرکت`}
+          detail="بهترین رکورد ۱RM در ۳۰ روز اخیر"
+          icon={TrendingUp}
+          tone="orange"
+        />
+        <DashboardStat
+          label="میانگین استراحت"
+          value={
+            home?.averageRestSeconds ? `${fa(home.averageRestSeconds)} ثانیه` : 'ثبت نشده'
+          }
+          detail="استراحت واقعی بین ست‌ها (۳۰ روز)"
+          icon={Timer}
+          tone="blue"
+        />
+        <DashboardStat
+          label="روزهای فعال"
+          value={`${fa(home?.consistencyDays ?? 0)} روز`}
+          detail="روزهای تمرین‌شده در ۲۸ روز اخیر"
+          icon={CalendarDays}
+          tone="green"
+        />
+        <DashboardStat
+          label="کل تمرین‌ها"
+          value={fa(home?.totalWorkouts ?? 0)}
+          detail={`حجم کل ${fa(Math.round(home?.totalVolumeKg ?? 0))} kg`}
+          icon={Trophy}
         />
       </section>
 
@@ -326,6 +444,40 @@ export function MemberHome() {
                   ثبت
                 </Button>
               </form>
+
+              {(home?.bodyWeightTrend?.length ?? 0) >= 2 && (
+                <div className="mt-4 border-t pt-3">
+                  <p className="text-muted-foreground text-xs">روند وزن (۳۰ ثبت آخر)</p>
+                  <div className="mt-2 h-24">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <MiniLineChart data={home?.bodyWeightTrend ?? []}>
+                        <XAxis dataKey="date" hide />
+                        <YAxis hide domain={['auto', 'auto']} />
+                        <Tooltip
+                          contentStyle={{
+                            backgroundColor: 'var(--popover)',
+                            border: '1px solid var(--border)',
+                            borderRadius: 12,
+                            color: 'var(--popover-foreground)',
+                            fontSize: 12,
+                          }}
+                          formatter={(value) => [
+                            `${fa(Number(value))} kg`,
+                            'وزن',
+                          ]}
+                        />
+                        <Line
+                          type="monotone"
+                          dataKey="weightKg"
+                          stroke="var(--primary)"
+                          strokeWidth={2.5}
+                          dot={false}
+                        />
+                      </MiniLineChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+              )}
             </div>
           </DashboardPanel>
 

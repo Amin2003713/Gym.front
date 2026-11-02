@@ -1,5 +1,6 @@
 'use client'
 
+
 import { CheckCircle2, Loader2, Trophy, Upload } from 'lucide-react'
 import { useState } from 'react'
 
@@ -14,7 +15,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { Input } from '@/components/ui/input'
+import { PersianDateInput } from '@/components/ui/persian-date-input'
 import { toast } from '@/lib/toast'
 
 const fa = (value: number) => (value ?? 0).toLocaleString('fa-IR')
@@ -119,12 +120,9 @@ export function FinishSummary({
           <div className="flex flex-wrap items-end gap-2">
             <label className="space-y-1 text-[11px]">
               <span className="text-muted-foreground">تاریخ عکس</span>
-              <Input
-                type="date"
-                value={takenOn}
-                max={today()}
-                onChange={(event) => setTakenOn(event.target.value)}
-              />
+              <div className="w-40">
+                <PersianDateInput value={takenOn} max={today()} onValueChange={setTakenOn} />
+              </div>
             </label>
             <label className="hover:bg-muted inline-flex h-10 cursor-pointer items-center gap-1.5 rounded-lg border px-3 text-xs font-semibold">
               {uploading ? (

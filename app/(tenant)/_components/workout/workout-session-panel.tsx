@@ -1,5 +1,6 @@
 'use client'
 
+
 import {
   CheckCircle2,
   ChevronLeft,
@@ -49,6 +50,7 @@ import { muscleLoad, muscleSlugs } from '@/lib/muscle-mapping'
 import { toast } from '@/lib/toast'
 
 import { EffortPicker } from './effort-picker'
+import { ExerciseLoadHelper } from './exercise-load-helper'
 import { FinishSummary } from './finish-summary'
 import { RestTimer, type RestResult } from './rest-timer'
 import { SessionStartSheet } from './session-start-sheet'
@@ -681,6 +683,18 @@ export function WorkoutSessionPanel({
                       {current.suggestion.reason ? ` · ${current.suggestion.reason}` : ''}
                     </p>
                   )}
+
+                  <ExerciseLoadHelper
+                    equipment={current.equipment ?? null}
+                    minWeightKg={current.minWeightKg ?? null}
+                    maxWeightKg={current.maxWeightKg ?? null}
+                    suggestionWeightKg={current.suggestion?.suggestedWeightKg ?? null}
+                    lastWeightKg={
+                      currentSets.length
+                        ? currentSets[currentSets.length - 1].weightKg
+                        : null
+                    }
+                  />
 
                   {currentSets.length > 0 && (
                     <div className="overflow-x-auto">

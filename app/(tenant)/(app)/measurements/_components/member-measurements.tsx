@@ -1,5 +1,6 @@
 'use client'
 
+
 import { LineChart, Plus, Trash2 } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
@@ -25,6 +26,7 @@ import {
   type UpsertMeasurementInput,
 } from '@/app/(tenant)/_model/training.types'
 import { Button } from '@/components/ui/button'
+import { PersianDateInput } from '@/components/ui/persian-date-input'
 import { toast } from '@/lib/toast'
 
 const fa = (value: number) => (value ?? 0).toLocaleString('fa-IR')
@@ -260,14 +262,9 @@ export function MemberMeasurements() {
         <section className="bg-card space-y-4 rounded-2xl border p-4 shadow-sm">
           <div className="flex items-center justify-between gap-2">
             <h2 className="font-bold">ثبت اندازه‌گیری</h2>
-            <input
-              type="date"
-              value={date}
-              max={todayIso()}
-              onChange={(event) => setDate(event.target.value)}
-              aria-label="تاریخ اندازه‌گیری"
-              className="border-input bg-background h-9 rounded-lg border px-2 text-xs"
-            />
+            <div className="w-40" aria-label="تاریخ اندازه‌گیری">
+              <PersianDateInput value={date} max={todayIso()} onValueChange={setDate} />
+            </div>
           </div>
 
           {GROUPS.map((group) => (

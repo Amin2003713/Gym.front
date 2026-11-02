@@ -1,10 +1,11 @@
 'use client'
 
+
 import { ImageUp, Loader2 } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 
 import { progressPhotoApi, type ProgressPhoto } from '@/app/(tenant)/_api/progress-photo-api'
-import { Input } from '@/components/ui/input'
+import { PersianDateInput } from '@/components/ui/persian-date-input'
 import { toast } from '@/lib/toast'
 
 const today = () => new Date().toISOString().slice(0, 10)
@@ -99,12 +100,7 @@ export function ProgressPhotos() {
         <div className="flex flex-wrap items-end gap-3">
           <label className="space-y-1 text-sm">
             <span>تاریخ عکس</span>
-            <Input
-              type="date"
-              value={takenOn}
-              max={today()}
-              onChange={(event) => setTakenOn(event.target.value)}
-            />
+            <PersianDateInput value={takenOn} max={today()} onValueChange={setTakenOn} />
           </label>
 
           <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border px-4 py-2.5 text-sm font-semibold hover:bg-muted">

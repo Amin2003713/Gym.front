@@ -1,5 +1,6 @@
 'use client'
 
+
 import { Activity, RefreshCw, Search, Shuffle } from 'lucide-react'
 import Link from 'next/link'
 import { useCallback, useEffect, useMemo, useState } from 'react'
@@ -17,6 +18,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
+import { PersianDateInput } from '@/components/ui/persian-date-input'
 import { toast } from '@/lib/toast'
 
 
@@ -373,11 +375,7 @@ export function MemberAnalysisPage() {
           </label>
           <label className="block space-y-1 text-sm">
             <span>تاریخ شروع</span>
-            <Input
-              type="date"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-            />
+            <PersianDateInput value={startDate} onValueChange={setStartDate} />
           </label>
           <DialogFooter>
             <Button onClick={() => void submitChange()} disabled={saving}>

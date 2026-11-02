@@ -94,6 +94,21 @@ export function loadBarbell(
   }
 }
 
+/**
+ * Dumbbells are loaded per hand: the entered weight is the pair total in the app, so the helper
+ * shows what each hand carries. Odd totals are reported as-is rather than silently rounded.
+ */
+export function loadDumbbells(target: number): {
+  total: number
+  perHand: number
+  uneven: boolean
+} {
+  const total = Math.max(0, target)
+  const perHand = round2(total / 2)
+
+  return { total, perHand, uneven: round2(perHand * 2) !== round2(total) }
+}
+
 /** Text form of one side, e.g. "۲۵ + ۱۰ + ۲.۵" (fa digits handled by the caller's formatter). */
 export function describePlateLoad(load: BarbellLoad, format: (value: number) => string): string {
   if (load.belowBar) return 'وزن از خود هالتر کمتر است'

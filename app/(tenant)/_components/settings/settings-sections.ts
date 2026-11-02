@@ -35,7 +35,7 @@ export const SETTINGS_SECTIONS: SettingsSection[] = [
     key: 'equipment',
     href: '/settings/equipment',
     label: 'تجهیزات',
-    hint: 'با چه وسایلی تمرین می‌کنی',
+    hint: 'هالتر و صفحه‌های باشگاه (فقط خواندنی)',
   },
   {
     key: 'look',

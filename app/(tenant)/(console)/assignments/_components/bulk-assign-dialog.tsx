@@ -1,5 +1,6 @@
 'use client'
 
+
 import { Trash2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 
@@ -9,7 +10,7 @@ import { useGetUsers } from '@/app/(tenant)/_api/use-get-users'
 import type { BulkAssignmentResponse } from '@/app/(tenant)/_model/assignment.types'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { Input } from '@/components/ui/input'
+import { PersianDateInput } from '@/components/ui/persian-date-input'
 import { toast } from '@/lib/toast'
 
 import type { PlanSummary } from '../../plans/_model/plan.types'
@@ -44,11 +45,16 @@ export function BulkAssignDialog({
   const nameOf = (id: string) => users.find((u) => u.id === id)?.label ?? id
 
   useEffect(() => {
-    if (open) {
+    if (!open) return
+
+    // Deferred a tick: opening the dialog should not cascade into the first render.
+    const timer = window.setTimeout(() => {
       setPlanId(plans.find((p) => !p.isArchived)?.id ?? '')
       setMembers([])
       setResult(null)
-    }
+    }, 0)
+
+    return () => window.clearTimeout(timer)
   }, [open, plans])
 
   const addMember = (selection: MemberPickerSelection) => {
@@ -149,7 +155,7 @@ export function BulkAssignDialog({
 
           <label className="block space-y-1 text-sm">
             <span>تاریخ شروع</span>
-            <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} required />
+            <PersianDateInput value={startDate} onValueChange={setStartDate} />
           </label>
 
           {result && (

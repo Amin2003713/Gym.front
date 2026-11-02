@@ -58,6 +58,11 @@ export interface WeeklyActivityDay {
   volumeKg: number
 }
 
+export interface BodyWeightPoint {
+  date: string
+  weightKg: number
+}
+
 export interface MemberHome {
   today: string
   currentStreakDays: number
@@ -66,6 +71,13 @@ export interface MemberHome {
   lastSessionAt: string | null
   latestMeasurement: BodyMeasurement | null
   week: WeeklyActivityDay[]
+  totalWorkouts: number
+  totalVolumeKg: number
+  /** Exercises whose best estimated 1RM of the last 30 days is still their best of 180. */
+  personalRecords: number
+  averageRestSeconds: number
+  consistencyDays: number
+  bodyWeightTrend: BodyWeightPoint[] | null
 }
 
 /**
