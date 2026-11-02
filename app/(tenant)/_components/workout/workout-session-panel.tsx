@@ -39,9 +39,12 @@ import {
   normalizeSessionStatus,
   normalizeSessionType,
 } from '@/app/(tenant)/_model/workout.types'
+import { ExerciseMedia } from '@/components/exercise/exercise-media'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { useConfirm } from '@/lib/confirm'
+import { t } from '@/lib/i18n'
 import { muscleLoad, muscleSlugs } from '@/lib/muscle-mapping'
 import { toast } from '@/lib/toast'
 
@@ -63,19 +66,6 @@ const draftFor = (exercise: SessionExerciseItem): Draft => ({
   rir: String(exercise.targetRir ?? 2),
   isWarmup: false,
 })
-
-/** First usable preview image/GIF of an exercise, in variant order. */
-function previewUrl(detail?: WorkoutExerciseDetail | null): string | undefined {
-  for (const media of detail?.media ?? []) {
-    for (const variant of media.asset?.variants ?? []) {
-      if (variant.url && /preview|original|thumb/i.test(variant.variantName)) return variant.url
-    }
-  }
-  for (const media of detail?.media ?? []) {
-    for (const variant of media.asset?.variants ?? []) if (variant.url) return variant.url
-  }
-  return undefined
-}
 
 /**
  * Muscles worked by one exercise. The catalog muscles win; the free-text target/body part is the
@@ -120,6 +110,7 @@ export function WorkoutSessionPanel({
   const [searchResults, setSearchResults] = useState<ExerciseSearchItem[]>([])
   const [celebration, setCelebration] = useState<CompleteSessionResponse | null>(null)
   const [rest, setRest] = useState<{ key: string; seconds: number } | null>(null)
+  const { confirm, prompt } = useConfirm()
 
   // Keep request IDs stable after a failed network request so retrying the same set is idempotent.
   const pendingRequestIds = useRef<Record<string, string>>({})
@@ -250,11 +241,16 @@ export function WorkoutSessionPanel({
   }
 
   const closeSession = async (mode: 'complete' | 'abandon') => {
-    if (
-      mode === 'abandon' &&
-      !window.confirm('جلسه تمرین رها شود؟ پیشرفت برنامه ثبت نمی‌شود.')
-    )
-      return
+    if (mode === 'abandon') {
+      const ok = await confirm({
+        title: t('workout.abandon.title'),
+        description: t('workout.abandon.body'),
+        confirmText: t('workout.abandon.confirm'),
+        destructive: true,
+      })
+
+      if (!ok) return
+    }
 
     setBusy(true)
     try {
@@ -309,7 +305,14 @@ export function WorkoutSessionPanel({
   }
 
   const removeExtra = async (exercise: SessionExerciseItem) => {
-    if (!window.confirm('این حرکت اضافی حذف شود؟')) return
+    const ok = await confirm({
+      title: t('workout.removeExtra.title'),
+      description: t('workout.removeExtra.body'),
+      confirmText: t('workout.removeExtra.confirm'),
+      destructive: true,
+    })
+
+    if (!ok) return
 
     try {
       await removeWorkoutExercise(sessionId, exercise.exerciseId)
@@ -323,15 +326,43 @@ export function WorkoutSessionPanel({
   }
 
   const editSet = async (set: LoggedSetItem) => {
-    const reps = window.prompt('تعداد تکرار', String(set.reps))
-    if (reps === null) return
-    const weight = window.prompt('وزنه (کیلوگرم)', String(set.weightKg))
-    if (weight === null) return
+    const values = await prompt({
+      title: t('workout.editSet.title', { number: fa(set.setNumber) }),
+      description: t('workout.editSet.body'),
+      fields: [
+        {
+          name: 'reps',
+          label: t('workout.editSet.reps'),
+          type: 'number',
+          min: '0',
+          defaultValue: String(set.reps),
+        },
+        {
+          name: 'weight',
+          label: t('workout.editSet.weight'),
+          type: 'number',
+          min: '0',
+          step: '0.5',
+          defaultValue: String(set.weightKg),
+        },
+      ],
+      confirmText: t('workout.editSet.confirm'),
+    })
+
+    if (!values) return
+
+    const reps = Number(values.reps)
+    const weight = Number(values.weight)
+
+    if (!Number.isFinite(reps) || !Number.isFinite(weight)) {
+      toast.error('تکرار و وزنه باید عدد معتبر باشند')
+      return
+    }
 
     try {
       await updateLoggedSet(set.setId, {
-        reps: Number(reps),
-        weightKg: Number(weight),
+        reps,
+        weightKg: weight,
         ...(set.rir != null ? { rir: set.rir } : {}),
         isWarmup: set.isWarmup,
       })
@@ -345,7 +376,17 @@ export function WorkoutSessionPanel({
   }
 
   const deleteSet = async (set: LoggedSetItem) => {
-    if (!window.confirm('ست حذف شود؟')) return
+    const ok = await confirm({
+      title: t('workout.deleteSet.title'),
+      description: t('workout.deleteSet.body', {
+        number: fa(set.setNumber),
+        exercise: detail?.name ?? current?.exerciseName ?? 'حرکت',
+      }),
+      confirmText: t('workout.deleteSet.confirm'),
+      destructive: true,
+    })
+
+    if (!ok) return
 
     try {
       await deleteLoggedSet(set.setId)
@@ -375,7 +416,6 @@ export function WorkoutSessionPanel({
     )
   }
 
-  const image = previewUrl(detail)
   const levels = current ? muscleLevels(detail, current) : {}
   const currentSets = current?.sets ?? []
   const isLast = step >= exercises.length - 1
@@ -517,22 +557,12 @@ export function WorkoutSessionPanel({
             <div className="grid gap-0 lg:grid-cols-[minmax(0,1fr)_19rem]">
               <div className="min-w-0 border-b lg:border-b-0 lg:border-e">
                 {/* Media first: the movement itself is the instruction. */}
-                <div className="bg-muted/40 flex h-56 items-center justify-center overflow-hidden sm:h-72">
-                  {image ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={image}
-                      alt={current.exerciseName ?? 'حرکت'}
-                      loading="lazy"
-                      className="max-h-full max-w-full object-contain"
-                    />
-                  ) : (
-                    <div className="text-muted-foreground flex flex-col items-center gap-2">
-                      <Dumbbell className="size-8 opacity-50" />
-                      <span className="text-xs">رسانه‌ای برای این حرکت ثبت نشده است</span>
-                    </div>
-                  )}
-                </div>
+                <ExerciseMedia
+                  media={detail?.media}
+                  name={detail?.name ?? current.exerciseName ?? 'حرکت'}
+                  loading="eager"
+                  className="h-56 sm:h-72"
+                />
 
                 <div className="space-y-4 p-4 sm:p-5">
                   <div className="flex flex-wrap items-start justify-between gap-2">
@@ -844,14 +874,13 @@ export function WorkoutSessionPanel({
             </div>
 
             <div className="space-y-4 p-4 sm:p-5">
-              {image && (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={image}
-                  alt={current.exerciseName ?? 'حرکت'}
-                  className="bg-muted/40 max-h-64 w-full rounded-xl object-contain"
+              {detail?.media?.length ? (
+                <ExerciseMedia
+                  media={detail.media}
+                  name={detail.name ?? current.exerciseName ?? 'حرکت'}
+                  className="max-h-64 rounded-xl"
                 />
-              )}
+              ) : null}
 
               {instructions.length > 0 ? (
                 <ol className="list-decimal space-y-2 pe-5 text-sm leading-7">

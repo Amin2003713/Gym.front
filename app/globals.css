@@ -525,6 +525,30 @@
     stroke-width: 2.5px;
 }
 
+/* Assisting muscles read lighter than the primary target without leaving the scale.
+   The `[data-palette]` selector matches the specificity of the palette rules above. */
+.bodymap[data-palette] .bm-m.sec,
+.bodymap .bm-m.sec {
+    opacity: .45;
+}
+
+/* Named sizes: thumbnail inside list rows, card inside panels, full on plan/detail screens. */
+.bodymap[data-size="thumbnail"] {
+    gap: .2rem;
+}
+
+.bodymap[data-size="thumbnail"] .bm-v {
+    max-height: 96px;
+}
+
+.bodymap[data-size="card"] .bm-v {
+    max-height: 200px;
+}
+
+.bodymap[data-size="full"] .bm-v {
+    max-height: 380px;
+}
+
 /* Legend swatches (same scale as above) */
 .hm-legend {
     display: inline-flex;

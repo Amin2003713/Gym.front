@@ -1,5 +1,6 @@
 import { OnboardingTour } from '@/app/(tenant)/_components/onboarding/onboarding-tour'
 import { readData } from '@/core/http-service'
+import { ConfirmProvider } from '@/lib/confirm'
 import { AuthProvider } from '@/providers/auth-provider'
 import { Problem } from '@/types/http-errors.interface'
 import { PublicUser } from '@/types/user.interface'
@@ -25,9 +26,12 @@ export default async function TenantLayout({
 }>) {
   return (
     <AuthProvider>
-      {/* Mounted once for both role shells; renders only while the tour is unfinished. */}
-      <OnboardingTour />
-      {children}
+      {/* One dialog surface for the whole tenant area: no native confirm/prompt anywhere. */}
+      <ConfirmProvider>
+        {/* Mounted once for both role shells; renders only while the tour is unfinished. */}
+        <OnboardingTour />
+        {children}
+      </ConfirmProvider>
     </AuthProvider>
   )
 }

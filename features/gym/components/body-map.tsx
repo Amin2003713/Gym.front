@@ -1,6 +1,8 @@
 'use client'
 
 import {useEffect, useState} from 'react'
+
+import {t} from '@/lib/i18n'
 import {MUSCLES, INERT, MUSCLE_NAME, levelsOf} from '@/lib/muscles'
 
 type Gender = 'male' | 'female'
@@ -34,9 +36,11 @@ type ViewProps = {
     levels: Record<string, number>
     onMuscle?: (slug: string) => void
     selected?: string
+    /** Primary muscles stay at full strength; assisting ones are drawn lighter. */
+    roles?: Record<string, 'primary' | 'secondary'>
 }
 
-function View({view, levels, onMuscle, selected}: ViewProps) {
+function View({view, levels, onMuscle, selected, roles}: ViewProps) {
     const activate = (event: React.KeyboardEvent, slug: string) => {
         if (event.key !== 'Enter' && event.key !== ' ') return
         if (event.key === ' ') event.preventDefault()
@@ -49,7 +53,7 @@ function View({view, levels, onMuscle, selected}: ViewProps) {
             {MUSCLES.map((slug: string) => (view.p[slug] || []).map((d, i) =>
                 <path
                     key={slug + i}
-                    className={'bm-m l' + (levels[slug] || 0) + (selected === slug ? ' sel' : '')}
+                    className={'bm-m l' + (levels[slug] || 0) + (selected === slug ? ' sel' : '') + (roles?.[slug] === 'secondary' ? ' sec' : '')}
                     d={d}
                     onClick={onMuscle ? () => onMuscle(slug) : undefined}
                     onKeyDown={onMuscle ? e => activate(e, slug) : undefined}
@@ -73,6 +77,10 @@ type BodyMapProps = {
     className?: string
     /** 'load' = green scale (more trained = greener); 'recovery' = blue scale with red for insufficient recovery. */
     palette?: BodyMapPalette
+    /** thumbnail (list rows) · card (panel) · full (plan/detail view). */
+    size?: 'thumbnail' | 'card' | 'full'
+    /** Optional per-muscle role so a primary muscle is not lost among its assisting ones. */
+    roles?: Record<string, 'primary' | 'secondary'>
 }
 
 export default function BodyMap({
@@ -82,16 +90,18 @@ export default function BodyMap({
                                     onMuscle,
                                     selected,
                                     className = '',
-                                    palette = 'load'
+                                    palette = 'load',
+                                    size = 'card',
+                                    roles
                                 }: BodyMapProps) {
     const paths = useBodyPaths()
     const levels = levelsOf(load, thresholds)
     const g = paths && (paths[body] || paths.male)
     return (
-        <div className={'bodymap ' + className} data-palette={palette}>
+        <div className={'bodymap ' + className} data-palette={palette} data-size={size}>
             {g ? <>
-                <View view={g.front} levels={levels} onMuscle={onMuscle} selected={selected}/>
-                <View view={g.back} levels={levels} onMuscle={onMuscle} selected={selected}/>
+                <View view={g.front} levels={levels} onMuscle={onMuscle} selected={selected} roles={roles}/>
+                <View view={g.back} levels={levels} onMuscle={onMuscle} selected={selected} roles={roles}/>
             </> : <div className="bm-ph" aria-hidden="true"/>}
         </div>
     )
@@ -107,7 +117,7 @@ const legends = {
 } as const
 
 export function BodyMapLegend({palette = 'load'}: { palette?: BodyMapPalette }) {
-    return <div className="hm-legend" aria-label="کمتر تا بیشتر">
+    return <div className="hm-legend" aria-label={t('bodyMap.legendAria')}>
         {legends[palette].map((part, index) => <span key={index}>{part}</span>)}
     </div>
 }

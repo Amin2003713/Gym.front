@@ -11,6 +11,8 @@ type Props = {
   selected?: string
   onMuscle?: (slug: string) => void
   className?: string
+  size?: 'thumbnail' | 'card' | 'full'
+  roles?: Record<string, 'primary' | 'secondary'>
 }
 
 export default function BodyMapPanel({
@@ -21,6 +23,8 @@ export default function BodyMapPanel({
   selected,
   onMuscle,
   className,
+  size,
+  roles,
 }: Props) {
   return (
     <div className={className}>
@@ -31,6 +35,8 @@ export default function BodyMapPanel({
         thresholds={thresholds}
         selected={selected}
         onMuscle={onMuscle}
+        size={size}
+        roles={roles}
       />
       <div className="mt-2 flex justify-center">
         <BodyMapLegend palette={palette} />
