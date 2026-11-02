@@ -30,7 +30,10 @@ import {
   listPublicPlanCatalog,
   type PlanSummary,
 } from '@/app/(tenant)/_api/member-plan-api'
-import { getTrainingHome, upsertMeasurement } from '@/app/(tenant)/_api/training-api'
+import {
+  getTrainingHome,
+  upsertMeasurement,
+} from '@/app/(tenant)/_api/training-api'
 import { getNextSession } from '@/app/(tenant)/_api/workout-api'
 import { GamificationSection } from '@/app/(tenant)/_components/gamification/gamification-section'
 import { MemberChecklist } from '@/app/(tenant)/_components/onboarding/member-checklist'
@@ -55,6 +58,7 @@ import {
 import { useConfirm } from '@/lib/confirm'
 import { muscleLoad } from '@/lib/muscle-mapping'
 import { toast } from '@/lib/toast'
+import { useFigureGender } from '@/hooks/use-figure-gender'
 
 const fa = (value: number) => (value ?? 0).toLocaleString('fa-IR')
 
@@ -80,6 +84,7 @@ const dateLabel = (iso?: string | null) =>
 export function MemberHome() {
   const [home, setHome] = useState<MemberHomeData | null>(null)
   const [assignment, setAssignment] = useState<AssignmentListItem | null>(null)
+  const figureGender = useFigureGender()
   const [next, setNext] = useState<{
     dayName?: string
     exercises?: Array<{ exerciseName?: string }>
@@ -108,7 +113,9 @@ export function MemberHome() {
 
         // The next planned day is a separate loader on purpose: Home must still render when the
         // rotation cannot resolve (e.g. an assignment without sessions left).
-        const planned = active ? await getNextSession(active.id).catch(() => null) : null
+        const planned = active
+          ? await getNextSession(active.id).catch(() => null)
+          : null
 
         if (cancelled) return
 
@@ -211,7 +218,10 @@ export function MemberHome() {
     return days[(assignment?.completedSessions ?? 0) % days.length] ?? null
   }, [assignment])
 
-  const targetLoad = useMemo(() => (nextDay ? muscleLoad(nextDay.exercises) : {}), [nextDay])
+  const targetLoad = useMemo(
+    () => (nextDay ? muscleLoad(nextDay.exercises) : {}),
+    [nextDay],
+  )
 
   const muscles = useMemo(
     () =>
@@ -224,7 +234,10 @@ export function MemberHome() {
   if (loading && !home) return <HomeSkeleton />
 
   const progress = assignment
-    ? Math.round((assignment.completedSessions / Math.max(1, assignment.totalSessions)) * 100)
+    ? Math.round(
+        (assignment.completedSessions / Math.max(1, assignment.totalSessions)) *
+          100,
+      )
     : 0
 
   return (
@@ -272,8 +285,8 @@ export function MemberHome() {
               />
             </div>
             <p className="text-muted-foreground text-[11px]">
-              {fa(assignment.completedSessions)} از {fa(assignment.totalSessions)} جلسه ·{' '}
-              {fa(progress)}٪
+              {fa(assignment.completedSessions)} از{' '}
+              {fa(assignment.totalSessions)} جلسه · {fa(progress)}٪
             </p>
           </div>
         )}
@@ -283,9 +296,12 @@ export function MemberHome() {
         <section className="bg-card flex flex-wrap items-center justify-between gap-3 rounded-2xl border p-4 shadow-sm">
           <div className="min-w-0">
             <p className="text-primary flex items-center gap-1 text-[11px] font-bold">
-              <Sparkles className="size-3.5" aria-hidden /> برنامه پیشنهادی باشگاه
+              <Sparkles className="size-3.5" aria-hidden /> برنامه پیشنهادی
+              باشگاه
             </p>
-            <p className="mt-1 truncate text-sm font-bold">{publicPlan.title}</p>
+            <p className="mt-1 truncate text-sm font-bold">
+              {publicPlan.title}
+            </p>
             <p className="text-muted-foreground mt-0.5 text-[11px] leading-5">
               برنامه فعالی نداری؛ می‌توانی همین حالا در این برنامه ثبت‌نام کنی.
             </p>
@@ -294,7 +310,11 @@ export function MemberHome() {
             <Button asChild size="sm" variant="outline">
               <Link href="/plan">همه برنامه‌ها</Link>
             </Button>
-            <Button size="sm" onClick={() => void enrollPublicPlan()} disabled={enrolling}>
+            <Button
+              size="sm"
+              onClick={() => void enrollPublicPlan()}
+              disabled={enrolling}
+            >
               {enrolling ? 'در حال ثبت‌نام…' : 'ثبت‌نام'}
             </Button>
           </div>
@@ -347,7 +367,9 @@ export function MemberHome() {
         <DashboardStat
           label="میانگین استراحت"
           value={
-            home?.averageRestSeconds ? `${fa(home.averageRestSeconds)} ثانیه` : 'ثبت نشده'
+            home?.averageRestSeconds
+              ? `${fa(home.averageRestSeconds)} ثانیه`
+              : 'ثبت نشده'
           }
           detail="استراحت واقعی بین ست‌ها (۳۰ روز)"
           icon={Timer}
@@ -387,14 +409,22 @@ export function MemberHome() {
               <Users className="text-muted-foreground size-7" />
               <p className="text-sm font-semibold">نقشه‌ای برای نمایش نیست</p>
               <p className="text-muted-foreground max-w-sm text-xs leading-6">
-                وقتی جلسه بعدی حرکات مشخصی داشته باشد، عضلات هدفش همین‌جا رنگ می‌گیرند.
+                وقتی جلسه بعدی حرکات مشخصی داشته باشد، عضلات هدفش همین‌جا رنگ
+                می‌گیرند.
               </p>
             </div>
           ) : (
-            <div className="grid gap-4 sm:grid-cols-[minmax(0,260px)_minmax(0,1fr)] sm:items-center">
-              <BodyMapPanel body="male" palette="load" load={targetLoad} />
+            <div className="space-y-4">
+              {/* Full-width body map */}
+              <div className="w-full">
+                <BodyMapPanel
+                  body={figureGender}
+                  palette="load"
+                  load={targetLoad}
+                />
+              </div>
 
-              <ul className="space-y-2">
+              <ul className="direction-rtl space-y-2">
                 {muscles.map(([slug, value]) => {
                   const percent = Math.round(
                     (value / Math.max(1, muscles[0]?.[1] ?? 1)) * 100,
@@ -403,10 +433,16 @@ export function MemberHome() {
                   return (
                     <li key={slug} className="text-xs">
                       <div className="flex items-center justify-between gap-2">
-                        <span className="font-semibold">{MUSCLE_LABEL[slug] ?? slug}</span>
-                        <span className="text-muted-foreground tabular-nums">{fa(percent)}٪</span>
+                        <span className="font-semibold">
+                          {MUSCLE_LABEL[slug] ?? slug}
+                        </span>
+
+                        <span className="text-muted-foreground tabular-nums">
+                          {fa(percent)}٪
+                        </span>
                       </div>
-                      <div className="bg-muted mt-1 h-1.5 overflow-hidden rounded-full">
+
+                      <div className="bg-muted mt-1 ml-auto h-1.5 w-full overflow-hidden rounded-full">
                         <div
                           className="bg-primary h-full rounded-full"
                           style={{ width: `${percent}%` }}
@@ -421,7 +457,10 @@ export function MemberHome() {
         </DashboardPanel>
 
         <div className="space-y-5">
-          <DashboardPanel title="هفته من" description="جلسه‌های ثبت‌شده در هفت روز گذشته">
+          <DashboardPanel
+            title="هفته من"
+            description="جلسه‌های ثبت‌شده در هفت روز گذشته"
+          >
             <WeekStrip week={home?.week ?? []} />
             <div className="mt-4 border-t pt-4">
               <p className="text-muted-foreground text-xs">وزن امروز</p>
@@ -440,14 +479,20 @@ export function MemberHome() {
                   aria-label="وزن امروز به کیلوگرم"
                   className="border-input bg-background focus-visible:ring-ring h-10 w-full rounded-lg border px-3 text-sm outline-none focus-visible:ring-2"
                 />
-                <Button type="submit" size="sm" disabled={savingWeight || !weight}>
+                <Button
+                  type="submit"
+                  size="sm"
+                  disabled={savingWeight || !weight}
+                >
                   ثبت
                 </Button>
               </form>
 
               {(home?.bodyWeightTrend?.length ?? 0) >= 2 && (
                 <div className="mt-4 border-t pt-3">
-                  <p className="text-muted-foreground text-xs">روند وزن (۳۰ ثبت آخر)</p>
+                  <p className="text-muted-foreground text-xs">
+                    روند وزن (۳۰ ثبت آخر)
+                  </p>
                   <div className="mt-2 h-24">
                     <ResponsiveContainer width="100%" height="100%">
                       <MiniLineChart data={home?.bodyWeightTrend ?? []}>
@@ -481,7 +526,10 @@ export function MemberHome() {
             </div>
           </DashboardPanel>
 
-          <DashboardPanel title="میان‌برها" description="بخش‌های پرکاربرد تمرین">
+          <DashboardPanel
+            title="میان‌برها"
+            description="بخش‌های پرکاربرد تمرین"
+          >
             <div className="grid gap-2">
               <DashboardModeCard
                 href="/stats"
@@ -510,11 +558,19 @@ export function MemberHome() {
 
       <GamificationSection />
 
-      <DashboardPanel title="برنامه تمرینی" description="روزهای برنامه و شروع هر جلسه">
+      <DashboardPanel
+        title="برنامه تمرینی"
+        description="روزهای برنامه و شروع هر جلسه"
+      >
         {next ? (
           <p className="text-muted-foreground text-sm leading-6">
-            جلسه بعدی: <span className="text-foreground font-semibold">{next.dayName ?? '—'}</span>
-            {next.exercises?.length ? ` · ${fa(next.exercises.length)} حرکت` : ''}
+            جلسه بعدی:{' '}
+            <span className="text-foreground font-semibold">
+              {next.dayName ?? '—'}
+            </span>
+            {next.exercises?.length
+              ? ` · ${fa(next.exercises.length)} حرکت`
+              : ''}
           </p>
         ) : (
           <p className="text-muted-foreground text-sm leading-6">
@@ -538,7 +594,9 @@ function WeekStrip({ week }: { week: WeeklyActivityDay[] }) {
     <div className="grid grid-cols-7 gap-1">
       {week.map((day, index) => (
         <div key={day.date} className="flex flex-col items-center gap-1">
-          <span className="text-muted-foreground text-[10px]">{WEEKDAY_LABELS[index]}</span>
+          <span className="text-muted-foreground text-[10px]">
+            {WEEKDAY_LABELS[index]}
+          </span>
           <span
             aria-label={`${day.sessions} جلسه`}
             className={`flex size-7 items-center justify-center rounded-full text-[10px] font-bold ${

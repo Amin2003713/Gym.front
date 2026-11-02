@@ -1,7 +1,6 @@
 'use client'
 
 import { Activity, Box, HeartPulse } from 'lucide-react'
-import dynamic from 'next/dynamic'
 import Link from 'next/link'
 import { useMemo, useState } from 'react'
 
@@ -22,16 +21,6 @@ import { setsOf } from '@/app/(tenant)/_model/structural-balance'
 import { useFigureGender } from '@/hooks/use-figure-gender'
 import { MUSCLE_REGION, type BodyRegion } from '@/lib/body-regions'
 import { MUSCLES, type MuscleSlug } from '@/lib/muscles'
-
-// Lazy: the three.js bundle is fetched only when the 3D map is opened.
-const BodyMap3D = dynamic(() => import('@/components/body/body-map-3d'), {
-  ssr: false,
-  loading: () => (
-    <div className="text-muted-foreground flex min-h-56 items-center justify-center text-xs">
-      در حال بارگذاری نقشه سه‌بعدی…
-    </div>
-  ),
-})
 
 const fa = (value: number) => (value ?? 0).toLocaleString('fa-IR')
 
@@ -85,16 +74,19 @@ export function MemberMuscles() {
   const rows = useMemo(
     () =>
       MUSCLES.map((slug) => ({
-          slug,
-          sets: setsOf(data.perMuscle[slug]),
-          recoveryPct: data.recovery.pcts[slug]?.pct ?? 100,
-        }))
-        .sort((a, b) => (mode === 'trained' ? b.sets - a.sets : a.recoveryPct - b.recoveryPct)),
+        slug,
+        sets: setsOf(data.perMuscle[slug]),
+        recoveryPct: data.recovery.pcts[slug]?.pct ?? 100,
+      })).sort((a, b) =>
+        mode === 'trained' ? b.sets - a.sets : a.recoveryPct - b.recoveryPct,
+      ),
     [data, mode],
   )
 
   const trained = rows.filter((row) => row.sets > 0)
-  const selectedRow = selected ? rows.find((row) => row.slug === selected) : null
+  const selectedRow = selected
+    ? rows.find((row) => row.slug === selected)
+    : null
 
   return (
     <div className="space-y-4">
@@ -103,11 +95,19 @@ export function MemberMuscles() {
         <p className="text-muted-foreground text-sm leading-6">
           هر عضله در بازه انتخابی چقدر کار کرده و چقدر ریکاوری شده است.
         </p>
-        <RangePicker range={range} onRange={setRange} onRefresh={refetch} loading={loading} />
+        <RangePicker
+          range={range}
+          onRange={setRange}
+          onRefresh={refetch}
+          loading={loading}
+        />
       </header>
 
       {error && (
-        <div role="alert" className="border-destructive/30 bg-destructive/5 rounded-xl border p-3 text-xs">
+        <div
+          role="alert"
+          className="border-destructive/30 bg-destructive/5 rounded-xl border p-3 text-xs"
+        >
           {error}
         </div>
       )}
@@ -120,10 +120,16 @@ export function MemberMuscles() {
             onClick={() => setMode(key)}
             aria-pressed={mode === key}
             className={`flex flex-1 items-center justify-center gap-2 rounded-full px-3 py-2 text-xs font-semibold transition-colors ${
-              mode === key ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground'
+              mode === key
+                ? 'bg-background text-foreground shadow-sm'
+                : 'text-muted-foreground'
             }`}
           >
-            {key === 'trained' ? <Activity className="size-3.5" /> : <HeartPulse className="size-3.5" />}
+            {key === 'trained' ? (
+              <Activity className="size-3.5" />
+            ) : (
+              <HeartPulse className="size-3.5" />
+            )}
             {key === 'trained' ? 'کارکرد' : 'ریکاوری'}
           </button>
         ))}
@@ -143,51 +149,7 @@ export function MemberMuscles() {
           </div>
         ) : (
           <div className="space-y-2">
-            <div className="flex justify-end">
-              <div className="bg-muted flex rounded-full p-1">
-                {(
-                  [
-                    { key: '2d', label: 'نقشه دوبعدی', icon: Activity },
-                    { key: '3d', label: 'مدل سه‌بعدی', icon: Box },
-                  ] as const
-                ).map((item) => (
-                  <button
-                    key={item.key}
-                    type="button"
-                    aria-pressed={render === item.key}
-                    onClick={() => setRender(item.key)}
-                    className={`flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold transition-colors ${
-                      render === item.key
-                        ? 'bg-background text-foreground shadow-sm'
-                        : 'text-muted-foreground'
-                    }`}
-                  >
-                    <item.icon className="size-3.5" aria-hidden />
-                    {item.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {render === '3d' ? (
-              <BodyMap3D
-                values={regionValues}
-                selected={
-                  selected
-                    ? (MUSCLE_REGION[selected]?.[0] as BodyRegion | undefined) ?? null
-                    : null
-                }
-                onSelect={(region) => {
-                  const slug = Object.entries(MUSCLE_REGION).find(([, regions]) =>
-                    regions.includes(region),
-                  )?.[0]
-
-                  if (slug) setSelected(slug as MuscleSlug)
-                }}
-                height={340}
-                activeColor={mode === 'trained' ? '#22C55E' : '#3B82F6'}
-              />
-            ) : (
+            {
               <BodyMapPanel
                 body={figureGender}
                 palette={mode === 'trained' ? 'load' : 'recovery'}
@@ -195,7 +157,7 @@ export function MemberMuscles() {
                 selected={selected ?? undefined}
                 onMuscle={(slug) => setSelected(slug as MuscleSlug)}
               />
-            )}
+            }
           </div>
         )}
 
@@ -205,7 +167,8 @@ export function MemberMuscles() {
             <span className="text-muted-foreground">
               {' '}
               · {fa(selectedRow.sets)} ست ·{' '}
-              {fa(Math.round(data.perMuscle[selectedRow.slug]?.volumeKg ?? 0))} kg ·{' '}
+              {fa(Math.round(data.perMuscle[selectedRow.slug]?.volumeKg ?? 0))}{' '}
+              kg ·{' '}
               {selectedRow.sets === 0
                 ? 'در این بازه تمرین نشده'
                 : `${fa(Math.round(selectedRow.recoveryPct))}٪ ریکاوری`}
@@ -229,7 +192,9 @@ export function MemberMuscles() {
             {(mode === 'trained' ? trained : rows).map((row) => {
               const max = Math.max(1, ...rows.map((item) => item.sets))
               const pct =
-                mode === 'trained' ? (row.sets / max) * 100 : Math.min(100, row.recoveryPct)
+                mode === 'trained'
+                  ? (row.sets / max) * 100
+                  : Math.min(100, row.recoveryPct)
 
               return (
                 <li key={row.slug}>
@@ -279,21 +244,25 @@ export function MemberMuscles() {
         ) : (
           <>
             <div className="mb-3 flex flex-wrap gap-1.5">
-              {[...trained, ...rows.filter((row) => row.sets === 0)].slice(0, 12).map((row) => (
-                <button
-                  key={row.slug}
-                  type="button"
-                  aria-pressed={(historySlug ?? trained[0]?.slug) === row.slug}
-                  onClick={() => setHistorySlug(row.slug)}
-                  className={`rounded-full border px-2.5 py-1 text-[11px] font-semibold transition-colors ${
-                    (historySlug ?? trained[0]?.slug) === row.slug
-                      ? 'border-primary bg-primary/10 text-primary'
-                      : 'text-muted-foreground hover:bg-muted'
-                  }`}
-                >
-                  {MUSCLE_LABEL[row.slug] ?? row.slug}
-                </button>
-              ))}
+              {[...trained, ...rows.filter((row) => row.sets === 0)]
+                .slice(0, 12)
+                .map((row) => (
+                  <button
+                    key={row.slug}
+                    type="button"
+                    aria-pressed={
+                      (historySlug ?? trained[0]?.slug) === row.slug
+                    }
+                    onClick={() => setHistorySlug(row.slug)}
+                    className={`rounded-full border px-2.5 py-1 text-[11px] font-semibold transition-colors ${
+                      (historySlug ?? trained[0]?.slug) === row.slug
+                        ? 'border-primary bg-primary/10 text-primary'
+                        : 'text-muted-foreground hover:bg-muted'
+                    }`}
+                  >
+                    {MUSCLE_LABEL[row.slug] ?? row.slug}
+                  </button>
+                ))}
             </div>
 
             {(() => {
@@ -314,7 +283,10 @@ export function MemberMuscles() {
                 <div>
                   <div className="flex h-32 items-end gap-1">
                     {series.map((value, index) => (
-                      <div key={weeks[index] ?? index} className="flex flex-1 flex-col items-center gap-1">
+                      <div
+                        key={weeks[index] ?? index}
+                        className="flex flex-1 flex-col items-center gap-1"
+                      >
                         <span className="text-muted-foreground text-[10px] tabular-nums">
                           {value > 0 ? fa(value) : ''}
                         </span>
@@ -323,7 +295,9 @@ export function MemberMuscles() {
                           className={`w-full rounded-t-md ${
                             value > 0 ? 'bg-primary' : 'bg-muted'
                           }`}
-                          style={{ height: `${Math.max(4, (value / max) * 100)}%` }}
+                          style={{
+                            height: `${Math.max(4, (value / max) * 100)}%`,
+                          }}
                         />
                       </div>
                     ))}
@@ -331,9 +305,10 @@ export function MemberMuscles() {
                   <div className="text-muted-foreground mt-1 flex justify-between text-[10px]">
                     <span>
                       {weeks[0]
-                        ? new Intl.DateTimeFormat('fa-IR', { month: 'short', day: 'numeric' }).format(
-                            new Date(`${weeks[0]}T12:00:00`),
-                          )
+                        ? new Intl.DateTimeFormat('fa-IR', {
+                            month: 'short',
+                            day: 'numeric',
+                          }).format(new Date(`${weeks[0]}T12:00:00`))
                         : '۱۲ هفته پیش'}
                     </span>
                     <span>هفته جاری</span>
@@ -350,7 +325,9 @@ export function MemberMuscles() {
         className="bg-card hover:border-primary/40 flex items-center justify-between rounded-2xl border p-4 text-sm font-semibold transition-colors"
       >
         بررسی تعادل عضلات
-        <span className="text-muted-foreground text-xs">سینه/پشت، بازو، پا…</span>
+        <span className="text-muted-foreground text-xs">
+          سینه/پشت، بازو، پا…
+        </span>
       </Link>
     </div>
   )

@@ -1,7 +1,6 @@
 'use client'
 
 import { Box, LineChart, Plus, Trash2 } from 'lucide-react'
-import dynamic from 'next/dynamic'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   CartesianGrid,
@@ -34,15 +33,7 @@ import {
 } from '@/lib/body-regions'
 import { toast } from '@/lib/toast'
 
-// three.js stays out of the initial bundle: the page only loads it when the 3D view is picked.
-const BodyMap3D = dynamic(() => import('@/components/body/body-map-3d'), {
-  ssr: false,
-  loading: () => (
-    <div className="text-muted-foreground flex h-80 items-center justify-center text-xs">
-      در حال بارگذاری مدل سه‌بعدی…
-    </div>
-  ),
-})
+
 
 const fa = (value: number) => (value ?? 0).toLocaleString('fa-IR')
 
@@ -114,7 +105,7 @@ export function MemberMeasurements() {
   const [saving, setSaving] = useState(false)
   const [loading, setLoading] = useState(true)
   const [version, setVersion] = useState(0)
-  const [view, setView] = useState<'chart' | 'body3d'>('chart')
+  const [view, setView] = useState<'chart'>('chart')
   const [selectedRegion, setSelectedRegion] = useState<BodyRegion | null>(null)
 
   useEffect(() => {
@@ -381,40 +372,9 @@ export function MemberMeasurements() {
       )}
 
       <section className="bg-card rounded-2xl border p-4 shadow-sm">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <h2 className="flex items-center gap-2 font-bold">
-            <LineChart className="text-primary size-4" />
-            روند تغییر
-          </h2>
-          <div className="bg-muted flex rounded-full p-1">
-            {(
-              [
-                { key: 'chart', label: 'نمودار', icon: LineChart },
-                { key: 'body3d', label: 'بدن سه‌بعدی', icon: Box },
-              ] as const
-            ).map((item) => (
-              <button
-                key={item.key}
-                type="button"
-                aria-pressed={view === item.key}
-                onClick={() => setView(item.key)}
-                className={`flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold transition-colors ${
-                  view === item.key
-                    ? 'bg-background text-foreground shadow-sm'
-                    : 'text-muted-foreground'
-                }`}
-              >
-                <item.icon className="size-3.5" aria-hidden />
-                {item.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
         <div className="mt-2 flex flex-wrap gap-1.5" role="group" aria-label="انتخاب شاخص‌ها">
           {METRICS.map((item) => {
             const active = selected.includes(item.key)
-
             return (
               <button
                 key={item.key}
@@ -559,14 +519,7 @@ export function MemberMeasurements() {
         </div>
         ) : (
           <div className="mt-3 space-y-2">
-            <BodyMap3D
-              values={zoneStats.shades}
-              selected={selectedRegion}
-              onSelect={(region) =>
-                setSelectedRegion((current) => (current === region ? null : region))
-              }
-              height={320}
-            />
+
 
             {selectedRegion && zoneStats.stats[selectedRegion] ? (
               <p className="text-muted-foreground text-center text-[11px] tabular-nums">
