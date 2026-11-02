@@ -88,6 +88,52 @@ export function pairBalances(perMuscle: Partial<Record<MuscleSlug, MuscleUse>>):
   })
 }
 
+export interface GroupWeek {
+  group: BalanceGroup
+  weekly: number[]
+}
+
+/** Folds the per-muscle weekly series into the four movement groups. */
+export function groupWeekly(
+  weeklyPerMuscle: Partial<Record<MuscleSlug, number[]>> | null | undefined,
+): Record<BalanceGroup, number[]> {
+  const groups: Record<BalanceGroup, number[]> = { push: [], pull: [], legs: [], core: [] }
+
+  for (const [slug, group] of Object.entries(MUSCLE_GROUP) as Array<[MuscleSlug, BalanceGroup]>) {
+    const series = weeklyPerMuscle?.[slug] ?? []
+
+    series.forEach((value, index) => {
+      groups[group][index] = (groups[group][index] ?? 0) + value
+    })
+  }
+
+  return groups
+}
+
+/** 100 means the two sides are equal; 0 means only one side was trained. */
+export function ratioPercent(a: number, b: number): number {
+  const max = Math.max(a, b)
+
+  return max === 0 ? 0 : Math.round((Math.min(a, b) / max) * 100)
+}
+
+/** Compares the latest `window` weeks with the `window` weeks before them. */
+export function windowTrend(
+  series: number[],
+  window = 4,
+): { recent: number; previous: number; changePct: number } {
+  const recent = series.slice(-window).reduce((sum, value) => sum + value, 0)
+  const previous = series
+    .slice(Math.max(0, series.length - window * 2), Math.max(0, series.length - window))
+    .reduce((sum, value) => sum + value, 0)
+
+  return {
+    recent,
+    previous,
+    changePct: previous === 0 ? (recent > 0 ? 100 : 0) : Math.round(((recent - previous) / previous) * 100),
+  }
+}
+
 export function groupVolumes(perMuscle: Partial<Record<MuscleSlug, MuscleUse>>) {
   const totals: Record<BalanceGroup, number> = { push: 0, pull: 0, legs: 0, core: 0 }
 

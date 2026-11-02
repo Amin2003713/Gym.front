@@ -21,6 +21,8 @@ const emptyStats: WorkoutMuscleStats = {
   perMuscle: {} as WorkoutMuscleStats['perMuscle'],
   totals: { sessions: 0, sets: 0, volumeKg: 0 },
   unmatchedExerciseIds: [],
+  weeklyPerMuscle: {} as WorkoutMuscleStats['weeklyPerMuscle'],
+  weekStarts: [],
 }
 
 /** Resolved exercise metadata, cached across renders and range changes. */

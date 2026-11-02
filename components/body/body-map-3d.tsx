@@ -1,7 +1,7 @@
 'use client'
 
-import { Canvas } from '@react-three/fiber'
-import { useMemo, useState } from 'react'
+import { Canvas, useThree } from '@react-three/fiber'
+import { useEffect, useMemo, useState } from 'react'
 
 import { BODY_REGIONS, type BodyRegion } from '@/lib/body-regions'
 
@@ -16,6 +16,23 @@ export interface BodyMap3DProps {
   activeColor?: string
   height?: number
   className?: string
+}
+
+/**
+ * Fits the whole figure on narrow screens: a portrait canvas needs the camera further back, so a
+ * phone shows the same body instead of a cropped torso.
+ */
+function ResponsiveCamera() {
+  const { camera, size } = useThree()
+
+  useEffect(() => {
+    const portrait = size.width / Math.max(1, size.height) < 0.95
+
+    camera.position.set(0, 0.15, portrait ? 4 : 3.1)
+    camera.updateProjectionMatrix()
+  }, [camera, size])
+
+  return null
 }
 
 /** Linear blend from the neutral body tone to the active tone. */
@@ -229,7 +246,14 @@ export default function BodyMap3D({
   return (
     <div
       className={className}
-      style={{ height }}
+      style={{
+        height: `clamp(280px, ${Math.round(height / 6)}vh, ${height}px)`,
+        width: '100%',
+        maxWidth: 520,
+        marginInline: 'auto',
+        // Vertical page scroll keeps working on touch screens; taps still select a region.
+        touchAction: 'pan-y',
+      }}
       role="img"
       aria-label={`مدل سه‌بعدی بدن با ${regionCount} ناحیه قابل انتخاب`}
     >
@@ -237,7 +261,9 @@ export default function BodyMap3D({
         dpr={[1, 2]}
         camera={{ position: [0, 0.15, 3.1], fov: 42 }}
         gl={{ antialias: true, alpha: true }}
+        style={{ touchAction: 'pan-y' }}
       >
+        <ResponsiveCamera />
         <ambientLight intensity={0.95} />
         <directionalLight position={[2.5, 4, 3]} intensity={1.15} />
         <directionalLight position={[-3, 2, -2]} intensity={0.45} />

@@ -116,7 +116,25 @@ export interface WorkoutMuscleStats {
   totals: { sessions: number; sets: number; volumeKg: number }
   /** Exercise ids found in sessions that had no resolvable metadata. */
   unmatchedExerciseIds: string[]
+  /** Sets per muscle for the last 12 weeks, oldest first. */
+  weeklyPerMuscle: Record<MuscleSlug, number[]>
+  /** ISO date of each week's Saturday, matching `weeklyPerMuscle` positions. */
+  weekStarts: string[]
 }
+
+const HISTORY_WEEKS = 12
+
+/** Saturday, the first day of the week in the member app. */
+function weekStartOf(iso: string): string {
+  const date = new Date(`${iso}T12:00:00`)
+
+  date.setDate(date.getDate() - ((date.getDay() + 1) % 7))
+
+  return date.toISOString().slice(0, 10)
+}
+
+const dayOf = (session: SessionResponse) =>
+  (session.startedAt ?? session.completedAt ?? '').slice(0, 10)
 
 const emptyUse = (): MuscleUse => ({
   primarySets: 0,
@@ -145,6 +163,25 @@ export function buildMuscleStats(
   const unmatchedSeen = new Set<string>()
   const touched = new Map<MuscleSlug, string>() // slug -> latest iso
 
+  const weeklyPerMuscle = Object.fromEntries(
+    MUSCLES.map((slug) => [slug, Array<number>(HISTORY_WEEKS).fill(0)]),
+  ) as Record<MuscleSlug, number[]>
+
+  const days = sessions.map(dayOf).filter(Boolean).sort()
+  const anchor = days.at(-1)
+  const weekStarts: string[] = []
+
+  if (anchor) {
+    const newestWeek = weekStartOf(anchor)
+
+    for (let index = HISTORY_WEEKS - 1; index >= 0; index -= 1) {
+      const date = new Date(`${newestWeek}T12:00:00`)
+
+      date.setDate(date.getDate() - index * 7)
+      weekStarts.push(date.toISOString().slice(0, 10))
+    }
+  }
+
   for (const session of sessions) {
     const attrs = (session.exercises ?? []).filter((ex) => (ex.sets ?? []).length > 0)
     if (!attrs.length) continue
@@ -171,12 +208,17 @@ export function buildMuscleStats(
       for (const [slug, weight] of Object.entries(weights) as Array<[MuscleSlug, number]>) {
         credited[slug] = Math.max(credited[slug] ?? 0, weight)
       }
+      const sessionWeek = weekStartOf(dayOf(session))
+      const weekIndex = weekStarts.indexOf(sessionWeek)
+
       for (const [slug, weight] of Object.entries(credited) as Array<[MuscleSlug, number]>) {
         const use = perMuscle[slug]
         if (weight >= WEIGHT_PRIMARY) use.primarySets += sessionSets
         else use.secondarySets += sessionSets
         use.volumeKg += sessionVolume
         sessionTouched.add(slug)
+
+        if (weekIndex >= 0) weeklyPerMuscle[slug][weekIndex] += sessionSets
         const last = touched.get(slug)
         if (stamps && (!last || stamps > last)) touched.set(slug, stamps)
       }
@@ -191,7 +233,7 @@ export function buildMuscleStats(
     perMuscle[slug] = { ...perMuscle[slug], lastWorkedAt: touched.get(slug) }
   }
 
-  return { perMuscle, totals, unmatchedExerciseIds }
+  return { perMuscle, totals, unmatchedExerciseIds, weeklyPerMuscle, weekStarts }
 }
 
 /* --------------------------- recovery model --------------------------- */

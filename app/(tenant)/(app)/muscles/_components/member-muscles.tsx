@@ -43,6 +43,7 @@ export function MemberMuscles() {
   const [mode, setMode] = useState<MapMode>('trained')
   const [selected, setSelected] = useState<MuscleSlug | null>(null)
   const [render, setRender] = useState<'2d' | '3d'>('2d')
+  const [historySlug, setHistorySlug] = useState<MuscleSlug | null>(null)
 
   // One snapshot per mount keeps the recovery percentages stable while rendering.
   const [nowMs] = useState(() => Date.now())
@@ -266,6 +267,81 @@ export function MemberMuscles() {
               )
             })}
           </ul>
+        )}
+      </InsightSection>
+
+      <InsightSection
+        title="تاریخچه ۱۲ هفته"
+        description="ست‌های هر عضله در ۱۲ هفته اخیر؛ ستون سمت راست، هفته جاری است."
+      >
+        {trained.length === 0 ? (
+          <InsightEmpty message="برای دیدن تاریخچه، اول یک جلسه ثبت کن." />
+        ) : (
+          <>
+            <div className="mb-3 flex flex-wrap gap-1.5">
+              {[...trained, ...rows.filter((row) => row.sets === 0)].slice(0, 12).map((row) => (
+                <button
+                  key={row.slug}
+                  type="button"
+                  aria-pressed={(historySlug ?? trained[0]?.slug) === row.slug}
+                  onClick={() => setHistorySlug(row.slug)}
+                  className={`rounded-full border px-2.5 py-1 text-[11px] font-semibold transition-colors ${
+                    (historySlug ?? trained[0]?.slug) === row.slug
+                      ? 'border-primary bg-primary/10 text-primary'
+                      : 'text-muted-foreground hover:bg-muted'
+                  }`}
+                >
+                  {MUSCLE_LABEL[row.slug] ?? row.slug}
+                </button>
+              ))}
+            </div>
+
+            {(() => {
+              const slug = historySlug ?? trained[0]?.slug
+              const series = slug ? (stats.weeklyPerMuscle?.[slug] ?? []) : []
+              const max = Math.max(1, ...series)
+              const weeks = stats.weekStarts ?? []
+
+              if (!slug || series.length === 0) {
+                return (
+                  <p className="text-muted-foreground py-4 text-center text-xs">
+                    برای این عضله در بازه انتخابی ستی ثبت نشده است.
+                  </p>
+                )
+              }
+
+              return (
+                <div>
+                  <div className="flex h-32 items-end gap-1">
+                    {series.map((value, index) => (
+                      <div key={weeks[index] ?? index} className="flex flex-1 flex-col items-center gap-1">
+                        <span className="text-muted-foreground text-[10px] tabular-nums">
+                          {value > 0 ? fa(value) : ''}
+                        </span>
+                        <div
+                          aria-label={`${fa(value)} ست در هفته ${index + 1}`}
+                          className={`w-full rounded-t-md ${
+                            value > 0 ? 'bg-primary' : 'bg-muted'
+                          }`}
+                          style={{ height: `${Math.max(4, (value / max) * 100)}%` }}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                  <div className="text-muted-foreground mt-1 flex justify-between text-[10px]">
+                    <span>
+                      {weeks[0]
+                        ? new Intl.DateTimeFormat('fa-IR', { month: 'short', day: 'numeric' }).format(
+                            new Date(`${weeks[0]}T12:00:00`),
+                          )
+                        : '۱۲ هفته پیش'}
+                    </span>
+                    <span>هفته جاری</span>
+                  </div>
+                </div>
+              )
+            })()}
+          </>
         )}
       </InsightSection>
 

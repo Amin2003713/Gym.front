@@ -14,10 +14,15 @@ import {
   BALANCE_GROUP_LABEL,
   BALANCE_STATUS,
   groupVolumes,
+  groupWeekly,
   pairBalances,
+  ratioPercent,
+  windowTrend,
   type BalanceGroup,
 } from '@/app/(tenant)/_model/structural-balance'
 import { MUSCLES, type MuscleSlug } from '@/lib/muscles'
+
+import { RatioCard } from './ratio-card'
 
 const fa = (value: number) => (value ?? 0).toLocaleString('fa-IR')
 
@@ -47,6 +52,27 @@ export function MemberStructuralBalance() {
       flagged: pairs.filter((pair) => pair.status === 'imbalanced' || pair.status === 'mild'),
     }
   }, [stats])
+
+  /** Push/pull and upper/lower, plus the change against the four weeks before. */
+  const ratios = useMemo(() => {
+    const weekly = groupWeekly(stats.weeklyPerMuscle)
+    const sum = (series: number[]) => series.reduce((total, value) => total + value, 0)
+
+    const push = sum(weekly.push)
+    const pull = sum(weekly.pull)
+    const legs = sum(weekly.legs)
+
+    return {
+      push,
+      pull,
+      legs,
+      pushPull: ratioPercent(push, pull),
+      upperLower: ratioPercent(push + pull, legs),
+      pushTrend: windowTrend(weekly.push),
+      pullTrend: windowTrend(weekly.pull),
+      legsTrend: windowTrend(weekly.legs),
+    }
+  }, [stats.weeklyPerMuscle])
 
   const maxPairSets = Math.max(
     1,
@@ -136,6 +162,44 @@ export function MemberStructuralBalance() {
               </li>
             ))}
           </ul>
+        )}
+      </InsightSection>
+
+      <InsightSection
+        title="نسبت‌های کلی"
+        description="فشار در برابر کشش و بالاتنه در برابر پا؛ تغییر نسبت به ۴ هفته قبل."
+      >
+        {data.total === 0 ? (
+          <InsightEmpty message="بعد از ثبت چند جلسه، این نسبت‌ها ساخته می‌شوند." />
+        ) : (
+          <div className="grid gap-3 sm:grid-cols-2">
+            <RatioCard
+              title="فشار / کشش"
+              leftLabel="فشار"
+              leftSets={ratios.push}
+              rightLabel="کشش"
+              rightSets={ratios.pull}
+              ratio={ratios.pushPull}
+              weakTrend={
+                ratios.push <= ratios.pull ? ratios.pushTrend : ratios.pullTrend
+              }
+              weakerLabel={ratios.push <= ratios.pull ? 'فشار' : 'کشش'}
+            />
+            <RatioCard
+              title="بالاتنه / پا"
+              leftLabel="بالاتنه"
+              leftSets={ratios.push + ratios.pull}
+              rightLabel="پا"
+              rightSets={ratios.legs}
+              ratio={ratios.upperLower}
+              weakTrend={
+                ratios.push + ratios.pull <= ratios.legs
+                  ? ratios.pushTrend
+                  : ratios.legsTrend
+              }
+              weakerLabel={ratios.push + ratios.pull <= ratios.legs ? 'بالاتنه' : 'پا'}
+            />
+          </div>
         )}
       </InsightSection>
 
