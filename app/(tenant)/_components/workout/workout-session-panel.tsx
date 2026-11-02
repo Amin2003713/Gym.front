@@ -691,6 +691,7 @@ export function WorkoutSessionPanel({
                             <th className="p-2 text-right font-medium">تکرار</th>
                             <th className="p-2 text-right font-medium">وزنه</th>
                             <th className="p-2 text-right font-medium">شدت</th>
+                            <th className="p-2 text-right font-medium">استراحت</th>
                             <th className="p-2 text-right font-medium">نوع</th>
                             <th className="p-2 text-right font-medium"> </th>
                           </tr>
@@ -703,6 +704,11 @@ export function WorkoutSessionPanel({
                               <td className="p-2 tabular-nums">{fa(set.weightKg)} kg</td>
                               <td className="p-2 tabular-nums">
                                 {set.rir != null ? `RIR ${fa(set.rir)}` : '—'}
+                              </td>
+                              <td className="text-muted-foreground p-2 text-xs tabular-nums">
+                                {set.restSeconds != null
+                                  ? `${fa(set.restSeconds)} ث${set.restSkipped ? ' (رد)' : ''}`
+                                  : '—'}
                               </td>
                               <td className="text-muted-foreground p-2 text-xs">
                                 {set.isWarmup ? 'گرم‌کردن' : 'اصلی'}

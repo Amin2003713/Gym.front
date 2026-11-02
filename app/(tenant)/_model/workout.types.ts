@@ -33,6 +33,10 @@ export interface LoggedSetItem {
   rpe?: number | null
   isWarmup: boolean
   completedAt?: string | null
+  /** Measured rest before this set (seconds); null when no countdown was used. */
+  restSeconds?: number | null
+  /** True when the member skipped the rest countdown. */
+  restSkipped?: boolean
 }
 export interface SessionExerciseItem {
   planDayExerciseId?: string | null
