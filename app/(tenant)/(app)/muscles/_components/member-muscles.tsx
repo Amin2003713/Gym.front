@@ -1,6 +1,7 @@
 'use client'
 
-import { Activity, HeartPulse } from 'lucide-react'
+import { Activity, Box, HeartPulse } from 'lucide-react'
+import dynamic from 'next/dynamic'
 import Link from 'next/link'
 import { useMemo, useState } from 'react'
 
@@ -19,7 +20,18 @@ import {
 import { MUSCLE_LABEL } from '@/app/(tenant)/_model/muscle-labels'
 import { setsOf } from '@/app/(tenant)/_model/structural-balance'
 import { useFigureGender } from '@/hooks/use-figure-gender'
+import { MUSCLE_REGION, type BodyRegion } from '@/lib/body-regions'
 import { MUSCLES, type MuscleSlug } from '@/lib/muscles'
+
+// Lazy: the three.js bundle is fetched only when the 3D map is opened.
+const BodyMap3D = dynamic(() => import('@/components/body/body-map-3d'), {
+  ssr: false,
+  loading: () => (
+    <div className="text-muted-foreground flex min-h-56 items-center justify-center text-xs">
+      در حال بارگذاری نقشه سه‌بعدی…
+    </div>
+  ),
+})
 
 const fa = (value: number) => (value ?? 0).toLocaleString('fa-IR')
 
@@ -30,6 +42,7 @@ export function MemberMuscles() {
   const figureGender = useFigureGender()
   const [mode, setMode] = useState<MapMode>('trained')
   const [selected, setSelected] = useState<MuscleSlug | null>(null)
+  const [render, setRender] = useState<'2d' | '3d'>('2d')
 
   // One snapshot per mount keeps the recovery percentages stable while rendering.
   const [nowMs] = useState(() => Date.now())
@@ -53,6 +66,20 @@ export function MemberMuscles() {
       recovery: recoveryLevels(perMuscle, nowMs),
     }
   }, [stats, nowMs])
+
+  /** Muscle levels folded onto the 3D figure's regions (a muscle can shade two limbs). */
+  const regionValues = useMemo(() => {
+    const source = mode === 'trained' ? data.load : data.recovery.levels
+    const values: Partial<Record<BodyRegion, number>> = {}
+
+    for (const [slug, value] of Object.entries(source)) {
+      for (const region of MUSCLE_REGION[slug] ?? []) {
+        values[region] = Math.max(values[region] ?? 0, Number(value))
+      }
+    }
+
+    return values
+  }, [data, mode])
 
   const rows = useMemo(
     () =>
@@ -114,13 +141,61 @@ export function MemberMuscles() {
             در حال محاسبه…
           </div>
         ) : (
-          <BodyMapPanel
-            body={figureGender}
-            palette={mode === 'trained' ? 'load' : 'recovery'}
-            load={mode === 'trained' ? data.load : data.recovery.levels}
-            selected={selected ?? undefined}
-            onMuscle={(slug) => setSelected(slug as MuscleSlug)}
-          />
+          <div className="space-y-2">
+            <div className="flex justify-end">
+              <div className="bg-muted flex rounded-full p-1">
+                {(
+                  [
+                    { key: '2d', label: 'نقشه دوبعدی', icon: Activity },
+                    { key: '3d', label: 'مدل سه‌بعدی', icon: Box },
+                  ] as const
+                ).map((item) => (
+                  <button
+                    key={item.key}
+                    type="button"
+                    aria-pressed={render === item.key}
+                    onClick={() => setRender(item.key)}
+                    className={`flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold transition-colors ${
+                      render === item.key
+                        ? 'bg-background text-foreground shadow-sm'
+                        : 'text-muted-foreground'
+                    }`}
+                  >
+                    <item.icon className="size-3.5" aria-hidden />
+                    {item.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {render === '3d' ? (
+              <BodyMap3D
+                values={regionValues}
+                selected={
+                  selected
+                    ? (MUSCLE_REGION[selected]?.[0] as BodyRegion | undefined) ?? null
+                    : null
+                }
+                onSelect={(region) => {
+                  const slug = Object.entries(MUSCLE_REGION).find(([, regions]) =>
+                    regions.includes(region),
+                  )?.[0]
+
+                  if (slug) setSelected(slug as MuscleSlug)
+                }}
+                height={340}
+                activeColor={mode === 'trained' ? '#22C55E' : '#3B82F6'}
+              />
+            ) : (
+              <BodyMapPanel
+                body={figureGender}
+                palette={mode === 'trained' ? 'load' : 'recovery'}
+                load={mode === 'trained' ? data.load : data.recovery.levels}
+                selected={selected ?? undefined}
+                onMuscle={(slug) => setSelected(slug as MuscleSlug)}
+              />
+            )}
+          </div>
         )}
 
         {selectedRow && (

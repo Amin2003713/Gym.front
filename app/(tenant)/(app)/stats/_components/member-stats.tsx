@@ -5,11 +5,13 @@ import Link from 'next/link'
 
 import { useMuscleBalance } from '@/app/(tenant)/_api/use-muscle-balance'
 import { GamificationSection } from '@/app/(tenant)/_components/gamification/gamification-section'
+import { DeepAnalytics } from '@/app/(tenant)/_components/insight/deep-analytics'
 import { RangePicker } from '@/app/(tenant)/_components/insight/insight-shell'
 import OverviewTab from '@/app/(tenant)/_components/progress/overview-tab'
 
 export function MemberStats() {
-  const { sessions, stats, loading, error, range, setRange, refetch } = useMuscleBalance()
+  const { sessions, listItems, stats, loading, error, range, setRange, refetch } =
+    useMuscleBalance()
 
   return (
     <div className="space-y-4">
@@ -28,6 +30,8 @@ export function MemberStats() {
       )}
 
       <OverviewTab sessions={sessions} stats={stats} loading={loading} />
+
+      <DeepAnalytics sessions={sessions} listItems={listItems} />
 
       <GamificationSection variant="full" />
 

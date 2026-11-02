@@ -1,7 +1,7 @@
 'use client'
 
-
-import { LineChart, Plus, Trash2 } from 'lucide-react'
+import { Box, LineChart, Plus, Trash2 } from 'lucide-react'
+import dynamic from 'next/dynamic'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   CartesianGrid,
@@ -27,7 +27,22 @@ import {
 } from '@/app/(tenant)/_model/training.types'
 import { Button } from '@/components/ui/button'
 import { PersianDateInput } from '@/components/ui/persian-date-input'
+import {
+  MEASUREMENT_REGION,
+  REGION_LABEL,
+  type BodyRegion,
+} from '@/lib/body-regions'
 import { toast } from '@/lib/toast'
+
+// three.js stays out of the initial bundle: the page only loads it when the 3D view is picked.
+const BodyMap3D = dynamic(() => import('@/components/body/body-map-3d'), {
+  ssr: false,
+  loading: () => (
+    <div className="text-muted-foreground flex h-80 items-center justify-center text-xs">
+      در حال بارگذاری مدل سه‌بعدی…
+    </div>
+  ),
+})
 
 const fa = (value: number) => (value ?? 0).toLocaleString('fa-IR')
 
@@ -99,6 +114,8 @@ export function MemberMeasurements() {
   const [saving, setSaving] = useState(false)
   const [loading, setLoading] = useState(true)
   const [version, setVersion] = useState(0)
+  const [view, setView] = useState<'chart' | 'body3d'>('chart')
+  const [selectedRegion, setSelectedRegion] = useState<BodyRegion | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -225,6 +242,39 @@ export function MemberMeasurements() {
     return [...byDate.values()]
   }, [history, selected])
 
+  /** Latest value of every mapped site, plus its normalised shade for the 3D figure. */
+  const zoneStats = useMemo(() => {
+    const latest = history[0]
+    const stats: Partial<Record<BodyRegion, { value: number; label: string; unit: string }>> = {}
+    const shades: Partial<Record<BodyRegion, number>> = {}
+
+    if (!latest) return { stats, shades }
+
+    for (const [key, region] of Object.entries(MEASUREMENT_REGION)) {
+      const value = latest[key as keyof BodyMeasurement]
+
+      if (typeof value !== 'number') continue
+
+      const field = MEASUREMENT_FIELDS.find((item) => item.key === key)
+      const series = history
+        .map((entry) => entry[key as keyof BodyMeasurement])
+        .filter((item): item is number => typeof item === 'number')
+
+      stats[region] = {
+        value,
+        label: field?.label ?? REGION_LABEL[region],
+        unit: field?.unit ?? 'cm',
+      }
+
+      const min = Math.min(...series)
+      const max = Math.max(...series)
+
+      shades[region] = max > min ? (value - min) / (max - min) : 0.5
+    }
+
+    return { stats, shades }
+  }, [history])
+
   const toggleMetric = (key: MetricKey) => {
     setSelected((current) => {
       if (current.includes(key))
@@ -336,9 +386,29 @@ export function MemberMeasurements() {
             <LineChart className="text-primary size-4" />
             روند تغییر
           </h2>
-          <span className="text-muted-foreground text-[11px]">
-            {fa(activeMetrics.length)} شاخص انتخاب شده
-          </span>
+          <div className="bg-muted flex rounded-full p-1">
+            {(
+              [
+                { key: 'chart', label: 'نمودار', icon: LineChart },
+                { key: 'body3d', label: 'بدن سه‌بعدی', icon: Box },
+              ] as const
+            ).map((item) => (
+              <button
+                key={item.key}
+                type="button"
+                aria-pressed={view === item.key}
+                onClick={() => setView(item.key)}
+                className={`flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold transition-colors ${
+                  view === item.key
+                    ? 'bg-background text-foreground shadow-sm'
+                    : 'text-muted-foreground'
+                }`}
+              >
+                <item.icon className="size-3.5" aria-hidden />
+                {item.label}
+              </button>
+            ))}
+          </div>
         </div>
 
         <div className="mt-2 flex flex-wrap gap-1.5" role="group" aria-label="انتخاب شاخص‌ها">
@@ -414,6 +484,7 @@ export function MemberMeasurements() {
           })}
         </ul>
 
+        {view === 'chart' ? (
         <div className="mt-3 h-48">
           {loading ? (
             <div className="text-muted-foreground flex h-full items-center justify-center text-xs">
@@ -486,6 +557,33 @@ export function MemberMeasurements() {
             </ResponsiveContainer>
           )}
         </div>
+        ) : (
+          <div className="mt-3 space-y-2">
+            <BodyMap3D
+              values={zoneStats.shades}
+              selected={selectedRegion}
+              onSelect={(region) =>
+                setSelectedRegion((current) => (current === region ? null : region))
+              }
+              height={320}
+            />
+
+            {selectedRegion && zoneStats.stats[selectedRegion] ? (
+              <p className="text-muted-foreground text-center text-[11px] tabular-nums">
+                <span className="text-foreground font-semibold">
+                  {zoneStats.stats[selectedRegion]!.label}
+                </span>{' '}
+                · {fa(zoneStats.stats[selectedRegion]!.value)}{' '}
+                {zoneStats.stats[selectedRegion]!.unit}
+                {history.length > 1 ? ' · آخرین ثبت' : ''}
+              </p>
+            ) : (
+              <p className="text-muted-foreground text-center text-[11px] leading-5">
+                روی یک ناحیه از بدن بزن تا مقدار ثبت‌شده همان محل را ببینی.
+              </p>
+            )}
+          </div>
+        )}
       </section>
 
       <section className="bg-card rounded-2xl border shadow-sm">
