@@ -85,6 +85,9 @@ export const logWorkoutSets = (
       rpe?: number
       isWarmup: boolean
       clientRequestId: string
+      /** Measured rest before this set, and whether the member skipped the timer. */
+      restSeconds?: number
+      restSkipped?: boolean
     }>
   },
 ) =>

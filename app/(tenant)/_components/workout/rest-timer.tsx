@@ -1,7 +1,7 @@
 'use client'
 
 import { TimerReset, X } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
@@ -14,22 +14,42 @@ const clock = (totalSeconds: number) => {
   return `${minutes}:${String(seconds).padStart(2, '0')}`
 }
 
+export type RestResult = { seconds: number; skipped: boolean }
+
 /**
- * Rest countdown between sets (mirrors the sheet template): a large clock, a progress bar and two
- * one-tap actions - add time or skip. It owns its tick so the session runner never re-renders on
- * every second.
+ * Rest countdown between sets. It owns its tick, and reports how the rest actually ended so the
+ * next logged set can carry the measured rest time (and whether it was skipped) into the session.
  */
 export function RestTimer({
   seconds,
-  onDone,
+  onFinish,
 }: {
   /** Rest the coach prescribed for the set, in seconds. */
   seconds: number
-  onDone: () => void
+  onFinish: (result: RestResult) => void
 }) {
   const [total, setTotal] = useState(Math.max(1, seconds))
   const [remaining, setRemaining] = useState(Math.max(1, seconds))
+  const startedAt = useRef<number | null>(null)
   const finished = useRef(false)
+
+  const finish = useCallback(
+    (skipped: boolean) => {
+      if (finished.current) return
+      finished.current = true
+
+      const start = startedAt.current ?? Date.now()
+      const elapsed = Math.round((Date.now() - start) / 1000)
+      onFinish({ seconds: Math.max(0, Math.min(total, elapsed)), skipped })
+    },
+    [onFinish, total],
+  )
+
+  // The start stamp is taken after mount; reading the clock during render would make the
+  // component impure (and the value would drift on every re-render).
+  useEffect(() => {
+    startedAt.current = Date.now()
+  }, [])
 
   useEffect(() => {
     const id = window.setInterval(() => {
@@ -41,10 +61,8 @@ export function RestTimer({
 
   useEffect(() => {
     if (remaining > 0 || finished.current) return
-
-    finished.current = true
-    onDone()
-  }, [remaining, onDone])
+    finish(false)
+  }, [remaining, finish])
 
   const addTime = () => {
     setTotal((value) => value + STEP_SECONDS)
@@ -61,7 +79,12 @@ export function RestTimer({
     >
       <div className="flex items-center justify-between gap-2">
         <p className="text-muted-foreground text-xs font-semibold">استراحت بین ست‌ها</p>
-        <Button variant="ghost" size="sm" onClick={onDone} aria-label="رد کردن استراحت">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => finish(true)}
+          aria-label="رد کردن استراحت و ثبت زمان سپری‌شده"
+        >
           <X className="size-4" />
           رد کردن
         </Button>

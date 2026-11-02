@@ -23,12 +23,16 @@ export type MemberNavItem = {
   icon: LucideIcon
 }
 
-/** The member app's four tabs - shared by the desktop bar and the mobile tab bar. */
+/**
+ * The member app's primary tabs - shared by the desktop sidebar and the mobile tab bar.
+ * Statistics belongs here: it is the screen members open most often after finishing a session.
+ */
 export const MEMBER_NAV: MemberNavItem[] = [
   { href: '/home', label: 'خانه', icon: House },
   { href: '/plan', label: 'برنامه', icon: CalendarDays },
   { href: '/workout', label: 'تمرین', icon: Dumbbell },
   { href: '/library', label: 'کتابخانه', icon: BookOpen },
+  { href: '/stats', label: 'آمار', icon: ChartNoAxesColumn },
 ]
 
 /** Secondary destinations - too many for the tab bar, so they live in the account menu. */
@@ -37,7 +41,6 @@ export const MEMBER_MORE: MemberNavItem[] = [
   { href: '/locker', label: 'کمد من', icon: LockKeyhole },
   { href: '/membership', label: 'اشتراک', icon: CreditCard },
   { href: '/muscles', label: 'عضلات', icon: PersonStanding },
-  { href: '/stats', label: 'آمار', icon: ChartNoAxesColumn },
   { href: '/structural-balance', label: 'تعادل ساختاری', icon: Scale },
   { href: '/measurements', label: 'اندازه‌گیری', icon: Ruler },
   { href: '/progress-photos', label: 'عکس پیشرفت', icon: ImageIcon },

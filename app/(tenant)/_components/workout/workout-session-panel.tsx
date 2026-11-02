@@ -48,7 +48,11 @@ import { t } from '@/lib/i18n'
 import { muscleLoad, muscleSlugs } from '@/lib/muscle-mapping'
 import { toast } from '@/lib/toast'
 
-import { RestTimer } from './rest-timer'
+import { EffortPicker } from './effort-picker'
+import { FinishSummary } from './finish-summary'
+import { RestTimer, type RestResult } from './rest-timer'
+import { SessionStartSheet } from './session-start-sheet'
+import { WorkoutStepper } from './workout-stepper'
 
 const fa = (value: number) => (value ?? 0).toLocaleString('fa-IR')
 
@@ -63,7 +67,7 @@ type Draft = { reps: string; weightKg: string; rir: string; isWarmup: boolean }
 const draftFor = (exercise: SessionExerciseItem): Draft => ({
   reps: String(exercise.targetRepsMin ?? 10),
   weightKg: '0',
-  rir: String(exercise.targetRir ?? 2),
+  rir: exercise.targetRir != null ? String(exercise.targetRir) : '',
   isWarmup: false,
 })
 
@@ -87,10 +91,24 @@ function muscleLevels(
   return muscleLoad([exercise])
 }
 
+const orderKey = (sessionId: string) => `workout-order:${sessionId}`
+
+function readOrder(sessionId: string): string[] {
+  if (typeof window === 'undefined') return []
+  try {
+    const raw = window.localStorage.getItem(orderKey(sessionId))
+    const parsed = raw ? (JSON.parse(raw) as unknown) : []
+    return Array.isArray(parsed) ? parsed.filter((id): id is string => typeof id === 'string') : []
+  } catch {
+    return []
+  }
+}
+
 /**
- * The session runner: one exercise per step. The media sits on top, the instructions open from a
- * button, and the set form is always visible, so a member never scrolls a long list to find the
- * next movement. Body-map highlight is per exercise and comes from the catalog muscle mapping.
+ * The session runner: one exercise per step. Wide screens put the movement and its muscles on the
+ * left and the instructions on the right; the set form is always visible, so a member never
+ * scrolls a long list to find the next movement. Steps are named, joined and drag-reorderable, and
+ * the step now follows the exercise progress rather than only advancing from the first one.
  */
 export function WorkoutSessionPanel({
   sessionId,
@@ -108,13 +126,19 @@ export function WorkoutSessionPanel({
   const [showInstructions, setShowInstructions] = useState(false)
   const [search, setSearch] = useState('')
   const [searchResults, setSearchResults] = useState<ExerciseSearchItem[]>([])
-  const [celebration, setCelebration] = useState<CompleteSessionResponse | null>(null)
+  const [finish, setFinish] = useState<CompleteSessionResponse | null>(null)
+  const [finishOpen, setFinishOpen] = useState(false)
   const [rest, setRest] = useState<{ key: string; seconds: number } | null>(null)
+  const [restResult, setRestResult] = useState<RestResult | null>(null)
+  const [checkInOpen, setCheckInOpen] = useState(false)
+  const [order, setOrder] = useState<string[]>(() => readOrder(sessionId))
   const { confirm, prompt } = useConfirm()
 
   // Keep request IDs stable after a failed network request so retrying the same set is idempotent.
   const pendingRequestIds = useRef<Record<string, string>>({})
   const requestedDetails = useRef(new Set<string>())
+  const firstLoad = useRef(false)
+  const checkInAsked = useRef(false)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -122,14 +146,28 @@ export function WorkoutSessionPanel({
       const next = await getWorkout(sessionId)
       setSession(next)
 
-      // Land on the first exercise that still has no logged set - the member's actual next action.
-      setStep((currentStep) => {
-        const rows = next.exercises ?? []
-        if (currentStep > 0 && currentStep < rows.length) return currentStep
+      const rows = next.exercises ?? []
+      const open = rows.findIndex((exercise) => (exercise.sets?.length ?? 0) === 0)
 
-        const open = rows.findIndex((exercise) => (exercise.sets?.length ?? 0) === 0)
-        return open === -1 ? 0 : open
-      })
+      // Position on the member's real next action once; after that the step is theirs (or the
+      // advance-after-set rule below), never a silent jump on every refresh.
+      if (!firstLoad.current) {
+        firstLoad.current = true
+        setStep(open === -1 ? 0 : open)
+      }
+
+      const logged = rows.reduce((count, exercise) => count + (exercise.sets?.length ?? 0), 0)
+
+      if (
+        !checkInAsked.current &&
+        logged === 0 &&
+        normalizeSessionStatus(next.status) === WorkoutSessionStatus.InProgress &&
+        !window.sessionStorage.getItem(`workout-checkin:${sessionId}`)
+      ) {
+        checkInAsked.current = true
+        window.sessionStorage.setItem(`workout-checkin:${sessionId}`, '1')
+        setCheckInOpen(true)
+      }
     } catch (error) {
       toast.error('دریافت جلسه تمرین ناموفق بود', {
         description: error instanceof Error ? error.message : 'خطای ناشناخته',
@@ -146,7 +184,24 @@ export function WorkoutSessionPanel({
   }, [load])
 
   const exercises = useMemo(() => session?.exercises ?? [], [session])
-  const current: SessionExerciseItem | undefined = exercises[step]
+
+  /**
+   * The member's own order for this session. Unknown ids are ignored and new exercises appended,
+   * so reordering survives a refresh without hiding an exercise added elsewhere.
+   */
+  const ordered = useMemo(() => {
+    if (order.length === 0) return exercises
+
+    const byId = new Map(exercises.map((exercise) => [exercise.exerciseId, exercise]))
+    const saved = order
+      .map((id) => byId.get(id))
+      .filter((exercise): exercise is SessionExerciseItem => !!exercise)
+    const added = exercises.filter((exercise) => !order.includes(exercise.exerciseId))
+
+    return [...saved, ...added]
+  }, [exercises, order])
+
+  const current: SessionExerciseItem | undefined = ordered[step]
   const currentId = current?.exerciseId
   const detail = currentId ? (details[currentId] ?? null) : null
 
@@ -182,7 +237,14 @@ export function WorkoutSessionPanel({
   const inProgress =
     normalizeSessionStatus(session?.status) === WorkoutSessionStatus.InProgress
 
+  const resting = !!rest
+
   const logSet = async (exercise: SessionExerciseItem) => {
+    if (resting) {
+      toast.error('اول استراحت را رد کن یا تمام شو؛ بعد ست بعدی را ثبت کن.')
+      return
+    }
+
     const values = draft(exercise)
 
     if (
@@ -205,6 +267,9 @@ export function WorkoutSessionPanel({
         : `${Date.now()}-${exercise.exerciseId}-${setNumber}`)
     pendingRequestIds.current[requestKey] = clientRequestId
 
+    const target = exercise.targetSets ?? 0
+    const logged = (exercise.sets?.length ?? 0) + 1
+
     setBusy(true)
     try {
       await logWorkoutSets(sessionId, {
@@ -220,6 +285,9 @@ export function WorkoutSessionPanel({
             ...(values.rir !== '' ? { rir: Number(values.rir) } : {}),
             isWarmup: values.isWarmup,
             clientRequestId,
+            ...(restResult
+              ? { restSeconds: restResult.seconds, restSkipped: restResult.skipped }
+              : {}),
           },
         ],
       })
@@ -230,7 +298,19 @@ export function WorkoutSessionPanel({
       }))
       toast.success('ست ثبت شد')
       setRest({ key: requestKey, seconds: DEFAULT_REST_SECONDS })
+      setRestResult(null)
       await load()
+
+      // Progress drives the step: once the exercise has its planned sets, move forward to the
+      // next one that still needs work. The old code only recomputed the step from index 0,
+      // which is why logging on any later step never advanced the rail.
+      if (target > 0 && logged >= target) {
+        const nextIndex = ordered.findIndex(
+          (item, index) =>
+            index > step && (item.sets?.length ?? 0) < (item.targetSets ?? 1),
+        )
+        if (nextIndex !== -1) setStep(nextIndex)
+      }
     } catch (error) {
       toast.error('ثبت ست ناموفق بود', {
         description: error instanceof Error ? error.message : undefined,
@@ -238,6 +318,11 @@ export function WorkoutSessionPanel({
     } finally {
       setBusy(false)
     }
+  }
+
+  const finishRest = (result: RestResult) => {
+    setRestResult(result)
+    setRest(null)
   }
 
   const closeSession = async (mode: 'complete' | 'abandon') => {
@@ -255,15 +340,17 @@ export function WorkoutSessionPanel({
     setBusy(true)
     try {
       if (mode === 'complete') {
-        setCelebration(await completeWorkout(sessionId))
+        const result = await completeWorkout(sessionId)
+        setFinish(result)
+        setFinishOpen(true)
         toast.success('تمرین تکمیل شد')
       } else {
         await abandonWorkout(sessionId)
         toast.success('تمرین رها شد')
+        onClosed()
       }
 
       await load()
-      if (mode === 'abandon') onClosed()
     } catch (error) {
       toast.error(
         mode === 'complete' ? 'تکمیل تمرین ناموفق بود' : 'رها کردن تمرین ناموفق بود',
@@ -399,6 +486,22 @@ export function WorkoutSessionPanel({
     }
   }
 
+  const reorder = (ids: string[]) => {
+    const activeId = current?.exerciseId
+    setOrder(ids)
+
+    try {
+      window.localStorage.setItem(orderKey(sessionId), JSON.stringify(ids))
+    } catch {
+      /* A blocked storage only loses the reorder on reload. */
+    }
+
+    if (activeId) {
+      const index = ids.indexOf(activeId)
+      if (index >= 0) setStep(index)
+    }
+  }
+
   if (loading && !session) {
     return (
       <div className="bg-card flex h-64 items-center justify-center gap-2 rounded-2xl border">
@@ -418,11 +521,18 @@ export function WorkoutSessionPanel({
 
   const levels = current ? muscleLevels(detail, current) : {}
   const currentSets = current?.sets ?? []
-  const isLast = step >= exercises.length - 1
+  const isLast = step >= ordered.length - 1
   const currentDraft = current ? draft(current) : null
   const instructions = [...(detail?.instructions ?? [])].sort(
     (a, b) => a.stepNumber - b.stepNumber,
   )
+  const stepperItems = ordered.map((exercise) => ({
+    id: exercise.exerciseId,
+    name: exercise.exerciseName ?? 'حرکت',
+    doneSets: exercise.sets?.length ?? 0,
+    totalSets: exercise.targetSets ?? 0,
+  }))
+  const sessionLoad = muscleLoad(ordered)
 
   return (
     <div className="space-y-4" dir="rtl">
@@ -452,7 +562,7 @@ export function WorkoutSessionPanel({
                     : 'لغوشده'}
               </Badge>
               <span className="text-muted-foreground text-xs">
-                {fa(exercises.length)} حرکت · {fa(step + 1)} از {fa(Math.max(1, exercises.length))}
+                {fa(ordered.length)} حرکت · {fa(step + 1)} از {fa(Math.max(1, ordered.length))}
               </span>
             </div>
           </div>
@@ -482,68 +592,17 @@ export function WorkoutSessionPanel({
           </div>
         </div>
 
-        {exercises.length > 1 && (
-          <div className="mt-4 flex gap-1.5 overflow-x-auto pb-1">
-            {exercises.map((exercise, index) => {
-              const done = (exercise.sets?.length ?? 0) > 0
-              const active = index === step
-
-              return (
-                <button
-                  key={`${exercise.exerciseId}-${index}`}
-                  type="button"
-                  onClick={() => setStep(index)}
-                  aria-current={active}
-                  title={exercise.exerciseName ?? 'حرکت'}
-                  className={`flex size-9 shrink-0 items-center justify-center rounded-full border text-xs font-bold transition-colors ${
-                    active
-                      ? 'border-primary bg-primary text-primary-foreground'
-                      : done
-                        ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400'
-                        : 'bg-background text-muted-foreground hover:border-primary'
-                  }`}
-                >
-                  {fa(index + 1)}
-                </button>
-              )
-            })}
-          </div>
-        )}
+        <div className="mt-4">
+          <WorkoutStepper
+            items={stepperItems}
+            activeIndex={step}
+            onSelect={setStep}
+            onReorder={reorder}
+          />
+        </div>
       </section>
 
-      {celebration && (
-        <section className="bg-card rounded-2xl border p-5 shadow-sm">
-          <h2 className="text-lg font-bold">آفرین! تمرین کامل شد 🎉</h2>
-          <p className="text-muted-foreground mt-2 text-sm leading-6">
-            حجم کل {fa(celebration.totalVolumeKg)} کیلوگرم · {fa(celebration.totalSets)} ست ·{' '}
-            {fa(celebration.distinctExercises)} حرکت · {fa(celebration.durationMinutes)} دقیقه
-          </p>
-          {celebration.newPrs?.length > 0 && (
-            <div className="mt-3 rounded-xl border p-3">
-              <p className="text-sm font-semibold">رکوردهای جدید</p>
-              <ul className="text-muted-foreground mt-1 space-y-1 text-xs">
-                {celebration.newPrs.map((pr) => (
-                  <li key={pr.exerciseId}>
-                    {pr.exerciseName ?? pr.exerciseId}: {fa(pr.weightKg)} کیلوگرم (e1RM{' '}
-                    {fa(pr.e1Rm)})
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-          <Button
-            className="mt-4"
-            onClick={() => {
-              setCelebration(null)
-              onClosed()
-            }}
-          >
-            بازگشت به فهرست
-          </Button>
-        </section>
-      )}
-
-      {!exercises.length ? (
+      {!ordered.length ? (
         <section className="bg-card flex flex-col items-center gap-3 rounded-2xl border border-dashed p-8 text-center">
           <Dumbbell className="text-muted-foreground size-7" />
           <p className="text-sm font-bold">هنوز حرکتی در این جلسه نیست</p>
@@ -555,14 +614,28 @@ export function WorkoutSessionPanel({
         current && (
           <section className="bg-card overflow-hidden rounded-2xl border shadow-sm">
             <div className="grid gap-0 lg:grid-cols-[minmax(0,1fr)_19rem]">
+              {/* Left: the movement, the muscles it works, and the logging surfaces. */}
               <div className="min-w-0 border-b lg:border-b-0 lg:border-e">
-                {/* Media first: the movement itself is the instruction. */}
                 <ExerciseMedia
                   media={detail?.media}
                   name={detail?.name ?? current.exerciseName ?? 'حرکت'}
                   loading="eager"
                   className="h-56 sm:h-72"
                 />
+
+                <div className="border-b p-4 sm:p-5">
+                  <div className="mb-2 flex items-center justify-between gap-2">
+                    <h3 className="text-sm font-bold">عضلات این حرکت</h3>
+                    <span className="text-muted-foreground text-[10px]">اصلی پررنگ‌تر است</span>
+                  </div>
+                  {Object.keys(levels).length > 0 ? (
+                    <BodyMapPanel body="male" palette="load" load={levels} size="card" />
+                  ) : (
+                    <p className="text-muted-foreground text-xs">
+                      عضلانی برای این حرکت ثبت نشده است.
+                    </p>
+                  )}
+                </div>
 
                 <div className="space-y-4 p-4 sm:p-5">
                   <div className="flex flex-wrap items-start justify-between gap-2">
@@ -617,6 +690,7 @@ export function WorkoutSessionPanel({
                             <th className="p-2 text-right font-medium">ست</th>
                             <th className="p-2 text-right font-medium">تکرار</th>
                             <th className="p-2 text-right font-medium">وزنه</th>
+                            <th className="p-2 text-right font-medium">شدت</th>
                             <th className="p-2 text-right font-medium">نوع</th>
                             <th className="p-2 text-right font-medium"> </th>
                           </tr>
@@ -627,6 +701,9 @@ export function WorkoutSessionPanel({
                               <td className="p-2 tabular-nums">{fa(set.setNumber)}</td>
                               <td className="p-2 tabular-nums">{fa(set.reps)}</td>
                               <td className="p-2 tabular-nums">{fa(set.weightKg)} kg</td>
+                              <td className="p-2 tabular-nums">
+                                {set.rir != null ? `RIR ${fa(set.rir)}` : '—'}
+                              </td>
                               <td className="text-muted-foreground p-2 text-xs">
                                 {set.isWarmup ? 'گرم‌کردن' : 'اصلی'}
                               </td>
@@ -662,7 +739,7 @@ export function WorkoutSessionPanel({
                       className="space-y-3 rounded-xl border p-3"
                       onSubmit={(event) => {
                         event.preventDefault()
-                        if (inProgress && !busy) void logSet(current)
+                        if (inProgress && !busy && !resting) void logSet(current)
                       }}
                     >
                       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
@@ -691,18 +768,19 @@ export function WorkoutSessionPanel({
                             }
                           />
                         </label>
-                        <label className="space-y-1 text-xs">
-                          <span className="text-muted-foreground">RIR</span>
-                          <Input
-                            type="number"
-                            min="0"
-                            max="10"
-                            value={currentDraft.rir}
-                            onChange={(event) =>
-                              updateDraft(current, { rir: event.target.value })
+                        <div className="space-y-1 text-xs">
+                          <span className="text-muted-foreground">شدت</span>
+                          <EffortPicker
+                            value={
+                              currentDraft.rir === '' ? null : Number(currentDraft.rir)
+                            }
+                            onChange={(rir) =>
+                              updateDraft(current, {
+                                rir: rir == null ? '' : String(rir),
+                              })
                             }
                           />
-                        </label>
+                        </div>
                         <label className="flex items-center gap-2 pt-5 text-xs">
                           <input
                             type="checkbox"
@@ -715,19 +793,33 @@ export function WorkoutSessionPanel({
                         </label>
                       </div>
 
-                      <Button type="submit" disabled={busy || !inProgress}>
+                      <Button
+                        type="submit"
+                        disabled={busy || !inProgress || resting}
+                        aria-describedby={resting ? 'rest-blocked-hint' : undefined}
+                      >
                         <Plus className="size-4" />
                         ثبت ست {fa(currentSets.length + 1)}
                       </Button>
+
+                      {resting && (
+                        <p id="rest-blocked-hint" className="text-muted-foreground text-[11px]">
+                          تا وقتی تایمر استراحت در جریان است ست جدید ثبت نمی‌شود؛ می‌توانی
+                          «رد کردن» را بزنی.
+                        </p>
+                      )}
                     </form>
                   )}
 
                   {rest && (
-                    <RestTimer
-                      key={rest.key}
-                      seconds={rest.seconds}
-                      onDone={() => setRest(null)}
-                    />
+                    <RestTimer key={rest.key} seconds={rest.seconds} onFinish={finishRest} />
+                  )}
+
+                  {restResult && (
+                    <p className="text-muted-foreground text-[11px]">
+                      استراحت ثبت‌شده: {fa(restResult.seconds)} ثانیه
+                      {restResult.skipped ? ' (رد شده)' : ''} — با ست بعدی به رکورد جلسه می‌رسد.
+                    </p>
                   )}
 
                   <div className="flex items-center justify-between gap-2 border-t pt-3">
@@ -757,23 +849,29 @@ export function WorkoutSessionPanel({
                 </div>
               </div>
 
-              {/* Body map: which muscles this step works, updated with the step. */}
+              {/* Right: how to perform the movement, and which muscles are involved. */}
               <aside className="space-y-3 p-4 sm:p-5">
                 <div>
-                  <h3 className="text-sm font-bold">عضلات این حرکت</h3>
+                  <h3 className="text-sm font-bold">دستورالعمل</h3>
                   <p className="text-muted-foreground mt-1 text-xs leading-5">
-                    نقشه با هر حرکت به‌روز می‌شود؛ عضلات اصلی پررنگ‌ترند.
+                    اجرای درست حرکت، مهم‌تر از وزنه است.
                   </p>
                 </div>
-                {Object.keys(levels).length > 0 ? (
-                  <BodyMapPanel body="male" palette="load" load={levels} />
+
+                {instructions.length > 0 ? (
+                  <ol className="list-decimal space-y-2 pe-4 text-xs leading-6">
+                    {instructions.map((item) => (
+                      <li key={item.stepNumber}>{item.text}</li>
+                    ))}
+                  </ol>
                 ) : (
-                  <p className="text-muted-foreground text-xs">
-                    عضلانی برای این حرکت ثبت نشده است.
+                  <p className="text-muted-foreground text-xs leading-6">
+                    دستورالعملی برای این حرکت ثبت نشده است.
                   </p>
                 )}
+
                 {detail?.muscles?.length ? (
-                  <div className="flex flex-wrap gap-1">
+                  <div className="flex flex-wrap gap-1 border-t pt-3">
                     {detail.muscles.map((muscle) => (
                       <span
                         key={`${muscle.code}-${muscle.role}`}
@@ -903,6 +1001,23 @@ export function WorkoutSessionPanel({
           </section>
         </div>
       )}
+
+      <SessionStartSheet
+        open={checkInOpen}
+        onOpenChange={setCheckInOpen}
+        onDone={() => setCheckInOpen(false)}
+      />
+
+      <FinishSummary
+        open={finishOpen}
+        onOpenChange={setFinishOpen}
+        result={finish}
+        load={sessionLoad}
+        onDone={() => {
+          setFinishOpen(false)
+          onClosed()
+        }}
+      />
     </div>
   )
 }
