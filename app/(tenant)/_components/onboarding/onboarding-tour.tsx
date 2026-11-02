@@ -1,7 +1,9 @@
 'use client'
 
 import { HelpCircle } from 'lucide-react'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { usePathname } from 'next/navigation'
+import { useSession } from 'next-auth/react'
+import { useCallback, useEffect, useMemo, useRef } from 'react'
 import Shepherd from 'shepherd.js'
 
 import { Button } from '@/components/ui/button'
@@ -14,73 +16,252 @@ type TourStep = {
   title: string
   text: string
   selector?: string
+  /** Route root this step belongs to; steps without one are shown everywhere. */
+  route?: string
 }
 
 type RoleKey = 'member' | 'coach' | 'console'
 
-/** One tour per role. A step without a selector is shown centred (feature that has no sidebar link). */
+/** Bumping this re-runs the guide for everyone, even if they finished the previous one. */
+const TOUR_VERSION = 2
+
+/**
+ * One tour per role. Member steps are route-scoped so the guide only talks about the screen the
+ * member is actually on; selectors are resolved against the live DOM, and a step whose target is
+ * not rendered is dropped instead of pointing at nothing.
+ */
 const ROLE_STEPS: Record<RoleKey, TourStep[]> = {
   member: [
-    { id: 'home', title: 'خانه', text: 'خلاصه هفته، زنجیره تمرین و آخرین اندازه‌گیری‌ات اینجاست.', selector: '[data-slot="member-shell"]' },
-    { id: 'plan', title: 'برنامه من', text: 'روزهای برنامه مربی و درصد پیشرفت هر برنامه را ببین.', selector: 'a[href="/plan"]' },
-    { id: 'workout', title: 'تمرین', text: 'جلسه بعدی را شروع کن؛ هر حرکت یک مرحله است با ویدیو، دستورالعمل و ثبت ست.', selector: 'a[href="/workout"]' },
-    { id: 'library', title: 'کتابخانه حرکات', text: 'حرکت‌ها را با جستجو و فیلتر عضله پیدا کن و جزئیاتشان را ببین.', selector: 'a[href="/library"]' },
-    { id: 'muscles', title: 'نقشه عضلات', text: 'بار تمرین و ریکاوری هر عضله را روی نقشه بدن ببین.', selector: 'a[href="/muscles"]' },
-    { id: 'stats', title: 'آمار', text: 'حجم، ست و روند پیشرفتت از جلسات ثبت‌شده ساخته می‌شود.', selector: 'a[href="/stats"]' },
-    { id: 'measurements', title: 'اندازه‌گیری', text: 'وزن، دورها، خواب و ضربان استراحت را ثبت کن تا گزارش دقیق‌تر شود.', selector: 'a[href="/measurements"]' },
-    { id: 'coach', title: 'مربی', text: 'سؤال تمرینی را از مربی هوشمند بپرس یا برای بازبینی برنامه به مربی باشگاه بفرست.', selector: 'a[href="/coach"]' },
-    { id: 'locker', title: 'کمد من', text: 'جای کمدت را روی نقشه اتاق رختکن پیدا کن.', selector: 'a[href="/locker"]' },
-    { id: 'support', title: 'پشتیبانی', text: 'درخواست پشتیبانی ثبت کن و پاسخ‌ها را در همان گفتگو ببین.', selector: 'a[href="/support"]' },
-    { id: 'settings', title: 'تنظیمات', text: 'واحدها، اعلان‌ها و ظاهر برنامه را از اینجا تغییر بده.', selector: 'a[href="/settings"]' },
-    { id: 'more', title: 'منوی حساب', text: 'این منو همه بخش‌های جانبی را دارد؛ هر وقت خواستی راهنما را از همین‌جا دوباره باز کن.', selector: 'button[aria-label="منوی حساب"], [data-slot="member-shell"] header button' },
+    {
+      id: 'home',
+      route: '/home',
+      title: 'خانه',
+      text: 'خلاصه هفته، زنجیره تمرین و جلسه بعدی‌ات اینجاست.',
+      selector: '[data-slot="member-shell"]',
+    },
+    {
+      id: 'plan',
+      route: '/plan',
+      title: 'برنامه من',
+      text: 'برنامه‌های فعال و عمومی را ببین و روزهای هر برنامه را باز کن.',
+      selector: 'a[href="/plan"]',
+    },
+    {
+      id: 'workout',
+      route: '/workout',
+      title: 'تمرین',
+      text: 'هر حرکت یک مرحله است؛ ست، شدت و استراحت را همان‌جا ثبت کن.',
+      selector: 'a[href="/workout"]',
+    },
+    {
+      id: 'library',
+      route: '/library',
+      title: 'کتابخانه حرکات',
+      text: 'حرکت‌ها را با فیلتر عضله و تجهیزات پیدا کن و جزئیاتشان را ببین.',
+      selector: 'a[href="/library"]',
+    },
+    {
+      id: 'stats',
+      route: '/stats',
+      title: 'آمار',
+      text: 'حجم، رکوردها، استراحت و روند ماه‌های گذشته از جلسات ثبت‌شده ساخته می‌شود.',
+      selector: 'a[href="/stats"]',
+    },
+    {
+      id: 'measurements',
+      route: '/measurements',
+      title: 'اندازه‌گیری',
+      text: 'وزن و دورها را ثبت کن؛ نمودار هر اندازه با رنگ خودش رسم می‌شود.',
+      selector: 'a[href="/measurements"]',
+    },
+    {
+      id: 'settings',
+      route: '/settings',
+      title: 'تنظیمات',
+      text: 'ظاهر، تجهیزات، کلید عبور و راهنمای سریع از همین‌جا در دسترس‌اند.',
+      selector: 'a[href="/settings"]',
+    },
+    {
+      id: 'nav',
+      title: 'همه امکانات',
+      text: 'در گوشی، دکمه «همه» هر بخش دیگر را در یک صفحه باز می‌کند.',
+      selector: 'button[aria-label="همه امکانات"], nav[aria-label="ناوبری اصلی"]',
+    },
   ],
   coach: [
-    { id: 'home', title: 'پنل مربی', text: 'درخواست‌های باز، شاگردان و راه‌های ورود به تمرین در یک نگاه.', selector: '[data-slot="console-layout"]' },
-    { id: 'queue', title: 'صف مربی', text: 'درخواست‌های انسانی اعضا؛ بازها اول و پاسخ در همان صفحه.', selector: 'a[href="/console/coach"]' },
-    { id: 'report', title: 'گزارش مربی', text: 'یک شاگرد را انتخاب کن تا برنامه، بار عضلانی، ریکاوری و اندازه‌گیری‌هایش را ببینی.', selector: 'a[href="/trainers/overview"]' },
-    { id: 'members', title: 'اعضا', text: 'اعضای باشگاه و وضعیت عضویتشان را مدیریت کن.', selector: 'a[href="/members"]' },
-    { id: 'plans', title: 'برنامه‌ها', text: 'برنامه تمرینی بساز یا برنامه‌های موجود را ویرایش کن.', selector: 'a[href="/plans"]' },
-    { id: 'assignments', title: 'تخصیص‌ها', text: 'برنامه را به شاگرد اختصاص بده و وضعیت اجرا را پیگیری کن.', selector: 'a[href="/assignments"]' },
-    { id: 'workouts', title: 'حالت تمرین', text: 'مثل یک عضو، جلسه را اجرا کن و ست ثبت کن؛ برای آزمایش برنامه‌های خودت مفید است.', selector: 'a[href="/workouts"]' },
-    { id: 'support', title: 'مرکز پشتیبانی', text: 'درخواست‌های پشتیبانی اعضا را بررسی و پاسخ بده.', selector: 'a[href="/support-desk"]' },
-    { id: 'profile', title: 'پروفایل', text: 'اطلاعات حساب و تصویر پروفایل را ویرایش کن.', selector: 'a[href="/console/profile"]' },
+    {
+      id: 'home',
+      title: 'پنل مربی',
+      text: 'درخواست‌های باز، شاگردان و راه‌های ورود به تمرین در یک نگاه.',
+      selector: '[data-slot="console-layout"]',
+    },
+    {
+      id: 'queue',
+      title: 'صف مربی',
+      text: 'درخواست‌های انسانی اعضا؛ بازها اول و پاسخ در همان صفحه.',
+      selector: 'a[href="/console/coach"]',
+    },
+    {
+      id: 'report',
+      title: 'گزارش مربی',
+      text: 'یک شاگرد را انتخاب کن تا برنامه، بار عضلانی، ریکاوری و اندازه‌گیری‌هایش را ببینی.',
+      selector: 'a[href="/trainers/overview"]',
+    },
+    {
+      id: 'members',
+      title: 'اعضا',
+      text: 'اعضای باشگاه و وضعیت عضویتشان را مدیریت کن.',
+      selector: 'a[href="/members"]',
+    },
+    {
+      id: 'plans',
+      title: 'برنامه‌ها',
+      text: 'برنامه تمرینی بساز یا برنامه‌های موجود را ویرایش کن.',
+      selector: 'a[href="/plans"]',
+    },
+    {
+      id: 'assignments',
+      title: 'تخصیص‌ها',
+      text: 'برنامه را به شاگرد اختصاص بده و وضعیت اجرا را پیگیری کن.',
+      selector: 'a[href="/assignments"]',
+    },
+    {
+      id: 'workouts',
+      title: 'حالت تمرین',
+      text: 'مثل یک عضو، جلسه را اجرا کن و ست ثبت کن؛ برای آزمایش برنامه‌های خودت مفید است.',
+      selector: 'a[href="/workouts"]',
+    },
+    {
+      id: 'support',
+      title: 'مرکز پشتیبانی',
+      text: 'درخواست‌های پشتیبانی اعضا را بررسی و پاسخ بده.',
+      selector: 'a[href="/support-desk"]',
+    },
+    {
+      id: 'profile',
+      title: 'پروفایل',
+      text: 'اطلاعات حساب و تصویر پروفایل را ویرایش کن.',
+      selector: 'a[href="/console/profile"]',
+    },
   ],
   console: [
-    { id: 'home', title: 'داشبورد باشگاه', text: 'وضعیت باشگاه، درخواست‌ها و میانبرهای مدیریت.', selector: '[data-slot="console-layout"]' },
-    { id: 'members', title: 'اعضا', text: 'اعضا را ببین، نقش بده و وضعیت عضویت را مدیریت کن.', selector: 'a[href="/members"]' },
-    { id: 'trainers', title: 'مربی‌ها و شاگردها', text: 'حساب مربی بساز و شاگردها را به او نسبت بده.', selector: 'a[href="/trainers"]' },
-    { id: 'report', title: 'گزارش مربی', text: 'گزارش پیشرفت، بار عضلانی و ریکاوری هر عضو برای کوچینگ.', selector: 'a[href="/trainers/overview"]' },
-    { id: 'queue', title: 'صف مربی', text: 'درخواست‌های اعضا از مربیان را ببین و پاسخ بده.', selector: 'a[href="/console/coach"]' },
-    { id: 'plans', title: 'برنامه‌ها', text: 'برنامه‌های تمرینی باشگاه را بساز و منتشر کن.', selector: 'a[href="/plans"]' },
-    { id: 'assignments', title: 'تخصیص برنامه', text: 'برنامه مناسب را به اعضا اختصاص بده.', selector: 'a[href="/assignments"]' },
-    { id: 'workouts', title: 'حالت تمرین', text: 'وارد تجربه تمرین شو و مثل یک عضو باشگاه تمرین کن.', selector: 'a[href="/workouts"]' },
-    { id: 'lockers', title: 'کمدهای هوشمند', text: 'اتاق‌ها، نقشه کمدها و تخصیص‌ها را مدیریت کن.', selector: 'a[href="/lockers"]' },
-    { id: 'billing', title: 'مالی و اشتراک', text: 'محصولات، اشتراک‌ها و پرداخت‌های اعضا.', selector: 'a[href="/billing"]' },
-    { id: 'support', title: 'مرکز پشتیبانی', text: 'درخواست‌های پشتیبانی را بررسی و پاسخ بده.', selector: 'a[href="/support-desk"]' },
-    { id: 'users', title: 'مدیریت کاربران', text: 'حساب‌ها، نقش‌ها و دسترسی‌ها.', selector: 'a[href="/users"]' },
-    { id: 'settings', title: 'تنظیمات باشگاه', text: 'نام، برند و قواعد باشگاه را ویرایش کن.', selector: 'a[href="/console/settings"]' },
+    {
+      id: 'home',
+      title: 'داشبورد باشگاه',
+      text: 'وضعیت باشگاه، درخواست‌ها و میانبرهای مدیریت.',
+      selector: '[data-slot="console-layout"]',
+    },
+    {
+      id: 'members',
+      title: 'اعضا',
+      text: 'اعضا را ببین، نقش بده و وضعیت عضویت را مدیریت کن.',
+      selector: 'a[href="/members"]',
+    },
+    {
+      id: 'trainers',
+      title: 'مربی‌ها و شاگردها',
+      text: 'حساب مربی بساز و شاگردها را به او نسبت بده.',
+      selector: 'a[href="/trainers"]',
+    },
+    {
+      id: 'report',
+      title: 'گزارش مربی',
+      text: 'گزارش پیشرفت، بار عضلانی و ریکاوری هر عضو برای کوچینگ.',
+      selector: 'a[href="/trainers/overview"]',
+    },
+    {
+      id: 'queue',
+      title: 'صف مربی',
+      text: 'درخواست‌های اعضا از مربیان را ببین و پاسخ بده.',
+      selector: 'a[href="/console/coach"]',
+    },
+    {
+      id: 'plans',
+      title: 'برنامه‌ها',
+      text: 'برنامه‌های تمرینی باشگاه را بساز و منتشر کن.',
+      selector: 'a[href="/plans"]',
+    },
+    {
+      id: 'assignments',
+      title: 'تخصیص برنامه',
+      text: 'برنامه مناسب را به اعضا اختصاص بده.',
+      selector: 'a[href="/assignments"]',
+    },
+    {
+      id: 'lockers',
+      title: 'کمدهای هوشمند',
+      text: 'اتاق‌ها، نقشه کمدها و تخصیص‌ها را مدیریت کن.',
+      selector: 'a[href="/lockers"]',
+    },
+    {
+      id: 'billing',
+      title: 'مالی و اشتراک',
+      text: 'محصولات، اشتراک‌ها و پرداخت‌های اعضا.',
+      selector: 'a[href="/billing"]',
+    },
+    {
+      id: 'settings',
+      title: 'تنظیمات باشگاه',
+      text: 'نام، برند و قواعد باشگاه را ویرایش کن.',
+      selector: 'a[href="/console/settings"]',
+    },
   ],
 }
 
-const storageKey = (role: RoleKey) => `hamowj-tour-${role}-completed`
+const routeRoot = (pathname: string) => {
+  const segment = pathname.split('/').filter(Boolean)[0]
+  return segment ? `/${segment}` : '/home'
+}
+
+const isMobileViewport = () =>
+  typeof window !== 'undefined' && window.matchMedia('(max-width: 639px)').matches
 
 /** Custom event so a menu item or a settings button can re-open the guide. */
 export const START_TOUR_EVENT = 'hamowj:start-tour'
 
 export function OnboardingTour() {
   const { isAdmin, isTrainer } = useUserRoles()
+  const { data: session } = useSession()
+  const pathname = usePathname()
 
   const role = useMemo<RoleKey>(
     () => (isAdmin ? 'console' : isTrainer ? 'coach' : 'member'),
     [isAdmin, isTrainer],
   )
 
-  const [ready, setReady] = useState(false)
+  // Tour state is per member and per tour version, so a new guide is offered after an upgrade
+  // while a finished one never reappears uninvited.
+  const userId = (session?.user as { id?: string } | undefined)?.id ?? 'anon'
+  const completionKey = `hamowj-tour-v${TOUR_VERSION}:${userId}:${role}:done`
+  const progressKey = `hamowj-tour-v${TOUR_VERSION}:${userId}:${role}:step`
+
   const activeTour = useRef<{ cancel: () => void } | null>(null)
+  const autoStarted = useRef(false)
 
   const startTour = useCallback(() => {
     activeTour.current?.cancel()
     activeTour.current = null
+
+    const all = ROLE_STEPS[role]
+    const scoped =
+      role === 'member' ? all.filter((step) => !step.route || step.route === routeRoot(pathname)) : all
+
+    // Keep only steps whose target is actually in the DOM (a collapsed menu, a role without that
+    // route, a feature hidden by settings); a centred step without a selector is still allowed.
+    const available = scoped.filter(
+      (step) => !step.selector || !!document.querySelector(step.selector),
+    )
+    const steps = available.length > 0 ? available : all.filter((step) => !step.selector)
+
+    if (steps.length === 0) return
+
+    const savedStep = (() => {
+      try {
+        return window.localStorage.getItem(progressKey)
+      } catch {
+        return null
+      }
+    })()
 
     const tour = new Shepherd.Tour({
       useModalOverlay: true,
@@ -91,10 +272,7 @@ export function OnboardingTour() {
       },
     })
 
-    const steps = ROLE_STEPS[role]
-
     steps.forEach((step, index) => {
-      const target = step.selector ? document.querySelector(step.selector) : null
       const isLast = index === steps.length - 1
       const isFirst = index === 0
 
@@ -102,9 +280,26 @@ export function OnboardingTour() {
         id: step.id,
         title: step.title,
         text: step.text,
-        ...(target
-          ? { attachTo: { element: target as HTMLElement, on: index % 2 === 0 ? 'bottom' : 'top' } }
+        ...(step.selector
+          ? {
+              attachTo: {
+                element: step.selector,
+                on: isMobileViewport() ? 'bottom' : index % 2 === 0 ? 'bottom' : 'top',
+              },
+            }
           : {}),
+        when: {
+          show: () => {
+            try {
+              window.localStorage.setItem(progressKey, step.id)
+            } catch {
+              /* Progress is a convenience; a blocked storage just means no resume. */
+            }
+            document
+              .querySelector(step.selector ?? '')
+              ?.scrollIntoView({ block: 'center', behavior: 'smooth' })
+          },
+        },
         buttons: [
           ...(isFirst
             ? []
@@ -125,7 +320,7 @@ export function OnboardingTour() {
             },
           },
           {
-            text: 'خروج',
+            text: 'بعداً',
             action() {
               tour.cancel()
             },
@@ -135,26 +330,51 @@ export function OnboardingTour() {
       })
     })
 
-    tour.on('complete', () => localStorage.setItem(storageKey(role), '1'))
-    tour.on('cancel', () => localStorage.setItem(storageKey(role), '1'))
+    tour.on('complete', () => {
+      try {
+        window.localStorage.setItem(completionKey, '1')
+        window.localStorage.removeItem(progressKey)
+      } catch {
+        /* ignore */
+      }
+    })
+    tour.on('cancel', () => {
+      // Not completed: the saved step id keeps the guide resumable from where it stopped.
+    })
 
     activeTour.current = tour
     void tour.start()
-  }, [role])
 
+    if (savedStep && steps.some((step) => step.id === savedStep)) {
+      window.setTimeout(() => {
+        try {
+          tour.show(savedStep)
+        } catch {
+          /* If the saved step is no longer available, the first step is already showing. */
+        }
+      }, 80)
+    }
+  }, [completionKey, pathname, progressKey, role])
+
+  // First visit of this user + version: start once, after the shell has painted its links.
   useEffect(() => {
-    setReady(true)
-  }, [])
+    if (autoStarted.current) return
 
-  // First visit of each role: start once, after the shell has painted its links.
-  useEffect(() => {
-    if (!ready || localStorage.getItem(storageKey(role))) return
+    let done = false
+    try {
+      done = window.localStorage.getItem(completionKey) === '1'
+    } catch {
+      done = false
+    }
 
-    const timer = window.setTimeout(startTour, 800)
+    if (done) return
+
+    autoStarted.current = true
+    const timer = window.setTimeout(startTour, 900)
     return () => window.clearTimeout(timer)
-  }, [ready, role, startTour])
+  }, [completionKey, startTour])
 
-  // A menu entry (or any button) can re-open the guide through this event.
+  // A settings button (or any surface) can re-open the guide through this event.
   useEffect(() => {
     const handler = () => startTour()
     window.addEventListener(START_TOUR_EVENT, handler)
@@ -162,8 +382,6 @@ export function OnboardingTour() {
   }, [startTour])
 
   useEffect(() => () => activeTour.current?.cancel(), [])
-
-  if (!ready) return null
 
   return (
     <Button

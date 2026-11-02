@@ -8,6 +8,7 @@ import {
   listMyMeasurements,
 } from '@/app/(tenant)/_api/training-api'
 import { listMyWorkouts } from '@/app/(tenant)/_api/workout-api'
+import { START_TOUR_EVENT } from '@/app/(tenant)/_components/onboarding/onboarding-tour'
 import { DEFAULT_PREFERENCES } from '@/app/(tenant)/_model/preferences'
 import { Button } from '@/components/ui/button'
 import { toast } from '@/lib/toast'
@@ -108,6 +109,15 @@ export function AboutPanel() {
         داده‌های تمرین در پایگاه‌داده همین باشگاه نگه‌داری می‌شود؛ مربی فقط چیزهایی را می‌بیند که
         برای نوشتن برنامه لازم است. برای پیشنهاد یا مشکل با مربی باشگاه حرف بزن.
       </p>
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={() => window.dispatchEvent(new Event(START_TOUR_EVENT))}
+      >
+        <RotateCcw className="size-4" />
+        نمایش دوباره راهنمای صفحه
+      </Button>
+
       <p className="text-muted-foreground text-xs">نسخه ۱.۰</p>
     </div>
   )
