@@ -29,6 +29,7 @@ import {
   type AssignmentPlanDay,
 } from '@/app/(tenant)/_model/assignment.types'
 import { MUSCLE_LABEL } from '@/app/(tenant)/_model/muscle-labels'
+import { BarbellLoad } from '@/components/barbell-load'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -568,9 +569,21 @@ export function MemberPlan() {
                                 )}
                                 <span className="truncate">{name}</span>
                               </span>
-                              <span className="text-muted-foreground shrink-0 tabular-nums">
-                                {fa(exercise.targetSets)} ×{' '}
-                                {repsLabel(exercise.targetRepsMin, exercise.targetRepsMax)}
+                              <span className="text-muted-foreground flex shrink-0 items-center gap-2 tabular-nums">
+                                {exercise.minWeightKg != null || exercise.maxWeightKg != null ? (
+                                  <span className="text-[10px]">
+                                    {exercise.minWeightKg != null
+                                      ? `${fa(exercise.minWeightKg)}–`
+                                      : ''}
+                                    {exercise.maxWeightKg != null
+                                      ? `${fa(exercise.maxWeightKg)} kg`
+                                      : ` ${fa(exercise.minWeightKg ?? 0)} kg`}
+                                  </span>
+                                ) : null}
+                                <span>
+                                  {fa(exercise.targetSets)} ×{' '}
+                                  {repsLabel(exercise.targetRepsMin, exercise.targetRepsMax)}
+                                </span>
                               </span>
                             </li>
                           )
@@ -698,6 +711,13 @@ function AssignmentCard({
 }
 
 function PlanDayRow({ day }: { day: AssignmentPlanDay }) {
+  /** The plan only stores a weight window; the schematic shows its ceiling. */
+  const heaviestWeight = day.exercises.reduce<number | null>((heaviest, exercise) => {
+    const weight = exercise.slot.maxWeightKg
+
+    return weight != null && (heaviest == null || weight > heaviest) ? weight : heaviest
+  }, null)
+
   const load = muscleLoad(
     day.exercises.map((exercise) => ({
       bodyPart: exercise.bodyPart,
@@ -721,21 +741,42 @@ function PlanDayRow({ day }: { day: AssignmentPlanDay }) {
                 <span className="truncate">
                   {getLocalized(exercise, 'exerciseName') || 'حرکت'}
                 </span>
-                <span className="text-muted-foreground shrink-0 tabular-nums">
-                  {fa(exercise.slot.targetSets)} ×{' '}
-                  {repsLabel(exercise.slot.targetRepsMin, exercise.slot.targetRepsMax)}
+                <span className="text-muted-foreground flex shrink-0 items-center gap-2 tabular-nums">
+                  {exercise.slot.maxWeightKg != null && (
+                    <span className="text-[10px]">
+                      {exercise.slot.minWeightKg != null
+                        ? `${fa(exercise.slot.minWeightKg)}–`
+                        : ''}
+                      {fa(exercise.slot.maxWeightKg)} kg
+                    </span>
+                  )}
+                  <span>
+                    {fa(exercise.slot.targetSets)} ×{' '}
+                    {repsLabel(exercise.slot.targetRepsMin, exercise.slot.targetRepsMax)}
+                  </span>
                 </span>
               </li>
             ))}
           </ul>
         </div>
 
-        {Object.keys(load).length > 0 && (
-          <div className="border-t pt-2 sm:border-s sm:border-t-0 sm:pt-0 sm:ps-3">
-            <p className="text-muted-foreground text-[10px] font-semibold">عضلات این روز</p>
-            <BodyMapPanel body="male" palette="load" load={load} size="thumbnail" />
-          </div>
-        )}
+        <div className="space-y-2">
+          {Object.keys(load).length > 0 && (
+            <div className="border-t pt-2 sm:border-t-0 sm:pt-0">
+              <p className="text-muted-foreground text-[10px] font-semibold">عضلات این روز</p>
+              <BodyMapPanel body="male" palette="load" load={load} size="thumbnail" />
+            </div>
+          )}
+
+          {heaviestWeight != null && (
+            <div className="border-t pt-2">
+              <p className="text-muted-foreground text-[10px] font-semibold">
+                صفحات سنگین‌ترین حرکت
+              </p>
+              <BarbellLoad weight={heaviestWeight} size="sm" className="mx-auto max-w-56" />
+            </div>
+          )}
+        </div>
       </div>
     </li>
   )

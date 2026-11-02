@@ -44,6 +44,12 @@ export const SETTINGS_SECTIONS: SettingsSection[] = [
     hint: 'پوسته، چیدمان و نقشه عضلات',
   },
   {
+    key: 'passkeys',
+    href: '/settings/passkeys',
+    label: 'کلیدهای عبور',
+    hint: 'ورود با اثر انگشت یا چهره',
+  },
+  {
     key: 'advanced',
     href: '/settings/advanced',
     label: 'پیشرفته',

@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button'
 import { AlertsPanel } from './panels/alerts-panel'
 import { EquipmentPanel } from './panels/equipment-panel'
 import { LookPanel } from './panels/look-panel'
+import { PasskeysPanel } from './panels/passkeys-panel'
 import { PlanPanel } from './panels/plan-panel'
 import { AboutPanel, AdvancedPanel, DataPanel } from './panels/system-panels'
 import type { PanelProps } from './panels/types'
@@ -24,6 +25,7 @@ const PANELS: Record<string, React.ComponentType<PanelProps>> = {
   alerts: AlertsPanel,
   equipment: EquipmentPanel,
   look: LookPanel,
+  passkeys: PasskeysPanel,
   advanced: AdvancedPanel,
   data: DataPanel,
   about: AboutPanel,

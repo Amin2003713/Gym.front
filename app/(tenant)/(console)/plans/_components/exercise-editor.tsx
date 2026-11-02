@@ -175,6 +175,30 @@ export default function ExerciseEditor({ exercise, muscleIds, onChange }: Exerci
                 onChange={(event) => onChange({ repsMax: event.target.value })}
               />
             </label>
+            <label className="space-y-1 text-sm">
+              <span>حداقل وزن (kg)</span>
+              <Input
+                type="number"
+                min={0}
+                max={1000}
+                step={0.25}
+                placeholder="بدون محدودیت"
+                value={exercise.minWeightKg}
+                onChange={(event) => onChange({ minWeightKg: event.target.value })}
+              />
+            </label>
+            <label className="space-y-1 text-sm">
+              <span>حداکثر وزن (kg)</span>
+              <Input
+                type="number"
+                min={0}
+                max={1000}
+                step={0.25}
+                placeholder="بدون محدودیت"
+                value={exercise.maxWeightKg}
+                onChange={(event) => onChange({ maxWeightKg: event.target.value })}
+              />
+            </label>
           </>
         )}
 

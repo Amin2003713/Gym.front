@@ -3,9 +3,9 @@
 import { LineChart, Plus, Trash2 } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
-  Area,
-  AreaChart,
   CartesianGrid,
+  Line,
+  LineChart as RechartsLineChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -41,26 +41,55 @@ const GROUPS: Array<{
 ]
 
 const METRICS = [
-  { key: 'weightKg', label: 'وزن', unit: 'kg' },
-  { key: 'waistCm', label: 'دور کمر', unit: 'cm' },
-  { key: 'bodyFatPercent', label: 'چربی بدن', unit: '٪' },
+  { key: 'weightKg', label: 'وزن', unit: 'kg', color: '#FB9A3C' },
+  { key: 'bodyFatPercent', label: 'چربی بدن', unit: '٪', color: '#8B5CF6' },
+  { key: 'neckCm', label: 'گردن', unit: 'cm', color: '#0EA5E9' },
+  { key: 'shoulderCm', label: 'شانه', unit: 'cm', color: '#14B8A6' },
+  { key: 'chestCm', label: 'سینه', unit: 'cm', color: '#F43F5E' },
+  { key: 'waistCm', label: 'دور کمر', unit: 'cm', color: '#22C55E' },
+  { key: 'hipsCm', label: 'باسن', unit: 'cm', color: '#EAB308' },
+  { key: 'armLeftCm', label: 'بازوی چپ', unit: 'cm', color: '#6366F1' },
+  { key: 'armRightCm', label: 'بازوی راست', unit: 'cm', color: '#A855F7' },
+  { key: 'forearmLeftCm', label: 'ساعد چپ', unit: 'cm', color: '#06B6D4' },
+  { key: 'forearmRightCm', label: 'ساعد راست', unit: 'cm', color: '#10B981' },
+  { key: 'thighLeftCm', label: 'ران چپ', unit: 'cm', color: '#F97316' },
+  { key: 'thighRightCm', label: 'ران راست', unit: 'cm', color: '#EF4444' },
+  { key: 'calfLeftCm', label: 'ساق چپ', unit: 'cm', color: '#84CC16' },
+  { key: 'calfRightCm', label: 'ساق راست', unit: 'cm', color: '#D946EF' },
 ] as const
 
 type MetricKey = (typeof METRICS)[number]['key']
 
-const TREND_FOR_METRIC: Record<
-  MetricKey,
-  keyof Pick<MeasurementSummary, 'weightKg' | 'waistCm' | 'bodyFatPercent'>
+const TREND_FOR_METRIC: Partial<
+  Record<
+    MetricKey,
+    keyof Pick<
+      MeasurementSummary,
+      | 'weightKg'
+      | 'waistCm'
+      | 'bodyFatPercent'
+      | 'chestCm'
+      | 'armLeftCm'
+      | 'armRightCm'
+      | 'thighLeftCm'
+      | 'thighRightCm'
+    >
+  >
 > = {
   weightKg: 'weightKg',
   waistCm: 'waistCm',
   bodyFatPercent: 'bodyFatPercent',
+  chestCm: 'chestCm',
+  armLeftCm: 'armLeftCm',
+  armRightCm: 'armRightCm',
+  thighLeftCm: 'thighLeftCm',
+  thighRightCm: 'thighRightCm',
 }
 
 export function MemberMeasurements() {
   const [history, setHistory] = useState<BodyMeasurement[]>([])
   const [summary, setSummary] = useState<MeasurementSummary | null>(null)
-  const [metric, setMetric] = useState<MetricKey>('weightKg')
+  const [selected, setSelected] = useState<MetricKey[]>(['weightKg', 'waistCm'])
   const [formOpen, setFormOpen] = useState(false)
   const [date, setDate] = useState(todayIso)
   const [values, setValues] = useState<Record<string, string>>({})
@@ -167,17 +196,43 @@ export function MemberMeasurements() {
     }
   }
 
-  const metricMeta = METRICS.find((item) => item.key === metric)!
-  const chartData = useMemo(
-    () =>
-      [...history]
-        .reverse()
-        .filter((entry) => entry[metric] !== null)
-        .map((entry) => ({ date: entry.date, value: Number(entry[metric]) })),
-    [history, metric],
-  )
+  const activeMetrics = METRICS.filter((item) => selected.includes(item.key))
 
-  const trend = summary?.[TREND_FOR_METRIC[metric]]
+  /** One row per day, one key per selected metric — recharts draws one line per key. */
+  const chartData = useMemo(() => {
+    const byDate = new Map<string, Record<string, number | string>>()
+
+    for (const entry of [...history].reverse()) {
+      const row: Record<string, number | string> = { date: entry.date }
+      let hasValue = false
+
+      for (const item of METRICS) {
+        if (!selected.includes(item.key)) continue
+
+        const value = entry[item.key]
+
+        if (value === null || value === undefined) continue
+
+        row[item.key] = Number(value)
+        hasValue = true
+      }
+
+      if (hasValue) byDate.set(entry.date, row)
+    }
+
+    return [...byDate.values()]
+  }, [history, selected])
+
+  const toggleMetric = (key: MetricKey) => {
+    setSelected((current) => {
+      if (current.includes(key))
+        return current.length === 1
+          ? current
+          : current.filter((item) => item !== key)
+
+      return [...current, key]
+    })
+  }
   const dateFmt = new Intl.DateTimeFormat('fa-IR', {
     month: 'short',
     day: 'numeric',
@@ -284,48 +339,83 @@ export function MemberMeasurements() {
             <LineChart className="text-primary size-4" />
             روند تغییر
           </h2>
-          <select
-            value={metric}
-            onChange={(event) => setMetric(event.target.value as MetricKey)}
-            aria-label="انتخاب شاخص"
-            className="border-input bg-background h-8 rounded-lg border px-2 text-xs"
-          >
-            {METRICS.map((item) => (
-              <option key={item.key} value={item.key}>
-                {item.label}
-              </option>
-            ))}
-          </select>
+          <span className="text-muted-foreground text-[11px]">
+            {fa(activeMetrics.length)} شاخص انتخاب شده
+          </span>
         </div>
 
-        {trend?.first !== null &&
-          trend?.change !== null &&
-          trend?.change !== undefined && (
-            <p className="text-muted-foreground mt-2 text-xs">
-              {fa(Number(trend.first))}
-              {trend.firstDate
-                ? ` (${dateFmt.format(new Date(`${trend.firstDate}T12:00:00`))})`
-                : ''}{' '}
-              → {trend.latest !== null ? fa(Number(trend.latest)) : '—'}
-              {trend.latestDate
-                ? ` (${dateFmt.format(new Date(`${trend.latestDate}T12:00:00`))})`
-                : ''}{' '}
-              {metricMeta.unit}
-              {' · '}
-              <span
-                className={
-                  trend.change === 0
-                    ? ''
-                    : trend.change > 0
-                      ? 'text-primary font-semibold'
-                      : 'font-semibold text-emerald-600'
-                }
+        <div className="mt-2 flex flex-wrap gap-1.5" role="group" aria-label="انتخاب شاخص‌ها">
+          {METRICS.map((item) => {
+            const active = selected.includes(item.key)
+
+            return (
+              <button
+                key={item.key}
+                type="button"
+                aria-pressed={active}
+                onClick={() => toggleMetric(item.key)}
+                className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-semibold transition-colors ${
+                  active
+                    ? 'border-transparent text-foreground'
+                    : 'text-muted-foreground hover:bg-muted'
+                }`}
+                style={active ? { backgroundColor: `${item.color}22` } : undefined}
               >
-                {trend.change > 0 ? '+' : ''}
-                {fa(Number(trend.change))} {metricMeta.unit}
-              </span>
-            </p>
-          )}
+                <span
+                  aria-hidden
+                  className="size-2 rounded-full"
+                  style={{ backgroundColor: item.color }}
+                />
+                {item.label}
+              </button>
+            )
+          })}
+        </div>
+
+        <ul className="mt-3 space-y-1">
+          {activeMetrics.map((item) => {
+            const trendKey = TREND_FOR_METRIC[item.key]
+            const trend = trendKey ? summary?.[trendKey] : undefined
+
+            return (
+              <li
+                key={item.key}
+                className="text-muted-foreground flex flex-wrap items-center gap-1.5 text-[11px]"
+              >
+                <span
+                  aria-hidden
+                  className="size-2 rounded-full"
+                  style={{ backgroundColor: item.color }}
+                />
+                <span className="text-foreground font-semibold">{item.label}:</span>
+                {trend?.first != null && trend?.latest != null ? (
+                  <>
+                    <span className="tabular-nums">
+                      {fa(Number(trend.first))} → {fa(Number(trend.latest))}{' '}
+                      {item.unit}
+                    </span>
+                    {trend.change != null && (
+                      <span
+                        className={
+                          trend.change === 0
+                            ? ''
+                            : trend.change > 0
+                              ? 'text-primary font-semibold'
+                              : 'font-semibold text-emerald-600'
+                        }
+                      >
+                        ({trend.change > 0 ? '+' : ''}
+                        {fa(Number(trend.change))} {item.unit})
+                      </span>
+                    )}
+                  </>
+                ) : (
+                  <span>هنوز دو اندازه‌گیری ثبت نشده</span>
+                )}
+              </li>
+            )
+          })}
+        </ul>
 
         <div className="mt-3 h-48">
           {loading ? (
@@ -338,24 +428,10 @@ export function MemberMeasurements() {
             </div>
           ) : (
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart
+              <RechartsLineChart
                 data={chartData}
                 margin={{ top: 8, right: 8, left: -18, bottom: 0 }}
               >
-                <defs>
-                  <linearGradient id="measureFill" x1="0" y1="0" x2="0" y2="1">
-                    <stop
-                      offset="0%"
-                      stopColor="var(--chart-1)"
-                      stopOpacity={0.3}
-                    />
-                    <stop
-                      offset="100%"
-                      stopColor="var(--chart-1)"
-                      stopOpacity={0}
-                    />
-                  </linearGradient>
-                </defs>
                 <CartesianGrid
                   stroke="var(--border)"
                   strokeDasharray="4 5"
@@ -386,19 +462,30 @@ export function MemberMeasurements() {
                     color: 'var(--popover-foreground)',
                     fontSize: 12,
                   }}
-                  formatter={(value: number) => [
-                    `${fa(value)} ${metricMeta.unit}`,
-                    metricMeta.label,
-                  ]}
+                  formatter={(value, name) => {
+                    const meta = METRICS.find((item) => item.key === name)
+
+                    return [
+                      `${fa(Number(value))} ${meta?.unit ?? ''}`,
+                      meta?.label ?? String(name),
+                    ]
+                  }}
                 />
-                <Area
-                  type="monotone"
-                  dataKey="value"
-                  stroke="var(--chart-1)"
-                  fill="url(#measureFill)"
-                  strokeWidth={2.5}
-                />
-              </AreaChart>
+
+                {activeMetrics.map((item) => (
+                  <Line
+                    key={item.key}
+                    type="monotone"
+                    dataKey={item.key}
+                    name={item.key}
+                    stroke={item.color}
+                    strokeWidth={2.5}
+                    dot={false}
+                    activeDot={{ r: 4 }}
+                    connectNulls
+                  />
+                ))}
+              </RechartsLineChart>
             </ResponsiveContainer>
           )}
         </div>

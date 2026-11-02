@@ -91,6 +91,8 @@ export interface AssignmentPlanExercise {
     restSeconds: number
     notes: string | null
     supersetGroup: number | null
+    minWeightKg?: number | null
+    maxWeightKg?: number | null
   }
   exerciseName?: string | null
   bodyPart?: string | null

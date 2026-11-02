@@ -46,6 +46,9 @@ export interface MemberPreferences {
   defaultMuscleMap: MuscleMapMode
   reduceMotion: boolean
   equipment: string[]
+  /** #RRGGBB picked by the member; null follows the gym palette. */
+  primaryColor: string | null
+  accentColor: string | null
 }
 
 /** Mirrors MemberPreferencesResponse.Defaults so the app renders before the GET returns. */
@@ -68,6 +71,8 @@ export const DEFAULT_PREFERENCES: MemberPreferences = {
   defaultMuscleMap: MuscleMapMode.Load,
   reduceMotion: false,
   equipment: [],
+  primaryColor: null,
+  accentColor: null,
 }
 
 export const EQUIPMENT_OPTIONS: Array<{ code: string; label: string }> = [

@@ -30,6 +30,9 @@ export type ExerciseDraft = {
   rir: string
   durationSeconds: string
   restSeconds: string
+  /** The coach's allowed weight window in the member's unit; empty = unbounded. */
+  minWeightKg: string
+  maxWeightKg: string
   notes: string
 }
 
@@ -79,6 +82,8 @@ export const blankExercise = (): ExerciseDraft => ({
   rir: '',
   durationSeconds: '45',
   restSeconds: '90',
+  minWeightKg: '',
+  maxWeightKg: '',
   notes: '',
 })
 
@@ -153,6 +158,8 @@ const draftsFromSlots = (slots: PlanExerciseDetail[]): ExerciseDraft[] => {
       rir: slot.targetRir == null ? '' : String(slot.targetRir),
       durationSeconds: slot.targetDurationSeconds == null ? '45' : String(slot.targetDurationSeconds),
       restSeconds: String(slot.restSeconds ?? 90),
+      minWeightKg: slot.minWeightKg == null ? '' : String(slot.minWeightKg),
+      maxWeightKg: slot.maxWeightKg == null ? '' : String(slot.maxWeightKg),
       notes: slot.notes ?? '',
     }
 
@@ -252,6 +259,23 @@ const validateExercise = (exercise: ExerciseDraft): string | null => {
   if (exercise.repsMin && exercise.repsMax && Number(exercise.repsMin) > Number(exercise.repsMax))
     return 'حداقل تکرار نباید از حداکثر بیشتر باشد.'
 
+  // Optional weight window: both ends are numbers when present, and the window must not invert.
+  for (const raw of [exercise.minWeightKg, exercise.maxWeightKg]) {
+    if (!raw.trim()) continue
+
+    const value = Number(raw)
+
+    if (!Number.isFinite(value) || value < 0)
+      return 'وزن‌های حداقل و حداکثر باید عدد صفر یا بیشتر باشند.'
+  }
+
+  if (
+    exercise.minWeightKg &&
+    exercise.maxWeightKg &&
+    Number(exercise.minWeightKg) > Number(exercise.maxWeightKg)
+  )
+    return 'حداقل وزن نباید از حداکثر بیشتر باشد.'
+
   return null
 }
 
@@ -315,5 +339,7 @@ const exerciseToInput = (
     supersetGroup,
     exerciseType: exercise.type,
     targetDurationSeconds: timed ? numberOrNull(exercise.durationSeconds) : null,
+    minWeightKg: timed ? null : numberOrNull(exercise.minWeightKg),
+    maxWeightKg: timed ? null : numberOrNull(exercise.maxWeightKg),
   }
 }

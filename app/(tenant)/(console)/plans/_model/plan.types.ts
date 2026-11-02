@@ -37,6 +37,9 @@ export interface PlanExerciseInput {
   supersetGroup?: number | null
   exerciseType: PlanExerciseType
   targetDurationSeconds?: number | null
+  /** The coach's allowed weight window for this slot; null = unbounded. */
+  minWeightKg?: number | null
+  maxWeightKg?: number | null
 }
 export interface PlanDayInput {
   name: string
@@ -84,6 +87,8 @@ export interface PlanExerciseDetail {
   supersetGroup?: number | null
   exerciseType?: PlanExerciseType
   targetDurationSeconds?: number | null
+  minWeightKg?: number | null
+  maxWeightKg?: number | null
   exerciseName?: string | null
   bodyPart?: string | null
   target?: string | null

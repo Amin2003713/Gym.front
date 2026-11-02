@@ -1,7 +1,7 @@
 'use server'
 
 import { serverActionWrapper } from '@/actions/server-action-wrapper'
-import { createData, deleteData, readData } from '@/core/http-service'
+import { createData, deleteData, readData, updateData } from '@/core/http-service'
 import { Problem } from '@/types/http-errors.interface'
 import { OperationResult } from '@/types/operation-result'
 
@@ -74,6 +74,18 @@ export async function registerPasskeyAction(input: {
 }): Promise<OperationResult<void>> {
   return serverActionWrapper(async () => {
     await createData<typeof input, unknown>('user/passkeys', input)
+  })
+}
+
+export async function renamePasskeyAction(
+  passkeyId: string,
+  name: string,
+): Promise<OperationResult<void>> {
+  return serverActionWrapper(async () => {
+    await updateData<{ name: string }, unknown>(
+      `user/passkeys/${encodeURIComponent(passkeyId)}`,
+      { name },
+    )
   })
 }
 
