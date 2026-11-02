@@ -62,15 +62,16 @@ const readText = (value: unknown): string | null => {
  * own fallback cannot express (it returns the source language instead of an empty string).
  */
 export function getLocalized(
-  source: Record<string, unknown> | null | undefined,
+  source: unknown,
   field: string,
   locale: AppLocale = defaultLocale,
 ): string {
-  if (!source) return ''
+  if (!source || typeof source !== 'object') return ''
 
+  const record = source as Record<string, unknown>
   const faKey = `${field}Fa`
   const enKey = `${field}En`
-  const value = source[field]
+  const value = record[field]
   const nested =
     value && typeof value === 'object'
       ? (value as Record<string, unknown>)
@@ -78,8 +79,8 @@ export function getLocalized(
 
   const candidates =
     locale === 'fa'
-      ? [source[faKey], nested?.fa, value, source[enKey], nested?.en]
-      : [source[enKey], nested?.en, value, source[faKey], nested?.fa]
+      ? [record[faKey], nested?.fa, value, record[enKey], nested?.en]
+      : [record[enKey], nested?.en, value, record[faKey], nested?.fa]
 
   for (const candidate of candidates) {
     const text = readText(candidate)
@@ -91,13 +92,13 @@ export function getLocalized(
 
 /** Same contract as `getLocalized`, for list fields (instructions, bullet text). */
 export function getLocalizedList(
-  source: Record<string, unknown> | null | undefined,
+  source: unknown,
   field: string,
   locale: AppLocale = defaultLocale,
 ): string[] {
-  if (!source) return []
+  if (!source || typeof source !== 'object') return []
 
-  const raw = source[field]
+  const raw = (source as Record<string, unknown>)[field]
   const list = Array.isArray(raw) ? raw : []
 
   return list
