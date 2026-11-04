@@ -9,6 +9,8 @@ import { DeepAnalytics } from '@/app/(tenant)/_components/insight/deep-analytics
 import { RangePicker } from '@/app/(tenant)/_components/insight/insight-shell'
 import OverviewTab from '@/app/(tenant)/_components/progress/overview-tab'
 
+import { StatsExtras } from './stats-extras'
+
 export function MemberStats() {
   const { sessions, listItems, stats, loading, error, range, setRange, refetch } =
     useMuscleBalance()
@@ -30,6 +32,8 @@ export function MemberStats() {
       )}
 
       <OverviewTab sessions={sessions} stats={stats} loading={loading} />
+
+      <StatsExtras sessions={sessions} stats={stats} loading={loading} />
 
       <DeepAnalytics sessions={sessions} listItems={listItems} />
 

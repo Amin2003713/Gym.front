@@ -72,7 +72,8 @@ type Draft = { reps: string; weightKg: string; rir: string; isWarmup: boolean }
 const draftFor = (exercise: SessionExerciseItem): Draft => ({
   reps: String(exercise.targetRepsMin ?? 10),
   weightKg: '0',
-  rir: exercise.targetRir != null ? String(exercise.targetRir) : '',
+  // RIR 0 (no reps in reserve) is the honest default; the plan's target still wins.
+  rir: exercise.targetRir != null ? String(exercise.targetRir) : '0',
   isWarmup: false,
 })
 
@@ -572,6 +573,28 @@ export function WorkoutSessionPanel({
   const currentSets = current?.sets ?? []
   const isLast = step >= ordered.length - 1
   const currentDraft = current ? draft(current) : null
+
+  const lastPerformance = current?.lastPerformance ?? null
+  const lastSets = lastPerformance?.workingSets ?? []
+
+  /** Last time's matching set (same number), else the last set of that day. */
+  const previousSetFor = (setNumber: number) =>
+    lastSets.find((item) => item.setNumber === setNumber) ??
+    lastSets[lastSets.length - 1]
+
+  /** Signed change for a logged set against the same set last time. */
+  const deltaFor = (set: LoggedSetItem) => {
+    const previous = previousSetFor(set.setNumber)
+    if (!previous) return null
+
+    return {
+      weightKg: set.weightKg - previous.weightKg,
+      reps: set.reps - previous.reps,
+    }
+  }
+
+  const signed = (value: number) =>
+    `${value >= 0 ? '+' : '−'}${fa(Math.abs(value))}`
   const instructions = [...(detail?.instructions ?? [])].sort(
     (a, b) => a.stepNumber - b.stepNumber,
   )
@@ -700,6 +723,14 @@ export function WorkoutSessionPanel({
                           : ''}
                         {current.targetRir != null ? ` · RIR ${fa(current.targetRir)}` : ''}
                       </p>
+                      {lastPerformance && lastSets.length > 0 && (
+                        <p className="text-muted-foreground mt-1 text-[11px]">
+                          آخرین بار{' '}
+                          {new Date(lastPerformance.completedAt).toLocaleDateString('fa-IR')} ·{' '}
+                          {fa(lastSets.length)} ست · بهترین{' '}
+                          {fa(Math.max(...lastSets.map((item) => item.weightKg)))} کیلوگرم
+                        </p>
+                      )}
                     </div>
                     <div className="flex shrink-0 gap-1.5">
                       <Button
@@ -753,6 +784,7 @@ export function WorkoutSessionPanel({
                             <th className="p-2 text-right font-medium">وزنه</th>
                             <th className="p-2 text-right font-medium">شدت</th>
                             <th className="p-2 text-right font-medium">استراحت</th>
+                            <th className="p-2 text-right font-medium">نسبت به قبل</th>
                             <th className="p-2 text-right font-medium">نوع</th>
                             <th className="p-2 text-right font-medium"> </th>
                           </tr>
@@ -770,6 +802,20 @@ export function WorkoutSessionPanel({
                                 {set.restSeconds != null
                                   ? `${fa(set.restSeconds)} ث${set.restSkipped ? ' (رد)' : ''}`
                                   : '—'}
+                              </td>
+                              <td className="p-2 text-xs tabular-nums whitespace-nowrap">
+                                {(() => {
+                                  const delta = deltaFor(set)
+                                  if (!delta) return <span className="text-muted-foreground">—</span>
+                                  if (delta.weightKg === 0 && delta.reps === 0) {
+                                    return <span className="text-muted-foreground">بدون تغییر</span>
+                                  }
+                                  return (
+                                    <span className="font-semibold">
+                                      {signed(delta.weightKg)} kg · {signed(delta.reps)}
+                                    </span>
+                                  )
+                                })()}
                               </td>
                               <td className="text-muted-foreground p-2 text-xs">
                                 {set.isWarmup ? 'گرم‌کردن' : 'اصلی'}
@@ -809,6 +855,17 @@ export function WorkoutSessionPanel({
                         if (inProgress && !busy && !resting) void logSet(current)
                       }}
                     >
+                      {(() => {
+                        const previous = previousSetFor(currentSets.length + 1)
+                        if (!previous) return null
+                        return (
+                          <p className="bg-muted/50 text-muted-foreground rounded-lg px-3 py-2 text-[11px] tabular-nums">
+                            بار قبل (ست {fa(previous.setNumber)}): {fa(previous.weightKg)} کیلوگرم ×{' '}
+                            {fa(previous.reps)} تکرار
+                            {previous.rir != null ? ` · RIR ${fa(previous.rir)}` : ''}
+                          </p>
+                        )
+                      })()}
                       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
                         <label className="space-y-1 text-xs">
                           <span className="text-muted-foreground">تکرار</span>

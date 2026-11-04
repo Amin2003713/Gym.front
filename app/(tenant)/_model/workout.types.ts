@@ -38,6 +38,18 @@ export interface LoggedSetItem {
   /** True when the member skipped the rest countdown. */
   restSkipped?: boolean
 }
+export interface WorkingSetItem {
+  setNumber: number
+  reps: number
+  weightKg: number
+  rir?: number | null
+  e1Rm?: number
+}
+/** The member's most recent set-day for the exercise, extracted server-side. */
+export interface LastPerformance {
+  completedAt: string
+  workingSets: WorkingSetItem[]
+}
 export interface SessionExerciseItem {
   planDayExerciseId?: string | null
   exerciseId: string
@@ -61,7 +73,7 @@ export interface SessionExerciseItem {
   notes?: string | null
   supersetGroup?: string | null
   sets: LoggedSetItem[]
-  lastPerformance?: unknown
+  lastPerformance?: LastPerformance | null
   suggestion?: { suggestedWeightKg?: number; suggestedReps?: number; reason?: string; confidence?: string; source?: string } | null
 }
 export interface SessionResponse {
