@@ -182,9 +182,9 @@ export default function ExerciseDetailDialog({
                         </span>
                       ))}
                     </div>
-                    {muscleLevels.length > 0 && (
+                    {Object.keys(muscleLevels).length > 0 && (
                       <div className="mt-3">
-                        <BodyMapPanel body="male" palette="load" load={muscleLevels} />
+                        <BodyMapPanel palette="load" load={muscleLevels} />
                       </div>
                     )}
                   </div>

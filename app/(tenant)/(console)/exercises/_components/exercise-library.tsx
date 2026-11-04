@@ -3,7 +3,9 @@
 import { Loader2 } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
+import { useFigureGender } from '@/hooks/use-figure-gender'
 import { useUserRoles } from '@/hooks/use-user-roles'
+import { muscleLoad } from '@/lib/muscle-mapping'
 import { toast } from '@/lib/toast'
 
 import { exerciseApi, exerciseCoverUrl, exerciseThumbUrl } from '../_api/exercise-api'
@@ -28,6 +30,7 @@ const VIEW_STORAGE_KEY = 'exercise-library-view'
 
 export default function ExerciseLibrary() {
   const { canManage, isTraineeOnly } = useUserRoles()
+  const figureGender = useFigureGender()
 
   const [items, setItems] = useState<ExerciseListItem[]>([])
   const [page, setPage] = useState(1)
@@ -54,6 +57,10 @@ export default function ExerciseLibrary() {
   const changeView = useCallback((next: ExerciseViewMode) => {
     setView(next)
     window.localStorage.setItem(VIEW_STORAGE_KEY, next)
+  }, [])
+  const resetFilters = useCallback(() => {
+    setSearchInput('')
+    setSearch('')
   }, [])
 
   const sentinelRef = useRef<HTMLDivElement>(null)
@@ -196,8 +203,10 @@ export default function ExerciseLibrary() {
         // Cards use the thumbnail variant; the gallery inside the detail
         // dialog upgrades to preview/original.
         imageUrl: exerciseThumbUrl(item.cover) ?? exerciseCoverUrl(item.cover),
+        muscleLevels: muscleLoad([{ bodyPart: item.bodyPart, target: item.target }]),
+        gender: figureGender,
       })),
-    [items],
+    [figureGender, items],
   )
 
   return (
@@ -213,10 +222,7 @@ export default function ExerciseLibrary() {
       <ExerciseFilters
         search={searchInput}
         onSearchChange={setSearchInput}
-        onReset={() => {
-          setSearchInput('')
-          setSearch('')
-        }}
+        onReset={resetFilters}
       />
 
       {error && items.length === 0 ? (
@@ -231,6 +237,7 @@ export default function ExerciseLibrary() {
             exercises={gridItems}
             loading={loading && items.length === 0}
             view={view}
+            onReset={resetFilters}
             onView={setDetailId}
             onEdit={canManage ? openEdit : undefined}
             onDelete={

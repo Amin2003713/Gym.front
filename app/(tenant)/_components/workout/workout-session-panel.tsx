@@ -28,7 +28,10 @@ import {
   updateLoggedSet,
   type WorkoutExerciseDetail,
 } from '@/app/(tenant)/_api/workout-api'
+import { listMyAssignments } from '@/app/(tenant)/_api/assignment-api'
+import { getPreferences } from '@/app/(tenant)/_api/preferences-api'
 import BodyMapPanel from '@/app/(tenant)/_components/progress/body-map-panel'
+import { PlanAssignmentStatus } from '@/app/(tenant)/_model/assignment.types'
 import {
   type CompleteSessionResponse,
   type ExerciseSearchItem,
@@ -141,6 +144,11 @@ export function WorkoutSessionPanel({
   const requestedDetails = useRef(new Set<string>())
   const firstLoad = useRef(false)
   const checkInAsked = useRef(false)
+  // Rest for a set comes from the plan's slot, then the member's profile, then the house default.
+  const [restDefaults, setRestDefaults] = useState<{
+    bySlot: Record<string, number>
+    profile: number | null
+  }>({ bySlot: {}, profile: null })
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -241,6 +249,45 @@ export function WorkoutSessionPanel({
 
   const resting = !!rest
 
+  useEffect(() => {
+    let alive = true
+
+    void (async () => {
+      const [assignments, preferences] = await Promise.all([
+        listMyAssignments(PlanAssignmentStatus.Active).catch(() => []),
+        getPreferences().catch(() => null),
+      ])
+
+      if (!alive) return
+
+      const bySlot: Record<string, number> = {}
+
+      for (const assignment of assignments) {
+        for (const day of assignment.plan?.days ?? []) {
+          for (const item of day.exercises) {
+            if (item.slot.restSeconds > 0) bySlot[item.slot.id] = item.slot.restSeconds
+          }
+        }
+      }
+
+      setRestDefaults({ bySlot, profile: preferences?.defaultRestSeconds ?? null })
+    })()
+
+    return () => {
+      alive = false
+    }
+  }, [])
+
+  const restFor = (exercise: SessionExerciseItem) => {
+    if (exercise.restSeconds && exercise.restSeconds > 0) return exercise.restSeconds
+
+    const planned = exercise.planDayExerciseId
+      ? restDefaults.bySlot[exercise.planDayExerciseId]
+      : undefined
+
+    return planned ?? restDefaults.profile ?? DEFAULT_REST_SECONDS
+  }
+
   const logSet = async (exercise: SessionExerciseItem) => {
     if (resting) {
       toast.error('اول استراحت را رد کن یا تمام شو؛ بعد ست بعدی را ثبت کن.')
@@ -299,7 +346,7 @@ export function WorkoutSessionPanel({
         [exercise.exerciseId]: { ...values, isWarmup: false },
       }))
       toast.success('ست ثبت شد')
-      setRest({ key: requestKey, seconds: DEFAULT_REST_SECONDS })
+      setRest({ key: requestKey, seconds: restFor(exercise) })
       setRestResult(null)
       await load()
 
@@ -631,7 +678,7 @@ export function WorkoutSessionPanel({
                     <span className="text-muted-foreground text-[10px]">اصلی پررنگ‌تر است</span>
                   </div>
                   {Object.keys(levels).length > 0 ? (
-                    <BodyMapPanel body="male" palette="load" load={levels} size="card" />
+                    <BodyMapPanel palette="load" load={levels} size="card" />
                   ) : (
                     <p className="text-muted-foreground text-xs">
                       عضلانی برای این حرکت ثبت نشده است.
@@ -1014,7 +1061,7 @@ export function WorkoutSessionPanel({
 
               {Object.keys(levels).length > 0 && (
                 <div className="border-t pt-4">
-                  <BodyMapPanel body="male" palette="load" load={levels} />
+                  <BodyMapPanel palette="load" load={levels} />
                 </div>
               )}
             </div>

@@ -129,7 +129,7 @@ const ROLE_STEPS: Record<RoleKey, TourStep[]> = {
       id: 'workouts',
       title: 'حالت تمرین',
       text: 'مثل یک عضو، جلسه را اجرا کن و ست ثبت کن؛ برای آزمایش برنامه‌های خودت مفید است.',
-      selector: 'a[href="/workouts"]',
+      selector: 'a[href="/home"]',
     },
     {
       id: 'support',

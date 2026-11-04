@@ -1,9 +1,11 @@
 'use client'
 
+import { useFigureGender } from '@/hooks/use-figure-gender'
 import BodyMap, { BodyMapLegend } from '@/features/gym/components/body-map'
 
 type Props = {
-  body: 'male' | 'female'
+  /** Omit to draw the signed-in member; staff panels pass the member's own figure. */
+  body?: 'male' | 'female'
   palette?: 'load' | 'recovery'
   load: Record<string, number>
   /** Absolute bands; without them the map scales relative to the hardest-worked muscle. */
@@ -13,6 +15,8 @@ type Props = {
   className?: string
   size?: 'thumbnail' | 'card' | 'full'
   roles?: Record<string, 'primary' | 'secondary'>
+  /** Compact surfaces (cards, rows) hide the colour key. */
+  legend?: boolean
 }
 
 export default function BodyMapPanel({
@@ -25,11 +29,14 @@ export default function BodyMapPanel({
   className,
   size,
   roles,
+  legend = true,
 }: Props) {
+  const userGender = useFigureGender()
+
   return (
     <div className={className}>
       <BodyMap
-        body={body}
+        body={body ?? userGender}
         palette={palette}
         load={load}
         thresholds={thresholds}
@@ -38,9 +45,11 @@ export default function BodyMapPanel({
         size={size}
         roles={roles}
       />
-      <div className="mt-2 flex justify-center">
-        <BodyMapLegend palette={palette} />
-      </div>
+      {legend && (
+        <div className="mt-2 flex justify-center">
+          <BodyMapLegend palette={palette} />
+        </div>
+      )}
     </div>
   )
 }

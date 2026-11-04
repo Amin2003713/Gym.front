@@ -32,17 +32,17 @@ export function DashboardStat({
   tone?: DashboardStatTone
 }) {
   return (
-    <div className="bg-card rounded-2xl border p-4 shadow-sm transition-shadow hover:shadow-md sm:p-5">
+    <div className="bg-card rounded-2xl border p-3 shadow-sm transition-shadow hover:shadow-md sm:p-5">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="text-muted-foreground text-sm">{label}</p>
-          <p className="mt-2 text-2xl font-extrabold tracking-tight">{value}</p>
+          <p className="text-muted-foreground text-xs sm:text-sm">{label}</p>
+          <p className="mt-1.5 text-xl font-extrabold tracking-tight sm:mt-2 sm:text-2xl">{value}</p>
         </div>
-        <span className={`flex size-11 items-center justify-center rounded-lg ${TONE_CLASS[tone]}`}>
-          <Icon className="size-5" />
+        <span className={`flex size-9 shrink-0 items-center justify-center rounded-lg sm:size-11 ${TONE_CLASS[tone]}`}>
+          <Icon className="size-4 sm:size-5" />
         </span>
       </div>
-      <p className="text-muted-foreground mt-3 text-xs">{detail}</p>
+      <p className="text-muted-foreground mt-2 text-[11px] leading-5 sm:mt-3 sm:text-xs">{detail}</p>
     </div>
   )
 }
@@ -60,7 +60,7 @@ export function DashboardPanel({
 }) {
   return (
     <section className="bg-card overflow-hidden rounded-2xl border shadow-sm">
-      <div className="flex flex-wrap items-start justify-between gap-3 border-b px-4 py-4 sm:px-5">
+      <div className="flex flex-wrap items-start justify-between gap-3 border-b px-3 py-3 sm:px-5 sm:py-4">
         <div>
           <h2 className="font-bold tracking-tight">{title}</h2>
           {description && (
@@ -69,7 +69,7 @@ export function DashboardPanel({
         </div>
         {action}
       </div>
-      <div className="p-4 sm:p-5">{children}</div>
+      <div className="p-3 sm:p-5">{children}</div>
     </section>
   )
 }

@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 
 import { getMemberProgress } from '@/app/(tenant)/_api/member-progress-api'
 import BodyMapPanel from '@/app/(tenant)/_components/progress/body-map-panel'
+import { useFigureGender } from '@/hooks/use-figure-gender'
 
 /**
  * The assigned member's recovery map, next to the targeted-muscles map. Days since each muscle was
@@ -11,6 +12,7 @@ import BodyMapPanel from '@/app/(tenant)/_components/progress/body-map-panel'
  */
 export function MemberRecoveryMap({ memberId }: { memberId: string }) {
   const [days, setDays] = useState<Record<string, number> | null>(null)
+  const figureGender = useFigureGender(memberId)
 
   useEffect(() => {
     let alive = true
@@ -46,7 +48,7 @@ export function MemberRecoveryMap({ memberId }: { memberId: string }) {
         <h4 className="text-sm font-semibold">ریکاوری شاگرد</h4>
         <span className="text-muted-foreground text-xs">از تاریخچه واقعی تمرین</span>
       </div>
-      <BodyMapPanel body="male" palette="recovery" load={load} />
+      <BodyMapPanel body={figureGender} palette="recovery" load={load} />
       <p className="text-muted-foreground mt-2 text-xs leading-5">
         قرمز: تازه تمرین شده و ریکاوری کامل نشده؛ سبز: آماده تمرین. برنامه را حول همین
         وضعیت بچینید.

@@ -275,7 +275,7 @@ export function AssignmentTable({
             {Object.keys(load).length > 0 ? (
               <div className="bg-background rounded-xl border p-3">
                 <p className="text-xs font-semibold">عضلات تحت پوشش برنامه</p>
-                <BodyMapPanel body="male" palette="load" load={load} />
+                <BodyMapPanel palette="load" load={load} />
               </div>
             ) : (
               <p className="text-muted-foreground text-xs">

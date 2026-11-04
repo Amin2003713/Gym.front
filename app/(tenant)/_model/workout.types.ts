@@ -53,6 +53,8 @@ export interface SessionExerciseItem {
   targetRepsMin?: number | null
   targetRepsMax?: number | null
   targetRir?: number | null
+  /** Rest the plan prescribes for this slot; absent on free/added exercises. */
+  restSeconds?: number | null
   /** The coach's allowed weight window for this slot. */
   minWeightKg?: number | null
   maxWeightKg?: number | null

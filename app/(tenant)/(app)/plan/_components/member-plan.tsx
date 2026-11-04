@@ -424,7 +424,6 @@ export function MemberPlan() {
                     {Object.keys(load).length > 0 && (
                       <div className="px-3 pb-1">
                         <BodyMapPanel
-                          body="male"
                           palette="load"
                           load={load}
                           size="thumbnail"
@@ -512,7 +511,7 @@ export function MemberPlan() {
             <div className="max-h-[70svh] space-y-4 overflow-y-auto pe-1">
               <section className="rounded-xl border bg-muted/20 p-3">
                 <p className="mb-2 text-xs font-bold">عضلاتی که این برنامه پوشش می‌دهد</p>
-                <BodyMapPanel body="male" palette="load" load={planMuscleLoad(detail.days)} />
+                <BodyMapPanel palette="load" load={planMuscleLoad(detail.days)} />
               </section>
 
               <ol className="space-y-3">
@@ -534,7 +533,6 @@ export function MemberPlan() {
 
                       {Object.keys(load).length > 0 && (
                         <BodyMapPanel
-                          body="male"
                           palette="load"
                           load={load}
                           size="thumbnail"
@@ -560,7 +558,6 @@ export function MemberPlan() {
                               <span className="flex min-w-0 items-center gap-2">
                                 {Object.keys(own).length > 0 && (
                                   <BodyMapPanel
-                                    body="male"
                                     palette="load"
                                     load={own}
                                     size="thumbnail"
@@ -764,7 +761,7 @@ function PlanDayRow({ day }: { day: AssignmentPlanDay }) {
           {Object.keys(load).length > 0 && (
             <div className="border-t pt-2 sm:border-t-0 sm:pt-0">
               <p className="text-muted-foreground text-[10px] font-semibold">عضلات این روز</p>
-              <BodyMapPanel body="male" palette="load" load={load} size="thumbnail" />
+              <BodyMapPanel palette="load" load={load} size="thumbnail" />
             </div>
           )}
 

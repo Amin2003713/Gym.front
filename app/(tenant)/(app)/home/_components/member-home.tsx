@@ -13,16 +13,9 @@ import {
   Trophy,
   Users,
 } from 'lucide-react'
+import dynamic from 'next/dynamic'
 import Link from 'next/link'
 import { useEffect, useMemo, useState } from 'react'
-import {
-  Line,
-  LineChart as MiniLineChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from 'recharts'
 
 import { listMyAssignments } from '@/app/(tenant)/_api/assignment-api'
 import {
@@ -60,6 +53,13 @@ import { muscleLoad } from '@/lib/muscle-mapping'
 import { toast } from '@/lib/toast'
 import { useFigureGender } from '@/hooks/use-figure-gender'
 
+const WeightTrendChart = dynamic(() => import('./weight-trend-chart'), {
+  ssr: false,
+  loading: () => (
+    <div className="bg-muted/50 mt-2 h-24 animate-pulse rounded-lg" />
+  ),
+})
+
 const fa = (value: number) => (value ?? 0).toLocaleString('fa-IR')
 
 const WEEKDAY_LABELS = ['ش', 'ی', 'د', 'س', 'چ', 'پ', 'ج']
@@ -95,6 +95,7 @@ export function MemberHome() {
   const [version, setVersion] = useState(0)
   const [publicPlan, setPublicPlan] = useState<PlanSummary | null>(null)
   const [enrolling, setEnrolling] = useState(false)
+  const [nextLoading, setNextLoading] = useState(true)
   const { confirm } = useConfirm()
 
   useEffect(() => {
@@ -111,18 +112,26 @@ export function MemberHome() {
 
         const active = assignments[0] ?? null
 
-        // The next planned day is a separate loader on purpose: Home must still render when the
-        // rotation cannot resolve (e.g. an assignment without sessions left).
-        const planned = active
-          ? await getNextSession(active.id).catch(() => null)
-          : null
+        // Paint as soon as the two core reads land; the next planned day resolves afterwards and
+        // only fills its own panel, so the dashboard never waits on the rotation service.
+        setHome(overview)
+        setAssignment(active)
+        setLoading(false)
+
+        if (!active) {
+          setNextLoading(false)
+          return
+        }
+
+        const planned = await getNextSession(active.id).catch(() => null)
 
         if (cancelled) return
 
-        setHome(overview)
-        setAssignment(active)
         setNext(planned)
+        setNextLoading(false)
       } catch (error) {
+        setNextLoading(false)
+
         if (!cancelled)
           toast.error('دریافت اطلاعات خانه ناموفق بود', {
             description: error instanceof Error ? error.message : undefined,
@@ -160,6 +169,7 @@ export function MemberHome() {
 
   const reload = () => {
     setLoading(true)
+    setNextLoading(true)
     setVersion((current) => current + 1)
   }
 
@@ -242,10 +252,10 @@ export function MemberHome() {
 
   return (
     <div className="space-y-5">
-      <section className="bg-card relative overflow-hidden rounded-2xl border p-5 shadow-sm sm:p-7">
+      <section className="bg-card relative overflow-hidden rounded-2xl border p-4 shadow-sm sm:p-7">
         <div className="bg-primary/10 pointer-events-none absolute -top-16 -left-10 size-48 rounded-full blur-3xl" />
         <div className="relative flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-          <div>
+          <div className="min-w-0">
             <span className="bg-primary/10 text-primary inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-bold">
               <Activity className="size-3.5" />
               {dateLabel(home?.today) || 'امروز'}
@@ -260,14 +270,14 @@ export function MemberHome() {
             </p>
           </div>
 
-          <div className="flex flex-wrap gap-2">
-            <Button asChild>
+          <div className="flex w-full flex-wrap gap-2 sm:w-auto">
+            <Button asChild className="w-full sm:w-auto">
               <Link href="/workout">
                 <Play className="size-4" />
                 {assignment ? 'شروع جلسه بعدی' : 'تمرین آزاد'}
               </Link>
             </Button>
-            <Button asChild variant="outline">
+            <Button asChild variant="outline" className="w-full sm:w-auto">
               <Link href="/plan">
                 <CalendarDays className="size-4" />
                 برنامه‌های من
@@ -321,7 +331,7 @@ export function MemberHome() {
         </section>
       )}
 
-      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <section className="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4">
         <DashboardStat
           label="زنجیره تمرین"
           value={`${fa(home?.currentStreakDays ?? 0)} روز`}
@@ -424,7 +434,7 @@ export function MemberHome() {
                 />
               </div>
 
-              <ul className="direction-rtl space-y-2">
+              <ul className="space-y-2">
                 {muscles.map(([slug, value]) => {
                   const percent = Math.round(
                     (value / Math.max(1, muscles[0]?.[1] ?? 1)) * 100,
@@ -442,7 +452,7 @@ export function MemberHome() {
                         </span>
                       </div>
 
-                      <div className="bg-muted mt-1 ml-auto h-1.5 w-full overflow-hidden rounded-full">
+                      <div className="bg-muted mt-1 h-1.5 w-full overflow-hidden rounded-full">
                         <div
                           className="bg-primary h-full rounded-full"
                           style={{ width: `${percent}%` }}
@@ -493,34 +503,7 @@ export function MemberHome() {
                   <p className="text-muted-foreground text-xs">
                     روند وزن (۳۰ ثبت آخر)
                   </p>
-                  <div className="mt-2 h-24">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <MiniLineChart data={home?.bodyWeightTrend ?? []}>
-                        <XAxis dataKey="date" hide />
-                        <YAxis hide domain={['auto', 'auto']} />
-                        <Tooltip
-                          contentStyle={{
-                            backgroundColor: 'var(--popover)',
-                            border: '1px solid var(--border)',
-                            borderRadius: 12,
-                            color: 'var(--popover-foreground)',
-                            fontSize: 12,
-                          }}
-                          formatter={(value) => [
-                            `${fa(Number(value))} kg`,
-                            'وزن',
-                          ]}
-                        />
-                        <Line
-                          type="monotone"
-                          dataKey="weightKg"
-                          stroke="var(--primary)"
-                          strokeWidth={2.5}
-                          dot={false}
-                        />
-                      </MiniLineChart>
-                    </ResponsiveContainer>
-                  </div>
+                  <WeightTrendChart data={home?.bodyWeightTrend ?? []} />
                 </div>
               )}
             </div>
@@ -562,7 +545,12 @@ export function MemberHome() {
         title="برنامه تمرینی"
         description="روزهای برنامه و شروع هر جلسه"
       >
-        {next ? (
+        {nextLoading ? (
+          <div className="space-y-2" aria-hidden>
+            <Skeleton className="h-4 w-2/3" />
+            <Skeleton className="h-4 w-1/3" />
+          </div>
+        ) : next ? (
           <p className="text-muted-foreground text-sm leading-6">
             جلسه بعدی:{' '}
             <span className="text-foreground font-semibold">

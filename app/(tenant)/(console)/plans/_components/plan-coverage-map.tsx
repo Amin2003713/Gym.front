@@ -120,7 +120,7 @@ export default function PlanCoverageMap({
         </p>
       )}
 
-      <BodyMapPanel body="male" palette="load" load={load} />
+      <BodyMapPanel palette="load" load={load} />
 
       {missing > 0 && (
         <p className="text-muted-foreground mt-2 text-xs">در حال دریافت جزئیات {missing} حرکت…</p>

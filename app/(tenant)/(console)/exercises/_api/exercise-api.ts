@@ -14,7 +14,7 @@ import type {
   ListExercisesFilter,
 } from '../_model/exercise.types'
 
-const route = 'exercise/exercise'
+const route = 'exercise'
 
 const queryString = (values: Record<string, unknown>) => {
   const query = new URLSearchParams()

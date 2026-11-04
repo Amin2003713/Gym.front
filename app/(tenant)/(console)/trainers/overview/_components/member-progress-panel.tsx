@@ -20,6 +20,7 @@ import {
 } from '@/app/(tenant)/_api/member-progress-api'
 import BodyMapPanel from '@/app/(tenant)/_components/progress/body-map-panel'
 import { MUSCLE_LABEL } from '@/app/(tenant)/_model/muscle-labels'
+import { useFigureGender } from '@/hooks/use-figure-gender'
 import { Button } from '@/components/ui/button'
 import { toast } from '@/lib/toast'
 
@@ -73,6 +74,7 @@ export function MemberProgressPanel({
   const [activityMode, setActivityMode] = useState<'sessions' | 'volume'>('sessions')
   const [metric, setMetric] = useState<Metric>('weightKg')
   const [selectedMuscle, setSelectedMuscle] = useState<string | null>(null)
+  const figureGender = useFigureGender(memberId)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -265,7 +267,7 @@ export function MemberProgressPanel({
 
         <div className="mt-3 grid gap-4 lg:grid-cols-[minmax(0,1fr)_20rem]">
           <BodyMapPanel
-            body="male"
+            body={figureGender}
             palette={mapMode === 'fatigue' ? 'recovery' : 'load'}
             load={mapLoad}
             selected={selectedMuscle ?? undefined}

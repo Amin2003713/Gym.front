@@ -416,7 +416,7 @@ export function CoachMemberReport() {
                   </p>
                   {Object.keys(report.load).length > 0 ? (
                     <div className="mt-3">
-                      <BodyMapPanel body="male" palette="load" load={report.load} />
+                      <BodyMapPanel palette="load" load={report.load} />
                     </div>
                   ) : (
                     <p className="text-muted-foreground mt-3 text-xs">
@@ -433,7 +433,6 @@ export function CoachMemberReport() {
                   {Object.keys(report.recuperation).length > 0 ? (
                     <div className="mt-3">
                       <BodyMapPanel
-                        body="male"
                         palette="recovery"
                         load={report.recuperation}
                         thresholds={[

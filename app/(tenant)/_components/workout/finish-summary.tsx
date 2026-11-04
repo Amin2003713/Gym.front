@@ -111,7 +111,7 @@ export function FinishSummary({
         {Object.keys(load).length > 0 && (
           <div className="border-t pt-3">
             <p className="mb-1 text-start text-xs font-bold">چیزی که تمرین کردی</p>
-            <BodyMapPanel body="male" palette="load" load={load} />
+            <BodyMapPanel palette="load" load={load} />
           </div>
         )}
 

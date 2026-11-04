@@ -40,7 +40,7 @@ export const bulkAssignPlan = (
   >(`${BASE}`, payload)
 export const enrollInPlan = (planId: string) =>
   createData<Record<string, never>, AssignmentStatusResponse>(
-    `${BASE}/plan/${encodeURIComponent(planId)}/enroll`,
+    `${BASE}/enroll?planId=${encodeURIComponent(planId)}`,
     {},
   )
 export const changeAssignmentStatus = (

@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import BodyMap, { BodyMapLegend } from '@/features/gym/components/body-map'
 import { useAppLocale } from '@/hooks/use-app-locale'
+import { useFigureGender } from '@/hooks/use-figure-gender'
 import { muscleLoad, muscleSlugs } from '@/lib/muscle-mapping'
 
 import { exerciseApi } from '../../exercises/_api/exercise-api'
@@ -41,6 +42,7 @@ export function PlanDetailDialog({
   onClose: () => void
 }) {
   const locale = useAppLocale()
+  const figureGender = useFigureGender()
   const [exercises, setExercises] = useState<Record<string, ExerciseListItem>>(
     {},
   )
@@ -240,7 +242,7 @@ export function PlanDetailDialog({
 
               {Object.keys(planLoad).length > 0 && (
                 <div className="border-t pt-3 lg:border-s lg:border-t-0 lg:ps-4 lg:pt-0">
-                  <BodyMap body="male" palette="load" load={planLoad} />
+                  <BodyMap body={figureGender} palette="load" load={planLoad} />
                   <div className="mt-2 flex justify-center">
                     <BodyMapLegend palette="load" />
                   </div>
@@ -289,7 +291,7 @@ export function PlanDetailDialog({
                     {Object.keys(dayLoad).length > 0 && (
                       <div className="flex items-center gap-2">
                         <div className="w-16 sm:w-20">
-                          <BodyMap body="male" palette="load" load={dayLoad} />
+                          <BodyMap body={figureGender} palette="load" load={dayLoad} />
                         </div>
                         <span className="text-muted-foreground hidden text-[10px] sm:inline">
                           عضلات این روز
@@ -361,7 +363,7 @@ export function PlanDetailDialog({
 
                           {Object.keys(load).length > 0 ? (
                             <div className="w-20 shrink-0 justify-self-end sm:w-24">
-                              <BodyMap body="male" palette="load" load={load} />
+                              <BodyMap body={figureGender} palette="load" load={load} />
                             </div>
                           ) : (
                             <div className="text-muted-foreground flex w-20 shrink-0 items-center justify-center sm:w-24">

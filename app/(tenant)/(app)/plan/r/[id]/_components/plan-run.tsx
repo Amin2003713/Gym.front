@@ -221,7 +221,7 @@ export function PlanRun({ assignmentId }: { assignmentId: string }) {
                 return Object.keys(load).length > 0 ? (
                   <div className="mt-3 rounded-xl border bg-muted/20 p-3">
                     <p className="mb-2 text-xs font-semibold text-muted-foreground">عضلات هدف این روز</p>
-                    <BodyMapPanel body="male" palette="load" load={load} className="mx-auto max-w-[260px]"/>
+                    <BodyMapPanel palette="load" load={load} className="mx-auto max-w-[260px]"/>
                   </div>
                 ) : null
               })()}

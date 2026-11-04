@@ -44,7 +44,7 @@ const activityFmt = new Intl.DateTimeFormat('fa-IR', {
 /**
  * One dashboard for every staff role: the layout is identical, only the number of
  * management shortcuts changes with the signed-in role. Admins and trainers can jump
- * straight into the training app (`/workouts`) to run the gym as a member would.
+ * straight into the training app (`/home`) to run the gym as a member would.
  */
 export function StaffDashboard() {
   const { isAdmin, isTrainer } = useUserRoles()
@@ -151,7 +151,7 @@ export function StaffDashboard() {
 
           <div className="flex flex-wrap gap-2">
             <Button asChild>
-              <Link href="/workouts">
+              <Link href="/home">
                 <Play className="size-4" />
                 حالت تمرین
               </Link>
@@ -264,10 +264,10 @@ export function StaffDashboard() {
         <DashboardPanel title="حالت‌های کاری" description="جابه‌جایی بین مدیریت باشگاه و تمرین">
           <div className="grid gap-2">
             <DashboardModeCard
-              href="/workouts"
+              href="/home"
               icon={Play}
               title="حالت تمرین باشگاه"
-              detail="شروع جلسه، ثبت ست و همان تجربه‌ای که اعضا می‌بینند"
+              detail="ورود به تجربه عضو: شروع جلسه، ثبت ست و برنامه‌های من"
               active
             />
             <DashboardModeCard

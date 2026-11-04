@@ -1,9 +1,9 @@
 'use client'
 
-import { LogOut, UserIcon } from 'lucide-react'
+import { LayoutDashboard, LogOut, UserIcon } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { useTransition } from 'react'
+import { useCallback, useTransition } from 'react'
 
 import { signOutAction } from '@/actions/auth'
 import { HamOwjBrand } from '@/components/branding/hamowj-mark'
@@ -20,6 +20,9 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar'
+import { getPreferences, savePreferences } from '@/app/(tenant)/_api/preferences-api'
+import { AppTheme } from '@/app/(tenant)/_model/preferences'
+import { useUserRoles } from '@/hooks/use-user-roles'
 import { Problem } from '@/types/http-errors.interface'
 import { PublicUser } from '@/types/user.interface'
 
@@ -40,6 +43,21 @@ type MemberShellProps = {
  */
 export function MemberShell({ user, error, children }: MemberShellProps) {
   const pathname = usePathname()
+  const { canManage } = useUserRoles()
+
+  // The palette lives in the member's saved preferences. Writing the flip back keeps the next
+  // ThemeSync from resetting it on reload (which is what made the toggle look broken).
+  const persistTheme = useCallback((theme: 'light' | 'dark') => {
+    const appTheme = theme === 'dark' ? AppTheme.Dark : AppTheme.Light
+    void (async () => {
+      try {
+        const current = await getPreferences()
+        if (current.theme !== appTheme) await savePreferences({ ...current, theme: appTheme })
+      } catch {
+        // Cosmetics only: the click already applied locally.
+      }
+    })()
+  }, [])
 
   return (
     <SidebarProvider className="min-h-svh">
@@ -48,7 +66,7 @@ export function MemberShell({ user, error, children }: MemberShellProps) {
 
         <div className="flex min-w-0 flex-1 flex-col">
           <header className="bg-card/90 supports-[backdrop-filter]:bg-card/75 sticky top-0 z-40 border-b backdrop-blur">
-            <div className="mx-auto flex h-14 w-full max-w-5xl items-center gap-2 px-3 sm:px-4">
+            <div className="mx-auto flex h-14 w-full max-w-6xl items-center gap-2 px-3 sm:px-4">
               <span className="hidden md:inline-flex">
                 <SidebarTrigger aria-label="جمع کردن منو" />
               </span>
@@ -61,13 +79,21 @@ export function MemberShell({ user, error, children }: MemberShellProps) {
               </Link>
 
               <div className="ms-auto flex items-center gap-1">
-                <ModeToggle />
+                {canManage && (
+                  <Button asChild variant="outline" size="sm" className="h-8 gap-1.5 px-2">
+                    <Link href="/" aria-label="بازگشت به پنل باشگاه">
+                      <LayoutDashboard className="size-4" aria-hidden />
+                      <span className="hidden sm:inline">پنل باشگاه</span>
+                    </Link>
+                  </Button>
+                )}
+                <ModeToggle onThemeChange={persistTheme} />
                 <MemberUserMenu user={user} error={error} />
               </div>
             </div>
           </header>
 
-          <main className="mx-auto w-full max-w-5xl flex-1 px-4 pt-4 pb-28 md:pb-10">
+          <main className="mx-auto w-full max-w-6xl flex-1 px-3 pt-4 pb-28 sm:px-4 md:pb-10">
             {children}
           </main>
 
@@ -84,7 +110,7 @@ export function MemberShell({ user, error, children }: MemberShellProps) {
                     key={href}
                     href={href}
                     aria-current={active ? 'page' : undefined}
-                    className={`flex flex-col items-center gap-1 py-2.5 text-[10px] font-semibold transition-colors ${
+                    className={`flex flex-col items-center gap-1 py-2.5 text-[9px] font-semibold sm:text-[10px] transition-colors ${
                       active ? 'text-primary' : 'text-muted-foreground'
                     }`}
                   >
@@ -95,7 +121,7 @@ export function MemberShell({ user, error, children }: MemberShellProps) {
                     >
                       <Icon className="size-[18px]" aria-hidden />
                     </span>
-                    {label}
+                    <span className="max-w-full truncate px-0.5 leading-tight">{label}</span>
                   </Link>
                 )
               })}
@@ -113,6 +139,7 @@ export function MemberShell({ user, error, children }: MemberShellProps) {
 function MemberUserMenu({ user, error }: Pick<MemberShellProps, 'user' | 'error'>) {
   const router = useRouter()
   const [, startTransition] = useTransition()
+  const { canManage } = useUserRoles()
 
   const signOut = () =>
     startTransition(async () => {
@@ -163,6 +190,19 @@ function MemberUserMenu({ user, error }: Pick<MemberShellProps, 'user' | 'error'
             </DropdownMenuItem>
           ))}
         </DropdownMenuGroup>
+        {canManage && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuGroup>
+              <DropdownMenuItem asChild>
+                <Link href="/">
+                  <LayoutDashboard className="size-4" />
+                  بازگشت به پنل باشگاه
+                </Link>
+              </DropdownMenuItem>
+            </DropdownMenuGroup>
+          </>
+        )}
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
           <DropdownMenuItem onClick={signOut} className="text-destructive">

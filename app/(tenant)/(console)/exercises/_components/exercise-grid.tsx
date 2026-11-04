@@ -13,6 +13,8 @@ interface ExerciseGridProps {
   onEdit?: (id: string) => void
   onDelete?: (id: string) => void
   deletingId?: string
+  /** Clears search and filters; shown as the empty state's first action. */
+  onReset?: () => void
 }
 
 export default function ExerciseGrid({
@@ -23,6 +25,7 @@ export default function ExerciseGrid({
   onEdit,
   onDelete,
   deletingId,
+  onReset,
 }: ExerciseGridProps) {
   if (loading) {
     return (
@@ -51,6 +54,15 @@ export default function ExerciseGrid({
         <p className="text-muted-foreground mt-2 text-sm">
           عبارت جستجو را تغییر دهید یا یک حرکت جدید اضافه کنید.
         </p>
+        {onReset && (
+          <button
+            type="button"
+            onClick={onReset}
+            className="bg-primary text-primary-foreground mt-4 inline-flex h-10 items-center justify-center rounded-lg px-4 text-sm font-semibold"
+          >
+            نمایش همه حرکات
+          </button>
+        )}
       </div>
     )
   }

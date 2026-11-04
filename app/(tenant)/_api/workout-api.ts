@@ -193,5 +193,5 @@ export interface WorkoutExerciseDetail {
 
 export const getWorkoutExerciseDetail = (exerciseId: string) =>
   readData<WorkoutExerciseDetail>(
-    `exercise/exercise/${encodeURIComponent(exerciseId)}?languageCode=fa`,
+    `exercise/${encodeURIComponent(exerciseId)}?languageCode=fa`,
   )

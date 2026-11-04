@@ -2,6 +2,8 @@
 
 import { Eye, LoaderCircle, Pencil, Trash2 } from 'lucide-react'
 
+import BodyMapPanel from '@/app/(tenant)/_components/progress/body-map-panel'
+
 export interface ExerciseCardItem {
   id: string
   name: string
@@ -9,6 +11,10 @@ export interface ExerciseCardItem {
   imageUrl?: string | null
   /** Primary/assisting muscles, shown as compact chips next to the instructions. */
   muscles?: string[]
+  /** The same muscles as a body-map load, so the card can shade the figure. */
+  muscleLevels?: Record<string, number>
+  /** Figure the card draws; the library passes the signed-in member's. */
+  gender?: 'male' | 'female'
 }
 
 interface ExerciseCardProps {
@@ -63,9 +69,22 @@ export default function ExerciseCard({
           {exercise.name}
         </button>
 
-        <p className="text-muted-foreground line-clamp-3 min-h-5 text-sm leading-6">
-          {exercise.description || 'دستورالعمل ثبت نشده است.'}
-        </p>
+        <div className="flex items-start gap-2">
+          <p className="text-muted-foreground line-clamp-3 min-h-5 flex-1 text-sm leading-6">
+            {exercise.description || 'دستورالعمل ثبت نشده است.'}
+          </p>
+
+          {exercise.muscleLevels && Object.keys(exercise.muscleLevels).length > 0 && (
+            <BodyMapPanel
+              body={exercise.gender}
+              palette="load"
+              load={exercise.muscleLevels}
+              size="thumbnail"
+              legend={false}
+              className="bg-muted/30 w-16 shrink-0 rounded-lg border p-1 sm:w-20"
+            />
+          )}
+        </div>
 
         {exercise.muscles && exercise.muscles.length > 0 && (
           <div className="flex flex-wrap gap-1">

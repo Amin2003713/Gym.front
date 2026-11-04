@@ -5,8 +5,6 @@ import {
   CalendarCheck,
   ChartNoAxesCombined,
   Dumbbell,
-  FileUp,
-  History,
   LockKeyhole,
   LifeBuoy,
   MessagesSquare,
@@ -47,11 +45,6 @@ const SIDEBAR_OPTIONS: { tree: SidebarItem[] } = {
       role: STAFF_ROLES,
       children: [
         { name: 'کتابخانه حرکات', path: '/exercises', icon: <Dumbbell className="size-4" />, colorClass: 'text-primary' },
-        { name: 'تمرین امروز', path: '/workouts', icon: <CalendarCheck className="size-4" />, colorClass: 'text-primary' },
-        { name: 'تاریخچه تمرین', path: '/history', icon: <History className="size-4" />, colorClass: 'text-primary' },
-        { name: 'اندازه‌گیری بدن', path: '/console/measurements', icon: <Activity className="size-4" />, colorClass: 'text-primary' },
-        // Importing the catalog is destructive data work: admins only.
-        { name: 'ورود و خروجی اطلاعات', path: '/imports', icon: <FileUp className="size-4" />, colorClass: 'text-primary', role: ADMIN_ROLES },
       ],
     },
     {

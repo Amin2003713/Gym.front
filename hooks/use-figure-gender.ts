@@ -8,6 +8,21 @@ import { usersApi } from '@/features/users/api/users-api'
 
 export type FigureGender = 'male' | 'female'
 
+type ProfileLike = Awaited<ReturnType<typeof usersApi.info>>
+
+// Every body map asks for the gender; one shared request per user keeps a page with
+// several maps from firing the same profile call over and over.
+const PROFILE_CACHE = new Map<string, Promise<ProfileLike>>()
+
+function profileRequest(userId: string): Promise<ProfileLike> {
+  const cached = PROFILE_CACHE.get(userId)
+  if (cached) return cached
+  const request = usersApi.info(userId)
+  PROFILE_CACHE.set(userId, request)
+  request.catch(() => PROFILE_CACHE.delete(userId))
+  return request
+}
+
 /**
  * The API contract is numeric: backend GenderEnum Male = 0, Female = 1
  * (see enums/gender.enum.ts). Legacy string names are still accepted for
@@ -64,10 +79,11 @@ export function useFigureGender(userId?: string | null, override?: FigureGender 
     const sessionGender = normalizeGender(sessionUser?.gender)
     if (tokenGender ?? sessionGender) setFigureGender((tokenGender ?? sessionGender)!)
 
-    if (userId ?? sessionUser?.id) {
+    const targetUserId = userId ?? sessionUser?.id
+
+    if (targetUserId) {
       let alive = true
-      usersApi
-        .info(userId ?? sessionUser?.id)
+      profileRequest(targetUserId)
         .then((profile) => {
           if (!alive) return
           const profileGender = normalizeGender(profile?.gender)
