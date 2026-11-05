@@ -21,30 +21,24 @@ const getTenantFromClientHost = (clientHost: string): string | null => {
   // Prefer the configured client base domain so only its direct tenant
   // subdomains can affect the API host.
   const configuredClientBase = process.env.NEXT_PUBLIC_BASE_DOMAIN
-  const clientBase = configuredClientBase
-    ? normalizeHost(configuredClientBase)
-    : ''
+  const clientBase = configuredClientBase ? normalizeHost(configuredClientBase) : ''
 
   if (clientBase && host.endsWith(`.${clientBase}`)) {
     const prefix = host.slice(0, -(clientBase.length + 1))
-    if (prefix && !prefix.includes('.') && prefix !== 'www' && prefix !== 'api')
-      return prefix
+    if (prefix && !prefix.includes('.') && prefix !== 'www' && prefix !== 'api') return prefix
     return null
   }
 
   // Local/dev and deployments without NEXT_PUBLIC_BASE_DOMAIN.
   if (!clientBase && host !== 'localhost' && host !== '127.0.0.1') {
     const parts = host.split('.')
-    if (parts.length > 2 && parts[0] !== 'www' && parts[0] !== 'api')
-      return parts[0]
+    if (parts.length > 2 && parts[0] !== 'www' && parts[0] !== 'api') return parts[0]
   }
   return null
 }
 
-const getBaseURL = async (): Promise<{
-  baseURL: string
-  tenant: string | null
-}> => {
+
+const getBaseURL = async (): Promise<{ baseURL: string; tenant: string | null }> => {
   const configuredApiUrl = API_URL?.trim()
 
   if (!configuredApiUrl) {
@@ -52,63 +46,43 @@ const getBaseURL = async (): Promise<{
   }
 
   const apiUrl = new URL(
-    /^[a-z][a-z\d+.-]*:\/\//i.test(configuredApiUrl)
+    /^[a-z][a-z0-9+.-]*:\/\//i.test(configuredApiUrl)
       ? configuredApiUrl
-      : `http://${configuredApiUrl}`,
+      : `https://${configuredApiUrl}`,
   )
 
   let clientHost = ''
-  let clientProtocol = 'http:'
 
   if (typeof window !== 'undefined') {
-    // Browser: use the actual current URL protocol
     clientHost = window.location.hostname
-    clientProtocol = window.location.protocol
   } else {
-    // Server: use the forwarded protocol from the reverse proxy
     const { headers } = await import('next/headers')
     const requestHeaders = await headers()
 
     clientHost =
-      requestHeaders.get('x-forwarded-host') || requestHeaders.get('host') || ''
-
-    const forwardedProtocol = requestHeaders
-      .get('x-forwarded-proto')
-      ?.split(',')[0]
-      ?.trim()
-
-    if (forwardedProtocol) {
-      clientProtocol = `${forwardedProtocol.replace(/:$/, '')}:`
-    } else {
-      // Fallback to the incoming request URL
-      const requestProtocol = requestHeaders.get('x-forwarded-protocol')
-
-      if (requestProtocol) {
-        clientProtocol = `${requestProtocol.replace(/:$/, '')}:`
-      }
-    }
+      requestHeaders.get('x-forwarded-host') ||
+      requestHeaders.get('host') ||
+      ''
   }
 
   const tenant = getTenantFromClientHost(clientHost)
 
-  // Apply the client's protocol to the API URL
-  apiUrl.protocol = clientProtocol
-
   if (tenant) {
     if (process.env.NODE_ENV === 'development') {
-      // Avoid ENOTFOUND for tenant.localhost
+      // Avoid Node.js ENOTFOUND for tenant.localhost.
       apiUrl.hostname = 'localhost'
     } else {
-      // Keep tenant subdomains in production
+      // Keep tenant subdomains in production if your API requires them.
       apiUrl.hostname = `${tenant}.${apiUrl.hostname}`
     }
   }
-  console.log({ apiUrl, tenant })
+
   return {
     baseURL: apiUrl.toString().replace(/\/$/, ''),
     tenant,
   }
 }
+
 
 const httpService = axios.create({
   headers: {
@@ -126,6 +100,7 @@ httpService.interceptors.response.use(
 
       errorHandler[statusCode]?.(errorData)
     } else {
+
       networkErrorStrategy()
     }
 
@@ -139,8 +114,10 @@ const apiBase = async <T>(
 ): Promise<T> => {
   const session = await (typeof window !== 'undefined' ? getSession() : auth())
 
+
   const baseURL = await getBaseURL()
   const fullURL = `${baseURL.baseURL}/api/${url}`
+
 
   const headers = {
     ...options?.headers,
@@ -156,6 +133,8 @@ const apiBase = async <T>(
     ...options,
     headers,
   })
+
+
 
   return response.data as T
 }
@@ -181,9 +160,6 @@ const createData = async <TModel, TResult>(
     headers,
     data,
   }
-
-  console.log(' the post    ==============')
-
   return await apiBase(url, options)
 }
 
@@ -193,8 +169,8 @@ const updateData = async <TModel, TResult>(
   headers?:
     | AxiosRequestHeaders
     | {
-        'X-Tenant': string
-      },
+    'X-Tenant': string
+  },
 ): Promise<TResult> => {
   const options: AxiosRequestConfig = {
     method: 'PUT',
