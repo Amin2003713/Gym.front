@@ -8,60 +8,81 @@ export const authConfig = {
   pages: {
     signIn: '/signin',
   },
+
   callbacks: {
     async authorized({ auth, request }) {
       const url = request.nextUrl.clone()
+
       const host = request.headers.get('host') || BASE_DOMAIN!
-      const hostParts = host.split('.')
-      const subdomain = hostParts[0]
+      const hostname = host.split(':')[0].toLowerCase()
+
+      const baseDomain = BASE_DOMAIN!.split(':')[0].toLowerCase()
+
       const isAuthenticated = !!auth?.user
+
       const publicPages = [
         '/signin',
         '/forget-password',
         '/not-found',
         '/verify-account',
+        '/signup',
       ]
-      const validSubdomain = subdomain !== 'www' && hostParts.length > 1
-    
 
-      // Tenant identity comes from the subdomain (validated above) and the
-      // session JWT; dashboard routes live at root paths, so no rewrite —
-      // and no tenant key in the URL — is needed.
+      // Determine whether the request belongs to a tenant
+      const isBaseDomain =
+        hostname === baseDomain || hostname === `www.${baseDomain}`
 
-      if (!validSubdomain && request.nextUrl.pathname === '/') {
+      const isSubdomain =
+        hostname.endsWith(`.${baseDomain}`) && hostname !== `www.${baseDomain}`
+
+      const subdomain = isSubdomain
+        ? hostname.slice(0, -(baseDomain.length + 1))
+        : null
+
+      // 1. Root domain or www without a tenant
+      if (isBaseDomain) {
+        if (url.pathname === '/') {
+          return NextResponse.redirect(new URL('/signup', request.url))
+        }
+
+        // Allow public pages on the main domain
+        if (publicPages.includes(url.pathname)) {
+          return NextResponse.next()
+        }
+
+        // Main domain cannot access tenant dashboard
         return NextResponse.redirect(new URL('/signup', request.url))
       }
 
-      if (validSubdomain && !publicPages.includes(request.nextUrl.pathname)) {
-        const isExist = await checkDomain(subdomain)
+      // 2. No valid tenant subdomain
+      if (!isSubdomain || !subdomain) {
+        return NextResponse.redirect(new URL('/signup', request.url))
+      }
 
-        if (isExist) {
-          if (isAuthenticated) {
-            return NextResponse.next()
-          } else {
-            return NextResponse.redirect(new URL(`/signin`, request.url))
-          }
-        } else {
-          return NextResponse.redirect(new URL('/not-found', request.url))
+      // 3. Check whether the tenant exists
+      const isTenantExist = await checkDomain(subdomain)
+
+      if (!isTenantExist) {
+        return NextResponse.redirect(new URL('/signup', request.url))
+      }
+
+      // 4. Allow public pages on valid tenant domains
+      if (publicPages.includes(url.pathname)) {
+        if (isAuthenticated && url.pathname === '/signin') {
+          return NextResponse.redirect(new URL('/', request.url))
         }
+
+        return NextResponse.next()
       }
 
-      // جلوگیری از دسترسی به لاگین در صورت احراز هویت
-      if (isAuthenticated && url.pathname.startsWith('/signin')) {
-        return NextResponse.redirect(new URL(`/`, request.url))
-      }
-
-      if (
-        !validSubdomain &&
-        ['/signin', '/forget-password', '/verify-account'].some((path) =>
-          request.nextUrl.pathname.includes(path),
-        )
-      ) {
-        return NextResponse.redirect(new URL('/not-found', request.url))
+      // 5. Require authentication for tenant dashboard
+      if (!isAuthenticated) {
+        return NextResponse.redirect(new URL('/signin', request.url))
       }
 
       return NextResponse.next()
     },
   },
+
   providers: [],
 } satisfies NextAuthConfig
