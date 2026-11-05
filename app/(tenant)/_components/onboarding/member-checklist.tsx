@@ -1,6 +1,6 @@
 'use client'
 
-import { CheckCircle2, Circle, X } from 'lucide-react'
+import { CheckCircle2, Circle, X } from '@/components/icons'
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 

@@ -12,7 +12,7 @@ import {
   ShieldCheck,
   Smartphone,
   Trash2,
-} from 'lucide-react'
+} from '@/components/icons'
 import { useCallback, useEffect, useState } from 'react'
 
 import {

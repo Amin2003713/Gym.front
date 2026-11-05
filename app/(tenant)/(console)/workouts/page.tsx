@@ -1,6 +1,6 @@
 'use client'
 
-import { Play, RefreshCw } from 'lucide-react'
+import { Play, RefreshCw } from '@/components/icons'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { Button } from '@/components/ui/button'

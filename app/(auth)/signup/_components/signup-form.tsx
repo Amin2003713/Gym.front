@@ -1,7 +1,7 @@
 'use client'
 
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Dumbbell, ShieldCheck, Trophy } from 'lucide-react'
+import { Dumbbell, ShieldCheck, Trophy } from '@/components/icons'
 import { useForm } from 'react-hook-form'
 
 import GymGroupInfoForm from '@/app/(auth)/signup/_components/gym-group-info-form'

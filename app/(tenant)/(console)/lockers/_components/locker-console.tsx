@@ -1,6 +1,6 @@
 'use client'
 
-import { DoorOpen, Lock, Plus, RefreshCw, Trash2, Wrench } from 'lucide-react'
+import { DoorOpen, Lock, Plus, RefreshCw, Trash2, Wrench } from '@/components/icons'
 import { useCallback, useEffect, useState } from 'react'
 
 import {

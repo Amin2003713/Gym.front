@@ -1,6 +1,6 @@
 'use client'
 
-import {Activity, Award, CalendarDays, Dumbbell, Flame, Info, Target, TrendingUp, Weight} from 'lucide-react'
+import {Activity, Award, CalendarDays, Dumbbell, Flame, Info, Target, TrendingUp, Weight} from '@/components/icons'
 import {useMemo, useState, type ReactNode} from 'react'
 import {Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis} from 'recharts'
 

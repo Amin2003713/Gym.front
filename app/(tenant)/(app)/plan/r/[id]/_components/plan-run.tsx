@@ -1,6 +1,6 @@
 'use client'
 
-import { ArrowRight, CalendarDays, CirclePlay, Timer, Trophy } from 'lucide-react'
+import { ArrowRight, CalendarDays, CirclePlay, Timer, Trophy } from '@/components/icons'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'

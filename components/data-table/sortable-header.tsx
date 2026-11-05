@@ -1,7 +1,7 @@
 'use client'
 
 import type { Column } from '@tanstack/react-table'
-import { ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react'
+import { ArrowUpDown, ArrowUp, ArrowDown } from '@/components/icons'
 import React from 'react'
 
 import { Button } from '@/components/ui/button'

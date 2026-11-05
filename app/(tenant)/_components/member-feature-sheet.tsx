@@ -1,6 +1,6 @@
 'use client'
 
-import { LayoutGrid } from 'lucide-react'
+import { LayoutGrid } from '@/components/icons'
 import Link from 'next/link'
 import { useState } from 'react'
 

@@ -1,6 +1,6 @@
 'use client'
 
-import { Dumbbell } from 'lucide-react'
+import { Dumbbell } from '@/components/icons'
 import { useMemo, useState } from 'react'
 
 import { Skeleton } from '@/components/ui/skeleton'

@@ -1,6 +1,6 @@
 'use client'
 
-import { LayoutDashboard, LogOut, UserIcon } from 'lucide-react'
+import { LayoutDashboard, LogOut, UserIcon } from '@/components/icons'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useCallback, useTransition } from 'react'

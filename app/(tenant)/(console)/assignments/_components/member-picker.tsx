@@ -1,6 +1,6 @@
 'use client'
 
-import { ChevronUp, Search } from 'lucide-react'
+import { ChevronUp, Search } from '@/components/icons'
 import { useMemo, useState } from 'react'
 
 

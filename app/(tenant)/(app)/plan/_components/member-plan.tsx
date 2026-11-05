@@ -9,7 +9,7 @@ import {
   Sparkles,
   Target,
   Trophy,
-} from 'lucide-react'
+} from '@/components/icons'
 import Link from 'next/link'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 

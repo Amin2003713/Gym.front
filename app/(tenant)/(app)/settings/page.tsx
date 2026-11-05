@@ -1,4 +1,4 @@
-import { ChevronLeft } from 'lucide-react'
+import { ChevronLeft } from '@/components/icons'
 import Link from 'next/link'
 
 import { SETTINGS_SECTIONS } from '@/app/(tenant)/_components/settings/settings-sections'

@@ -1,7 +1,7 @@
 'use client'
 
 import { startAuthentication } from '@simplewebauthn/browser'
-import { Fingerprint, LoaderCircle } from 'lucide-react'
+import { Fingerprint, LoaderCircle } from '@/components/icons'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 

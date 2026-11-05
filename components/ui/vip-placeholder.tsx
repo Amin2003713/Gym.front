@@ -1,4 +1,4 @@
-import { Crown } from 'lucide-react'
+import { Crown } from '@/components/icons'
 import React from 'react'
 
 const VipPlaceholder = () => {

@@ -19,7 +19,7 @@ import {
   Users,
   Video,
   VideoOff,
-} from 'lucide-react'
+} from '@/components/icons'
 import {
   HubConnectionBuilder,
   HubConnectionState,

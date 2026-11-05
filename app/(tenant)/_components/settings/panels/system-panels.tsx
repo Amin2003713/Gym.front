@@ -1,6 +1,6 @@
 'use client'
 
-import { Download, RotateCcw } from 'lucide-react'
+import { Download, RotateCcw } from '@/components/icons'
 import { useState } from 'react'
 
 import {

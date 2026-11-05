@@ -1,6 +1,6 @@
 'use client'
 
-import { ChevronLeft, Flame, Gauge, Timer } from 'lucide-react'
+import { ChevronLeft, Flame, Gauge, Timer } from '@/components/icons'
 import Link from 'next/link'
 import { useEffect, useMemo, useState } from 'react'
 

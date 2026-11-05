@@ -1,6 +1,6 @@
 'use client'
 
-import { ArrowDownRight, ArrowUpRight, Minus } from 'lucide-react'
+import { ArrowDownRight, ArrowUpRight, Minus } from '@/components/icons'
 
 import { windowTrend } from '@/app/(tenant)/_model/structural-balance'
 

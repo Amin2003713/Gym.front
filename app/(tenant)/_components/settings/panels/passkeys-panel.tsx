@@ -1,7 +1,7 @@
 'use client'
 
 import { startRegistration } from '@simplewebauthn/browser'
-import { Fingerprint, KeyRound, Loader2, Pencil, Plus, Trash2, X } from 'lucide-react'
+import { Fingerprint, KeyRound, Loader2, Pencil, Plus, Trash2, X } from '@/components/icons'
 import { useCallback, useEffect, useState } from 'react'
 
 import {

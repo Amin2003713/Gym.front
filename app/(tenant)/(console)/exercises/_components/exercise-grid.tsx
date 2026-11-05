@@ -1,6 +1,6 @@
 'use client'
 
-import { Eye, LoaderCircle, Pencil, Trash2 } from 'lucide-react'
+import { Eye, LoaderCircle, Pencil, Trash2 } from '@/components/icons'
 
 import ExerciseCard, { type ExerciseCardItem } from './exercise-card'
 import type { ExerciseViewMode } from './exercise-library-header'

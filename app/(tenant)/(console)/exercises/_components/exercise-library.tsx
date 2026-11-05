@@ -1,6 +1,6 @@
 'use client'
 
-import { Loader2 } from 'lucide-react'
+import { Loader2 } from '@/components/icons'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { useAppLocale } from '@/hooks/use-app-locale'

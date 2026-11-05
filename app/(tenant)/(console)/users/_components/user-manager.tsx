@@ -12,7 +12,7 @@ import {
   Trash2,
   UserRound,
   Users,
-} from 'lucide-react'
+} from '@/components/icons'
 import Link from 'next/link'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 

@@ -1,7 +1,7 @@
 'use client'
 
 import type { LatLngExpression } from 'leaflet'
-import { Loader2, MapPin } from 'lucide-react'
+import { Loader2, MapPin } from '@/components/icons'
 import dynamic from 'next/dynamic'
 import {
   type Control,

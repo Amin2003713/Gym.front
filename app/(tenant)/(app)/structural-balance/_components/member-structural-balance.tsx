@@ -1,6 +1,6 @@
 'use client'
 
-import { AlertTriangle, CheckCircle2, Scale } from 'lucide-react'
+import { AlertTriangle, CheckCircle2, Scale } from '@/components/icons'
 import { useMemo } from 'react'
 
 import { useMuscleBalance } from '@/app/(tenant)/_api/use-muscle-balance'

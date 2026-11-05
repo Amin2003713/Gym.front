@@ -30,7 +30,7 @@ import {
   useReactTable,
   VisibilityState,
 } from '@tanstack/react-table'
-import { Loader2 } from 'lucide-react'
+import { Loader2 } from '@/components/icons'
 import * as React from 'react'
 import { useEffect, useId, useMemo, useState } from 'react'
 

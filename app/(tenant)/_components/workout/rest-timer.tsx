@@ -1,6 +1,6 @@
 'use client'
 
-import { TimerReset, X } from 'lucide-react'
+import { TimerReset, X } from '@/components/icons'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { Button } from '@/components/ui/button'

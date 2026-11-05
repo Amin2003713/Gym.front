@@ -1,6 +1,6 @@
 'use client'
 
-import { Check, LoaderCircle, Plus, Search, X } from 'lucide-react'
+import { Check, LoaderCircle, Plus, Search, X } from '@/components/icons'
 import { useEffect, useMemo, useState } from 'react'
 
 import { toast } from '@/lib/toast'

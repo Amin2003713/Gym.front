@@ -1,6 +1,6 @@
 'use client'
 
-import { ChartAreaIcon } from 'lucide-react'
+import { ChartAreaIcon } from '@/components/icons'
 import * as React from 'react'
 import {
   Area,

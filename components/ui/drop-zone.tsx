@@ -1,7 +1,7 @@
 'use client'
 
 import throttle from 'lodash.throttle'
-import { CloudUpload, FileText, Trash } from 'lucide-react'
+import { CloudUpload, FileText, Trash } from '@/components/icons'
 import Image from 'next/image'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { FieldValues, Path, PathValue, UseFormReturn } from 'react-hook-form'

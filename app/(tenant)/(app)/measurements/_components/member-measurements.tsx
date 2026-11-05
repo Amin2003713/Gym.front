@@ -1,6 +1,6 @@
 'use client'
 
-import { Box, LineChart, Plus, Trash2 } from 'lucide-react'
+import { Box, LineChart, Plus, Trash2 } from '@/components/icons'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   CartesianGrid,

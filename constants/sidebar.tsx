@@ -12,7 +12,7 @@ import {
   ShieldCheck,
   Users,
   Wallet,
-} from 'lucide-react'
+} from '@/components/icons'
 import * as React from 'react'
 
 import { SidebarItem } from '@/components/ui/sidebar'

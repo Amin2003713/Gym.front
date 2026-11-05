@@ -1,7 +1,7 @@
 'use client'
 
 import { cva } from 'class-variance-authority'
-import { CheckIcon, Loader2, LucideIcon, X } from 'lucide-react'
+import { CheckIcon, Loader2, LucideIcon, X } from '@/components/icons'
 import * as React from 'react'
 import { forwardRef } from 'react'
 

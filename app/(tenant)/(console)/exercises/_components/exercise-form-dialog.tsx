@@ -1,6 +1,6 @@
 'use client'
 
-import { Check, LoaderCircle, UploadCloud, X } from 'lucide-react'
+import { Check, LoaderCircle, UploadCloud, X } from '@/components/icons'
 import { useEffect, useState, type FormEvent } from 'react'
 
 import { mediaApi } from '@/app/(tenant)/_api/media-api'

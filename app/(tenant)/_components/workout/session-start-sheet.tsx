@@ -1,6 +1,6 @@
 'use client'
 
-import { Scale } from 'lucide-react'
+import { Scale } from '@/components/icons'
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 

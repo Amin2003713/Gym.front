@@ -1,6 +1,6 @@
 'use client'
 
-import { Check, ChevronsUpDown, Loader2, Plus } from 'lucide-react'
+import { Check, ChevronsUpDown, Loader2, Plus } from '@/components/icons'
 import * as React from 'react'
 
 import { Badge } from '@/components/ui/badge'

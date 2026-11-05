@@ -4,7 +4,7 @@ import {
   Activity, ArrowUpLeft, Check, ChevronDown, CircleHelp, Clock3, Dumbbell,
   FileDown, Filter, Plus, Search, ShieldCheck, Sparkles, Target, TrendingUp,
   Upload, Users, Weight, X,
-} from 'lucide-react'
+} from '@/components/icons'
 import Link from 'next/link'
 import { useMemo, useState, type ReactNode } from 'react'
 

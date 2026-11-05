@@ -1,6 +1,6 @@
 'use client'
 
-import { SidebarIcon } from 'lucide-react'
+import { SidebarIcon } from '@/components/icons'
 import { usePathname } from 'next/navigation'
 import { Fragment, useEffect } from 'react'
 

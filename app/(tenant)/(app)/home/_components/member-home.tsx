@@ -12,7 +12,7 @@ import {
   TrendingUp,
   Trophy,
   Users,
-} from 'lucide-react'
+} from '@/components/icons'
 import dynamic from 'next/dynamic'
 import Link from 'next/link'
 import { useEffect, useMemo, useState } from 'react'

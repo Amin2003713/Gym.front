@@ -14,7 +14,7 @@ import {
   Search,
   Send,
   Ticket,
-} from 'lucide-react'
+} from '@/components/icons'
 
 import {
   createSupportTicket,

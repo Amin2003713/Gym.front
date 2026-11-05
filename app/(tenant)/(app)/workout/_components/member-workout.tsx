@@ -1,6 +1,6 @@
 'use client'
 
-import { Dumbbell, Play, RotateCcw, Timer } from 'lucide-react'
+import { Dumbbell, Play, RotateCcw, Timer } from '@/components/icons'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useEffect, useState } from 'react'
 

@@ -1,6 +1,6 @@
 'use client'
 
-import { Save } from 'lucide-react'
+import { Save } from '@/components/icons'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import type { FormEvent } from 'react'

@@ -12,7 +12,7 @@ import {
   RefreshCw,
   Trash2,
   X,
-} from 'lucide-react'
+} from '@/components/icons'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import {

@@ -16,7 +16,7 @@ import {
   Settings,
   UserRoundPen,
   type LucideIcon,
-} from 'lucide-react'
+} from '@/components/icons'
 
 export type MemberNavItem = {
   href: string

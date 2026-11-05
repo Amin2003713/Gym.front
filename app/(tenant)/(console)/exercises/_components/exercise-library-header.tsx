@@ -1,6 +1,6 @@
 'use client'
 
-import { LayoutGrid, List, Minimize2, Plus, RefreshCw } from 'lucide-react'
+import { LayoutGrid, List, Minimize2, Plus, RefreshCw } from '@/components/icons'
 
 export type ExerciseViewMode = 'card' | 'list' | 'compact'
 

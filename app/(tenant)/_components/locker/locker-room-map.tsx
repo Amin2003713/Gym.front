@@ -1,6 +1,6 @@
 'use client'
 
-import { MapPin, Search } from 'lucide-react'
+import { MapPin, Search } from '@/components/icons'
 import { useEffect, useMemo, useState } from 'react'
 
 import {

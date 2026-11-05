@@ -1,7 +1,7 @@
 'use client'
 
 import isEqual from 'lodash.isequal'
-import { X, Filter } from 'lucide-react'
+import { X, Filter } from '@/components/icons'
 import { useEffect, useRef } from 'react'
 import { useForm } from 'react-hook-form'
 

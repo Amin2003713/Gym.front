@@ -5,7 +5,7 @@ import {
   ChevronDown, Clock3, Copy, Dumbbell, FileJson, FileSpreadsheet,
   HeartPulse, History, ListChecks, Plus, RotateCcw, Save, Search, Settings2,
   Target, Timer, Trash2, TrendingUp, Weight, X,
-} from 'lucide-react'
+} from '@/components/icons'
 import { useEffect, useState, type ReactNode } from 'react'
 
 import { PersianDateInput } from '@/components/ui/persian-date-input'

@@ -1,6 +1,6 @@
 'use client'
 
-import { Dumbbell, Loader2, X } from 'lucide-react'
+import { Dumbbell, Loader2, X } from '@/components/icons'
 import { useEffect, useMemo, useState } from 'react'
 
 import { MUSCLE_LABEL } from '@/app/(tenant)/_model/muscle-labels'

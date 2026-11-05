@@ -1,6 +1,6 @@
 'use client'
 
-import { X } from 'lucide-react'
+import { X } from '@/components/icons'
 
 import type { SessionResponse } from '@/app/(tenant)/_model/workout.types'
 import { normalizeSessionType } from '@/app/(tenant)/_model/workout.types'

@@ -1,6 +1,6 @@
 'use client'
 
-import { ChevronLeft } from 'lucide-react'
+import { ChevronLeft } from '@/components/icons'
 import Link from 'next/link'
 
 import { useMuscleBalance } from '@/app/(tenant)/_api/use-muscle-balance'

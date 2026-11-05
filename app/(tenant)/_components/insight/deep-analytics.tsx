@@ -1,6 +1,6 @@
 'use client'
 
-import { Timer, TrendingUp, Trophy } from 'lucide-react'
+import { Timer, TrendingUp, Trophy } from '@/components/icons'
 import { useMemo, useState } from 'react'
 import {
   Area,

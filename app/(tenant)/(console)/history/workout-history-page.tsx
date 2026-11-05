@@ -1,6 +1,6 @@
 'use client'
 
-import { History, LoaderCircle, RefreshCw } from 'lucide-react'
+import { History, LoaderCircle, RefreshCw } from '@/components/icons'
 import { useCallback, useEffect, useState } from 'react'
 
 

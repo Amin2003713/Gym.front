@@ -1,6 +1,6 @@
 'use client'
 
-import { AlertCircle, Check, Dumbbell, LoaderCircle, Search, Timer, Trash2 } from 'lucide-react'
+import { AlertCircle, Check, Dumbbell, LoaderCircle, Search, Timer, Trash2 } from '@/components/icons'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { exerciseApi, exerciseCoverUrl } from '@/app/(tenant)/(console)/exercises/_api/exercise-api'

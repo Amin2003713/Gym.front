@@ -1,4 +1,4 @@
-import { PlusCircleIcon, XIcon } from 'lucide-react'
+import { PlusCircleIcon, XIcon } from '@/components/icons'
 import Image from 'next/image'
 import { FieldValues, UseFormReturn } from 'react-hook-form'
 

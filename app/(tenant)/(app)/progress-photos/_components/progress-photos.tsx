@@ -1,7 +1,7 @@
 'use client'
 
 
-import { ImageUp, Loader2 } from 'lucide-react'
+import { ImageUp, Loader2 } from '@/components/icons'
 import { useCallback, useEffect, useState } from 'react'
 
 import { progressPhotoApi, type ProgressPhoto } from '@/app/(tenant)/_api/progress-photo-api'

@@ -1,6 +1,6 @@
 'use client'
 
-import { BadgeCheck, CreditCard, Sparkles } from 'lucide-react'
+import { BadgeCheck, CreditCard, Sparkles } from '@/components/icons'
 import { useCallback, useEffect, useState } from 'react'
 
 import { checkout, listMySubscriptions, listProducts } from '@/app/(tenant)/_api/billing-api'

@@ -1,6 +1,6 @@
 'use client'
 
-import { Award, Dumbbell, Repeat2, Target, Timer } from 'lucide-react'
+import { Award, Dumbbell, Repeat2, Target, Timer } from '@/components/icons'
 import { useMemo } from 'react'
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 

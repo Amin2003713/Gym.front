@@ -1,6 +1,6 @@
 'use client'
 
-import { HelpCircle } from 'lucide-react'
+import { HelpCircle } from '@/components/icons'
 import { usePathname } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import { useCallback, useEffect, useMemo, useRef } from 'react'

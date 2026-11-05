@@ -1,6 +1,6 @@
 'use client'
 
-import { Bot, Loader2, MessageSquarePlus, UserRound } from 'lucide-react'
+import { Bot, Loader2, MessageSquarePlus, UserRound } from '@/components/icons'
 import { useEffect, useState } from 'react'
 
 import {

@@ -6,7 +6,7 @@ import {
   FingerprintIcon,
   MoreVerticalIcon,
   PenIcon,
-} from 'lucide-react'
+} from '@/components/icons'
 import { useRouter } from 'next/navigation'
 import {
   ReactNode,

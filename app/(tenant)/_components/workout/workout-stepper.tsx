@@ -17,7 +17,7 @@ import {
   horizontalListSortingStrategy,
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { Check, GripVertical } from 'lucide-react'
+import { Check, GripVertical } from '@/components/icons'
 import { useCallback } from 'react'
 
 import { cn } from '@/lib/utils'

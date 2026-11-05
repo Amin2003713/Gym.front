@@ -1,6 +1,6 @@
 'use client'
 
-import { CreditCard, Plus, RefreshCw, ShieldCheck, Trash2 } from 'lucide-react'
+import { CreditCard, Plus, RefreshCw, ShieldCheck, Trash2 } from '@/components/icons'
 import { useCallback, useEffect, useState } from 'react'
 
 import {

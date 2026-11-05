@@ -1,6 +1,6 @@
 'use client'
 
-import { Bot, Loader2, Send, User, UserRound } from 'lucide-react'
+import { Bot, Loader2, Send, User, UserRound } from '@/components/icons'
 import { useEffect, useRef, useState } from 'react'
 
 import {

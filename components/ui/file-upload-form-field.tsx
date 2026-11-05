@@ -1,6 +1,6 @@
 'use client'
 
-import { CloudUpload, FileTextIcon, X, XIcon } from 'lucide-react'
+import { CloudUpload, FileTextIcon, X, XIcon } from '@/components/icons'
 import Image from 'next/image'
 import * as React from 'react'
 import {

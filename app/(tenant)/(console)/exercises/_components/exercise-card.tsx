@@ -1,6 +1,6 @@
 'use client'
 
-import { Dumbbell, Eye, LoaderCircle, Pencil, Trash2, TriangleAlert } from 'lucide-react'
+import { Dumbbell, Eye, LoaderCircle, Pencil, Trash2, TriangleAlert } from '@/components/icons'
 
 import BodyMapPanel from '@/app/(tenant)/_components/progress/body-map-panel'
 

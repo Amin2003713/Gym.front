@@ -1,7 +1,7 @@
 'use client'
 
 
-import { Plus, Trash2 } from 'lucide-react'
+import { Plus, Trash2 } from '@/components/icons'
 import { useSession } from 'next-auth/react'
 import { useEffect, useMemo, useState } from 'react'
 

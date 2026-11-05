@@ -6,7 +6,7 @@ import {
   ChevronRightIcon,
   ChevronsLeftIcon,
   ChevronsRightIcon,
-} from 'lucide-react'
+} from '@/components/icons'
 
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'

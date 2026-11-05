@@ -1,6 +1,6 @@
 'use client'
 
-import { Flame, Minus, Plus } from 'lucide-react'
+import { Flame, Minus, Plus } from '@/components/icons'
 import { useState } from 'react'
 
 import { Button } from '@/components/ui/button'

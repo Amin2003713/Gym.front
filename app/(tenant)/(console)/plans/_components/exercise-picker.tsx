@@ -1,6 +1,6 @@
 'use client'
 
-import { ChevronUp, LoaderCircle, RefreshCw, Search } from 'lucide-react'
+import { ChevronUp, LoaderCircle, RefreshCw, Search } from '@/components/icons'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { useAppLocale } from '@/hooks/use-app-locale'

@@ -1,6 +1,6 @@
 'use client'
 
-import { ArrowRight, Check } from 'lucide-react'
+import { ArrowRight, Check } from '@/components/icons'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 

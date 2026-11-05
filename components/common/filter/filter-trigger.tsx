@@ -1,6 +1,6 @@
 'use client'
 
-import { FilterIcon } from 'lucide-react'
+import { FilterIcon } from '@/components/icons'
 
 import { Badge } from '@/components/ui/badge'
 import { Button, ButtonProps } from '@/components/ui/button'

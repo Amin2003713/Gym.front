@@ -1,6 +1,6 @@
 'use client'
 
-import { ChevronLeft, Timer } from 'lucide-react'
+import { ChevronLeft, Timer } from '@/components/icons'
 
 import { normalizeSessionType, type WorkoutListItem } from '@/app/(tenant)/_model/workout.types'
 

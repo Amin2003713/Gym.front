@@ -1,6 +1,6 @@
 'use client'
 import { useSortable } from '@dnd-kit/sortable'
-import { GripVerticalIcon } from 'lucide-react'
+import { GripVerticalIcon } from '@/components/icons'
 
 import { Button } from '@/components/ui/button'
 

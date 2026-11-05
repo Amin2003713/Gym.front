@@ -4,7 +4,7 @@ import {
   ChevronDownIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
-} from 'lucide-react'
+} from '@/components/icons'
 import * as React from 'react'
 import { DayButton, getDefaultClassNames } from 'react-day-picker'
 import { DayPicker } from 'react-day-picker/persian'

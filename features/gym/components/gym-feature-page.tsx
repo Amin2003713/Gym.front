@@ -13,7 +13,7 @@ import {
   ShieldCheck,
   Users,
   type LucideIcon,
-} from 'lucide-react'
+} from '@/components/icons'
 import Link from 'next/link'
 
 import { OpenGymWorkspace } from './open-gym-workspace'

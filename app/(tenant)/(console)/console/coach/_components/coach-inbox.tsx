@@ -1,6 +1,6 @@
 'use client'
 
-import { Inbox, Loader2, MessageCircle, RefreshCw } from 'lucide-react'
+import { Inbox, Loader2, MessageCircle, RefreshCw } from '@/components/icons'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { listCoachQueue } from '@/app/(tenant)/console/_api/coach-queue-api'

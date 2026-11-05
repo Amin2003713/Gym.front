@@ -1,6 +1,6 @@
 'use client'
 
-import { FileText, Trash } from 'lucide-react'
+import { FileText, Trash } from '@/components/icons'
 import Image from 'next/image'
 import Link from 'next/link'
 

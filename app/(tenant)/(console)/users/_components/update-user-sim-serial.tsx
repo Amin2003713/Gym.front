@@ -1,6 +1,6 @@
 'use client'
 
-import { PenIcon } from 'lucide-react'
+import { PenIcon } from '@/components/icons'
 import { useRouter } from 'next/navigation'
 import React, { useActionState, useEffect, useTransition } from 'react'
 import { toast } from '@/lib/toast'

@@ -1,6 +1,6 @@
 'use client'
 
-import { Archive, Download, Eye, Pencil, Plus, RefreshCw, Search, UserPlus, X } from 'lucide-react'
+import { Archive, Download, Eye, Pencil, Plus, RefreshCw, Search, UserPlus, X } from '@/components/icons'
 import { useRouter } from 'next/navigation'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 

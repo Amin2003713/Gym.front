@@ -1,7 +1,7 @@
 'use client'
 
 
-import { Trash2 } from 'lucide-react'
+import { Trash2 } from '@/components/icons'
 import { useEffect, useState } from 'react'
 
 

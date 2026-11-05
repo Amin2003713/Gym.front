@@ -1,6 +1,6 @@
 'use client'
 
-import { LoaderCircle, Save } from 'lucide-react'
+import { LoaderCircle, Save } from '@/components/icons'
 import { useEffect, useState } from 'react'
 
 import { getUserInfo, updateUser } from '@/app/(tenant)/(console)/users/_api/user-api'

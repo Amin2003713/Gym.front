@@ -11,7 +11,7 @@ import {
   TrendingDown,
   TrendingUp,
   Users,
-} from 'lucide-react'
+} from '@/components/icons'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { listCoachAssignments } from '@/app/(tenant)/_api/assignment-api'

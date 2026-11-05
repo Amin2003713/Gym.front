@@ -1,6 +1,6 @@
 'use client'
 
-import { RefreshCw, UserPlus } from 'lucide-react'
+import { RefreshCw, UserPlus } from '@/components/icons'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import {

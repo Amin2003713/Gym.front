@@ -1,7 +1,7 @@
 'use client'
 
 
-import { CheckCircle2, Loader2, Trophy, Upload } from 'lucide-react'
+import { CheckCircle2, Loader2, Trophy, Upload } from '@/components/icons'
 import { useState } from 'react'
 
 import { progressPhotoApi } from '@/app/(tenant)/_api/progress-photo-api'

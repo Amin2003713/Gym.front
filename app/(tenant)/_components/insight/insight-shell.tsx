@@ -1,6 +1,6 @@
 'use client'
 
-import { RefreshCw } from 'lucide-react'
+import { RefreshCw } from '@/components/icons'
 
 import type { BalanceRangeKey } from '@/app/(tenant)/_api/use-muscle-balance'
 

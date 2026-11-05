@@ -1,6 +1,6 @@
 'use client'
 
-import { Dumbbell, Flame, Sparkles } from 'lucide-react'
+import { Dumbbell, Flame, Sparkles } from '@/components/icons'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 

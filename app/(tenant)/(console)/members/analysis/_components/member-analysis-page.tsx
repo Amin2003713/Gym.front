@@ -1,7 +1,7 @@
 'use client'
 
 
-import { Activity, RefreshCw, Search, Shuffle } from 'lucide-react'
+import { Activity, RefreshCw, Search, Shuffle } from '@/components/icons'
 import Link from 'next/link'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 

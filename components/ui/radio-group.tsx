@@ -1,7 +1,7 @@
 'use client'
 
 import * as RadioGroupPrimitive from '@radix-ui/react-radio-group'
-import { CircleIcon } from 'lucide-react'
+import { CircleIcon } from '@/components/icons'
 import * as React from 'react'
 import { ReactNode } from 'react'
 import { Control, FieldValues, Path } from 'react-hook-form'

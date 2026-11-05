@@ -1,6 +1,6 @@
 'use client'
 
-import { Activity, CalendarCheck, Dumbbell, Timer } from 'lucide-react'
+import { Activity, CalendarCheck, Dumbbell, Timer } from '@/components/icons'
 import { useMemo, useState } from 'react'
 
 

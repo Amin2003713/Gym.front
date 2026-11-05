@@ -1,4 +1,4 @@
-import { ShieldCheck, TrendingUp, Users } from 'lucide-react'
+import { ShieldCheck, TrendingUp, Users } from '@/components/icons'
 
 import { HamOwjBrand } from '@/components/branding/hamowj-mark'
 import { Card, CardContent } from '@/components/ui/card'

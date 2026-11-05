@@ -1,6 +1,6 @@
 'use client'
 
-import { Info } from 'lucide-react'
+import { Info } from '@/components/icons'
 
 import { BarbellLoad } from '@/components/barbell-load'
 import { loadDumbbells, type WeightUnit } from '@/lib/barbell'

@@ -1,6 +1,6 @@
 'use client'
 
-import { PlusCircleIcon, SearchIcon } from 'lucide-react'
+import { PlusCircleIcon, SearchIcon } from '@/components/icons'
 import { useEffect, useState } from 'react'
 
 

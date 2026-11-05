@@ -1,6 +1,6 @@
 'use client'
 
-import {Activity, Dumbbell, Search, X} from 'lucide-react'
+import {Activity, Dumbbell, Search, X} from '@/components/icons'
 import {useSession} from 'next-auth/react'
 import {useEffect, useMemo, useState} from 'react'
 

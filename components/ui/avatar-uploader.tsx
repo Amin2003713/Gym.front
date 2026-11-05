@@ -1,6 +1,6 @@
 'use client'
 
-import { LoaderCircle, Trash2, UploadCloud, UserIcon } from 'lucide-react'
+import { LoaderCircle, Trash2, UploadCloud, UserIcon } from '@/components/icons'
 import { useId, useRef, useState } from 'react'
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'

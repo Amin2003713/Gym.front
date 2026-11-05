@@ -1,6 +1,6 @@
 'use client'
 
-import { Dumbbell, History, Search } from 'lucide-react'
+import { Dumbbell, History, Search } from '@/components/icons'
 import { useEffect, useState } from 'react'
 
 import {

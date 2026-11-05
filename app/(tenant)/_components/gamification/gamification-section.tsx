@@ -1,6 +1,6 @@
 'use client'
 
-import { Award, Flame, Sparkles, Trophy } from 'lucide-react'
+import { Award, Flame, Sparkles, Trophy } from '@/components/icons'
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 

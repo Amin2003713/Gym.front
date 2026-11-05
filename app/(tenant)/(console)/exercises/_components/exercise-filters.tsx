@@ -1,6 +1,6 @@
 'use client'
 
-import { Search, SlidersHorizontal, TriangleAlert, X } from 'lucide-react'
+import { Search, SlidersHorizontal, TriangleAlert, X } from '@/components/icons'
 
 import {
   MISSING_EQUIPMENT,

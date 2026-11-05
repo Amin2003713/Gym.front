@@ -1,6 +1,6 @@
 'use client'
 
-import { Activity, Box, HeartPulse } from 'lucide-react'
+import { Activity, Box, HeartPulse } from '@/components/icons'
 import Link from 'next/link'
 import { useMemo, useState } from 'react'
 

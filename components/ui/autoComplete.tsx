@@ -1,7 +1,7 @@
 'use client'
 
 import { Command as CommandPrimitive } from 'cmdk'
-import { CircleX, Loader2 } from 'lucide-react'
+import { CircleX, Loader2 } from '@/components/icons'
 import {
   useState,
   useRef,
