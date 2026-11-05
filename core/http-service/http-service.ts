@@ -103,7 +103,7 @@ const getBaseURL = async (): Promise<{
       apiUrl.hostname = `${tenant}.${apiUrl.hostname}`
     }
   }
-
+  console.log({ apiUrl, tenant })
   return {
     baseURL: apiUrl.toString().replace(/\/$/, ''),
     tenant,
@@ -181,6 +181,9 @@ const createData = async <TModel, TResult>(
     headers,
     data,
   }
+
+  console.log(' the post    ==============')
+
   return await apiBase(url, options)
 }
 
