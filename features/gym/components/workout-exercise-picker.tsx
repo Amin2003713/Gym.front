@@ -5,12 +5,14 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { exerciseApi, exerciseCoverUrl } from '@/app/(tenant)/(console)/exercises/_api/exercise-api'
 import type { ExerciseListItem } from '@/app/(tenant)/(console)/exercises/_model/exercise.types'
+import { useAppLocale } from '@/hooks/use-app-locale'
 import { toast } from '@/lib/toast'
 
 const field = 'h-11 w-full rounded-lg border border-input bg-background px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring'
 const button = 'inline-flex min-h-10 items-center justify-center gap-2 rounded-lg px-4 text-sm font-semibold transition focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50'
 
 export function WorkoutExercisePicker({ onSelectionChange }: { onSelectionChange?: (items: ExerciseListItem[]) => void }) {
+  const locale = useAppLocale()
   const [search, setSearch] = useState('')
   const [items, setItems] = useState<ExerciseListItem[]>([])
   const [selectedIds, setSelectedIds] = useState<string[]>([])
@@ -22,22 +24,22 @@ export function WorkoutExercisePicker({ onSelectionChange }: { onSelectionChange
   const load = useCallback(async () => {
     setLoading(true); setError('')
     try {
-      const result = await exerciseApi.list({ pageNumber: 1, pageSize: 50, search: search.trim() || undefined, languageCode: 'fa' })
+      const result = await exerciseApi.list({ pageNumber: 1, pageSize: 50, search: search.trim() || undefined, languageCode: locale })
       setItems(result.results ?? [])
     } catch (e) {
       const err = e as { response?: { data?: { detail?: string; title?: string } }; message?: string }
       setError(err.response?.data?.detail || err.response?.data?.title || err.message || 'دریافت حرکات ناموفق بود.')
       setItems([])
     } finally { setLoading(false) }
-  }, [search])
+  }, [search, locale])
   useEffect(() => { void load() }, [load])
   useEffect(() => {
     let cancelled = false
     if (!selectedIds.length) { setResolved([]); return }
     setResolving(true)
-    exerciseApi.byIds(selectedIds, 'fa').then(result => { if (!cancelled) setResolved(result ?? []) }).catch(() => { if (!cancelled) toast.error('بازیابی حرکات انتخاب‌شده ناموفق بود.') }).finally(() => { if (!cancelled) setResolving(false) })
+    exerciseApi.byIds(selectedIds, locale).then(result => { if (!cancelled) setResolved(result ?? []) }).catch(() => { if (!cancelled) toast.error('بازیابی حرکات انتخاب‌شده ناموفق بود.') }).finally(() => { if (!cancelled) setResolving(false) })
     return () => { cancelled = true }
-  }, [selectedIds])
+  }, [selectedIds, locale])
 
   const toggle = (id: string) => setSelectedIds(current => current.includes(id) ? current.filter(x => x !== id) : [...current, id])
 

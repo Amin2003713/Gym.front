@@ -1,0 +1,122 @@
+name: Deploy carpet (DEV)
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch: { }
+
+permissions:
+  contents: read
+
+concurrency:
+  group: next-carpet-queue
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Validate remote directory
+        env:
+          REMOTE_DIR: ${{ vars.DEV_REMOTE_DIR }}
+        run: |
+          set -euo pipefail
+
+          case "$REMOTE_DIR" in
+            ""|"/"|"/root"|"/home"|"/etc"|"/usr"|"/var"|"/var/"|"/opt"|"/srv")
+              echo "Unsafe REMOTE_DIR: $REMOTE_DIR"
+              exit 1
+              ;;
+          esac
+
+          echo "REMOTE_DIR is safe: $REMOTE_DIR"
+
+
+      - name: Install sshpass
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y sshpass rsync
+
+
+      # -----------------------
+      # SAFE SYNC (DEV)
+      # -----------------------
+      - name: Sync repository (DEV)
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
+          SSH_PORT: ${{ vars.SSH_PORT }}
+          REMOTE_DIR: ${{ vars.DEV_REMOTE_DIR }}
+        run: |
+          set -euo pipefail
+
+          sshpass -p "$SSH_PASSWORD" ssh -p "$SSH_PORT" -o StrictHostKeyChecking=no \
+            "$SSH_USER@$SSH_HOST" "
+              set -e
+              mkdir -p '${REMOTE_DIR%/}'
+              find '${REMOTE_DIR%/}' -mindepth 1 -delete
+            "
+
+          sshpass -p "$SSH_PASSWORD" rsync -az \
+            --delete \
+            --exclude='.git' \
+            --exclude='.github' \
+            -e "ssh -p $SSH_PORT -o StrictHostKeyChecking=no" \
+            ./ "$SSH_USER@$SSH_HOST:${REMOTE_DIR%/}/"
+      
+
+      # -----------------------
+      # BUILD + RUN
+      # -----------------------
+      - name: Build & Run (DEV)
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
+          SSH_PORT: ${{ vars.SSH_PORT }}
+
+          REMOTE_DIR: ${{ vars.DEV_REMOTE_DIR }}
+          PORT: ${{ vars.DEV_PORT }}
+
+          IMAGE: carpet-dev-customer:latest
+          CONTAINER: carpet-dev-customer
+        run: |
+          set -euo pipefail
+          
+          sshpass -p "$SSH_PASSWORD" ssh -p "$SSH_PORT" -o StrictHostKeyChecking=no "$SSH_USER@$SSH_HOST" <<EOF
+          set -e
+          cd "${REMOTE_DIR%/}"
+          
+          docker stop $CONTAINER || true
+          docker rm $CONTAINER || true
+          
+          docker build -t $IMAGE .
+          
+          docker run -d \
+            --name $CONTAINER \
+            --env-file .env.production \
+            -p "127.0.0.1:${PORT}:${PORT}" \
+            --restart unless-stopped \
+            $IMAGE
+          EOF
+
+
+      - name: Cleanup lite folder on remote (optional)
+        if: always()
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
+          SSH_PORT: ${{ vars.SSH_PORT }}
+          REMOTE_DIR: ${{ vars.DEV_REMOTE_DIR }}
+        run: |
+          set -euo pipefail
+          sshpass -p "$SSH_PASSWORD" ssh -p "$SSH_PORT" -o StrictHostKeyChecking=no "$SSH_USER@$SSH_HOST" \
+            "rm -rf '${REMOTE_DIR%/}'"

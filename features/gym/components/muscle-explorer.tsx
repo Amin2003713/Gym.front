@@ -7,6 +7,7 @@ import {useEffect, useMemo, useState} from 'react'
 import {exerciseApi, exerciseCoverUrl} from '@/app/(tenant)/(console)/exercises/_api/exercise-api'
 import type {ExerciseListItem} from '@/app/(tenant)/(console)/exercises/_model/exercise.types'
 import {usersApi} from '@/features/users/api/users-api'
+import {useAppLocale} from '@/hooks/use-app-locale'
 
 
 import BodyMap, {BodyMapLegend} from './body-map'
@@ -76,6 +77,7 @@ function matchesMuscle(ex: ExerciseListItem, m: Muscle) {
 
 export function MuscleExplorer() {
     const {data: session} = useSession()
+    const locale = useAppLocale()
     const sessionUser = session?.user as {
         gender?: number | string | null;
         accessToken?: string;
@@ -120,7 +122,7 @@ export function MuscleExplorer() {
 
     useEffect(() => {
         let alive = true
-        exerciseApi.list({pageNumber: 1, pageSize: 100, languageCode: 'fa'})
+        exerciseApi.list({pageNumber: 1, pageSize: 100, languageCode: locale})
             .then(result => {
                 if (alive) setItems(result.results ?? [])
             })
@@ -133,7 +135,7 @@ export function MuscleExplorer() {
         return () => {
             alive = false
         }
-    }, [])
+    }, [locale])
 
     const select = (id: string) => {
         setSelected(id)

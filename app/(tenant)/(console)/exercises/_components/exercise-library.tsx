@@ -3,6 +3,7 @@
 import { Loader2 } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
+import { useAppLocale } from '@/hooks/use-app-locale'
 import { useFigureGender } from '@/hooks/use-figure-gender'
 import { useUserRoles } from '@/hooks/use-user-roles'
 import { muscleLoad } from '@/lib/muscle-mapping'
@@ -30,6 +31,7 @@ const SEARCH_DEBOUNCE_MS = 400
 const VIEW_STORAGE_KEY = 'exercise-library-view'
 
 export default function ExerciseLibrary() {
+  const locale = useAppLocale()
   const { canManage, isTraineeOnly } = useUserRoles()
   const figureGender = useFigureGender()
 
@@ -101,7 +103,7 @@ export default function ExerciseLibrary() {
           equipments: equipmentParam || undefined,
           bodyPart: bodyPart || undefined,
           level: level || undefined,
-          languageCode: 'fa',
+          languageCode: locale,
         })
         if (seq !== requestSeq.current) return
         const next = result.results ?? []
@@ -125,7 +127,7 @@ export default function ExerciseLibrary() {
         if (seq === requestSeq.current) setLoading(false)
       }
     },
-    [bodyPart, equipmentParam, level, search],
+    [bodyPart, equipmentParam, level, locale, search],
   )
 
   // First load, search changes and refreshes always fetch page 1.

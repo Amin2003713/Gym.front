@@ -4,6 +4,7 @@ import {
   readData,
   updateData,
 } from '@/core/http-service'
+import { EXERCISE_LANGUAGE } from '@/lib/exercise-language'
 
 import type {
   ExerciseDetail,
@@ -17,11 +18,7 @@ import type {
 
 const route = 'exercise'
 
-/**
- * Content language for every exercise read in the app (Persian). The API serves the English
- * translation for any row where the Persian translation is missing, then the source language.
- */
-export const EXERCISE_LANGUAGE = 'fa'
+export { EXERCISE_LANGUAGE }
 
 /** Resolved list cards are reused for a minute so switching screens does not re-download them. */
 const BY_IDS_TTL_MS = 60_000

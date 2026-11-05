@@ -14,6 +14,7 @@ import {
   readData,
   updateData,
 } from '@/core/http-service'
+import { EXERCISE_LANGUAGE } from '@/lib/exercise-language'
 
 
 
@@ -121,17 +122,25 @@ export const updateLoggedSet = (
   )
 export const deleteLoggedSet = (setId: string) =>
   deleteData(`${BASE}/sets/${encodeURIComponent(setId)}`)
-export const listRecentExercises = () =>
-  readData<RecentExerciseItem[]>(`${BASE}/exercises/recent`)
+export const listRecentExercises = (languageCode = EXERCISE_LANGUAGE) =>
+  readData<RecentExerciseItem[]>(
+    `${BASE}/exercises/recent?${query({ languageCode })}`,
+  )
 export const searchExercises = (filters: {
   query: string
   muscle?: string
   equipment?: string
   page?: number
   pageSize?: number
+  languageCode?: string
 }) =>
   readData<ExerciseSearchResponse>(
-    `${BASE}/exercises/search?${query({ page: 1, pageSize: 20, ...filters })}`,
+    `${BASE}/exercises/search?${query({
+      page: 1,
+      pageSize: 20,
+      languageCode: EXERCISE_LANGUAGE,
+      ...filters,
+    })}`,
   )
 export const getExerciseHistory = (
   exerciseId: string,
@@ -193,5 +202,5 @@ export interface WorkoutExerciseDetail {
 
 export const getWorkoutExerciseDetail = (exerciseId: string) =>
   readData<WorkoutExerciseDetail>(
-    `exercise/${encodeURIComponent(exerciseId)}?languageCode=fa`,
+    `exercise/${encodeURIComponent(exerciseId)}?languageCode=${EXERCISE_LANGUAGE}`,
   )

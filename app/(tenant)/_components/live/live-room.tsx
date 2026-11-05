@@ -65,13 +65,29 @@ const HUB_URL = API_BASE
 const ICE_SERVERS: RTCIceServer[] = [
   { urls: process.env.NEXT_PUBLIC_STUN_URL || 'stun:stun.l.google.com:19302' },
 ]
-const TURN_URL = process.env.NEXT_PUBLIC_TURN_URL
-if (TURN_URL) {
+
+// Accept one or several URLs so a deployment can advertise both a UDP TURN endpoint and a
+// TLS `turns:` endpoint. The browser prefers the secure one when the page is served over HTTPS.
+const TURN_URLS = (process.env.NEXT_PUBLIC_TURN_URLS || process.env.NEXT_PUBLIC_TURN_URL || '')
+  .split(',')
+  .map((url) => url.trim())
+  .filter(Boolean)
+
+if (TURN_URLS.length) {
   ICE_SERVERS.push({
-    urls: TURN_URL,
+    urls: TURN_URLS,
     username: process.env.NEXT_PUBLIC_TURN_USERNAME,
     credential: process.env.NEXT_PUBLIC_TURN_CREDENTIAL,
   })
+}
+
+// WebRTC always encrypts media with DTLS-SRTP; the browser refuses a non-secure context for
+// camera/microphone access. This also keeps the SignalR signaling socket on WSS when the page is
+// served over HTTPS instead of letting the browser block it as mixed content.
+function secureHubUrl(url: string) {
+  if (typeof window !== 'undefined' && window.location.protocol === 'https:')
+    return url.replace(/^http:\/\//i, 'https://')
+  return url
 }
 
 function mediaError(error: unknown): string {
@@ -202,7 +218,14 @@ export function LiveRoom({ staff = false }: { staff?: boolean }) {
       const existing = pcsRef.current.get(target)
       if (existing) return existing
 
-      const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS })
+      // `max-bundle` keeps all media on one encrypted transport and `require` forbids fallback
+      // RTP; the DTLS fingerprint still authenticates each peer end-to-end.
+      const pc = new RTCPeerConnection({
+        iceServers: ICE_SERVERS,
+        bundlePolicy: 'max-bundle',
+        rtcpMuxPolicy: 'require',
+        iceCandidatePoolSize: 4,
+      })
       pcsRef.current.set(target, pc)
 
       const stream = localStreamRef.current
@@ -388,7 +411,7 @@ export function LiveRoom({ staff = false }: { staff?: boolean }) {
   const connect = useCallback(async () => {
     if (hubRef.current) return hubRef.current
     const connection = new HubConnectionBuilder()
-      .withUrl(HUB_URL)
+      .withUrl(secureHubUrl(HUB_URL))
       .withAutomaticReconnect([0, 2000, 5000, 10000])
       .configureLogging(LogLevel.Warning)
       .build()
@@ -400,6 +423,8 @@ export function LiveRoom({ staff = false }: { staff?: boolean }) {
   }, [attachHandlers])
 
   const acquireMedia = useCallback(async () => {
+    if (!window.isSecureContext)
+      throw new Error('برای پخش زنده، صفحه باید روی HTTPS یا localhost باز شود.')
     if (!navigator.mediaDevices?.getUserMedia)
       throw new Error('مرورگر شما از پخش زنده پشتیبانی نمی‌کند.')
     const stream = await navigator.mediaDevices.getUserMedia({
@@ -727,8 +752,10 @@ export function LiveRoom({ staff = false }: { staff?: boolean }) {
 
         <p className="text-muted-foreground flex items-start gap-2 text-xs leading-6">
           <Info className="mt-1 size-3.5 shrink-0" />
-          این اتاق‌ها همتا‌به‌همتا (P2P) هستند و تصویر از سرور عبور نمی‌کند. برای شبکه‌های
-          محدود، متغیرهای TURN را در محیط تنظیم کنید.
+          این اتاق‌ها همتا‌به‌همتا (P2P) هستند، تصویر از سرور عبور نمی‌کند و رسانه با
+          DTLS-SRTP رمزنگاری می‌شود. برای شبکه‌های محدود، یک TURN امن با آدرس
+          <span dir="ltr"> turns: </span>
+          تنظیم کنید.
         </p>
       </div>
     )
