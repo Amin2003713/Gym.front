@@ -80,6 +80,7 @@ jobs:
           SSH_HOST: "85.198.52.187"
           SSH_PASSWORD: "Amin#7Xv!92QpL4"
           SSH_PORT: "22"
+          SSH_USER: "root"
           REMOTE_DIR: "/gym/front"
           PORT: "3000"
           IMAGE: gym-client:latest
@@ -111,6 +112,7 @@ jobs:
           SSH_HOST: "85.198.52.187"
           SSH_PASSWORD: "Amin#7Xv!92QpL4"
           SSH_PORT: "22"
+          SSH_USER: "root"
           REMOTE_DIR: "/gym/front"
         run: |
           set -euo pipefail
