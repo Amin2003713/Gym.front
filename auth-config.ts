@@ -28,6 +28,16 @@ export const authConfig = {
         '/signup',
       ]
 
+      const redirectToRootSignup = () => {
+        const signupUrl = new URL(request.url)
+
+        signupUrl.hostname = baseDomain
+        signupUrl.port = ''
+        signupUrl.pathname = '/signup'
+        signupUrl.search = ''
+
+        return NextResponse.redirect(signupUrl)
+      }
       // Determine whether the request belongs to a tenant
       const isBaseDomain =
         hostname === baseDomain || hostname === `www.${baseDomain}`
@@ -56,14 +66,14 @@ export const authConfig = {
 
       // 2. No valid tenant subdomain
       if (!isSubdomain || !subdomain) {
-        return NextResponse.redirect(new URL('/signup', request.url))
+        return redirectToRootSignup()
       }
 
       // 3. Check whether the tenant exists
       const isTenantExist = await checkDomain(subdomain)
 
       if (!isTenantExist) {
-        return NextResponse.redirect(new URL('/signup', request.url))
+        return redirectToRootSignup()
       }
 
       // 4. Allow public pages on valid tenant domains
@@ -86,3 +96,4 @@ export const authConfig = {
 
   providers: [],
 } satisfies NextAuthConfig
+
