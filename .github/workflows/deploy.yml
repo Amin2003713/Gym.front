@@ -24,7 +24,7 @@ jobs:
 
       - name: Validate remote directory
         env:
-          REMOTE_DIR: ${{ vars.DEV_REMOTE_DIR }}
+          REMOTE_DIR: "/gym/front"
         run: |
           set -euo pipefail
 
@@ -49,11 +49,9 @@ jobs:
       # -----------------------
       - name: Sync repository (DEV)
         env:
-          SSH_HOST: ${{ secrets.SSH_HOST }}
-          SSH_USER: ${{ secrets.SSH_USER }}
-          SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
-          SSH_PORT: ${{ vars.SSH_PORT }}
-          REMOTE_DIR: ${{ vars.DEV_REMOTE_DIR }}
+          SSH_HOST: "85.198.52.187"
+          SSH_USER: "root"
+          REMOTE_DIR: "/gym/front"
         run: |
           set -euo pipefail
 
@@ -77,16 +75,14 @@ jobs:
       # -----------------------
       - name: Build & Run (DEV)
         env:
-          SSH_HOST: ${{ secrets.SSH_HOST }}
-          SSH_USER: ${{ secrets.SSH_USER }}
-          SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
-          SSH_PORT: ${{ vars.SSH_PORT }}
+          SSH_HOST: "85.198.52.187"
+          SSH_PASSWORD: "Amin#7Xv!92QpL4"
 
-          REMOTE_DIR: ${{ vars.DEV_REMOTE_DIR }}
-          PORT: ${{ vars.DEV_PORT }}
+          REMOTE_DIR: "/gym/front"
+          PORT: "3000"
 
-          IMAGE: carpet-dev-customer:latest
-          CONTAINER: carpet-dev-customer
+          IMAGE: gym-client:latest
+          CONTAINER: gym-client
         run: |
           set -euo pipefail
           
@@ -111,11 +107,9 @@ jobs:
       - name: Cleanup lite folder on remote (optional)
         if: always()
         env:
-          SSH_HOST: ${{ secrets.SSH_HOST }}
-          SSH_USER: ${{ secrets.SSH_USER }}
-          SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
-          SSH_PORT: ${{ vars.SSH_PORT }}
-          REMOTE_DIR: ${{ vars.DEV_REMOTE_DIR }}
+          SSH_HOST: "85.198.52.187"
+          SSH_PORT: "22"
+          REMOTE_DIR: "/gym/front"
         run: |
           set -euo pipefail
           sshpass -p "$SSH_PASSWORD" ssh -p "$SSH_PORT" -o StrictHostKeyChecking=no "$SSH_USER@$SSH_HOST" \
