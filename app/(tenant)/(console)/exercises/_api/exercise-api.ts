@@ -17,6 +17,17 @@ import type {
 
 const route = 'exercise'
 
+/**
+ * Content language for every exercise read in the app (Persian). The API serves the English
+ * translation for any row where the Persian translation is missing, then the source language.
+ */
+export const EXERCISE_LANGUAGE = 'fa'
+
+/** Resolved list cards are reused for a minute so switching screens does not re-download them. */
+const BY_IDS_TTL_MS = 60_000
+const byIdsCache = new Map<string, { at: number; item: ExerciseListItem }>()
+const byIdsKey = (language: string, id: string) => `${language}:${id}`
+
 const queryString = (values: Record<string, unknown>) => {
   const query = new URLSearchParams()
   Object.entries(values).forEach(([key, value]) => {
@@ -28,24 +39,36 @@ const queryString = (values: Record<string, unknown>) => {
 
 export const exerciseApi = {
   list: (filter: ListExercisesFilter) =>
-    readData<ExercisePage<ExerciseListItem>>(`${route}?${queryString(filter)}`),
+    readData<ExercisePage<ExerciseListItem>>(
+      `${route}?${queryString({
+        ...filter,
+        languageCode: filter.languageCode ?? EXERCISE_LANGUAGE,
+      })}`,
+    ),
   /** Equipment chips with counts, grouped from the values the catalog actually stores. */
   equipmentOptions: () =>
     readData<ExerciseEquipmentOptions>(`${route}/equipment-options`),
-  get: (id: string, languageCode?: string) =>
+  get: (id: string, languageCode = EXERCISE_LANGUAGE) =>
     readData<ExerciseDetail>(
-      `${route}/${encodeURIComponent(id)}${languageCode ? `?${queryString({ languageCode })}` : ''}`,
+      `${route}/${encodeURIComponent(id)}?${queryString({ languageCode })}`,
     ),
-  byIds: async (ids: string[], languageCode?: string) => {
-    const query = languageCode
-      ? `?languageCode=${encodeURIComponent(languageCode)}`
-      : ''
-    const url = `${route}/by-ids${query}`
-    try {
-      return await createData<string[], ExerciseListItem[]>(url, ids)
-    } catch (error) {
-      throw error
+  byIds: async (ids: string[], languageCode = EXERCISE_LANGUAGE) => {
+    const now = Date.now()
+    const cached = ids.map((id) => byIdsCache.get(byIdsKey(languageCode, id)))
+    if (
+      cached.length > 0 &&
+      cached.every((entry) => entry && now - entry.at < BY_IDS_TTL_MS)
+    ) {
+      return cached.map((entry) => entry!.item)
     }
+
+    const items = await createData<string[], ExerciseListItem[]>(
+      `${route}/by-ids?languageCode=${encodeURIComponent(languageCode)}`,
+      ids,
+    )
+    for (const item of items ?? [])
+      byIdsCache.set(byIdsKey(languageCode, item.id), { at: now, item })
+    return items
   },
   create: (input: ExerciseInput) =>
     createData<ExerciseInput, ExerciseDetail>(route, input),

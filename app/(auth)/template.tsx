@@ -1,4 +1,4 @@
-import { ShieldCheck, Users, TrendingUp } from 'lucide-react'
+import { ShieldCheck, TrendingUp, Users } from 'lucide-react'
 
 import { HamOwjBrand } from '@/components/branding/hamowj-mark'
 import { Card, CardContent } from '@/components/ui/card'
@@ -44,8 +44,8 @@ export default async function AuthLayout({
                   </span>
                 </h1>
                 <p className="mt-5 max-w-sm text-sm leading-8 text-[#9FA9A8]">
-                  از مدیریت گروه تا همراهی مربی‌ها و اعضا؛ همه در یک
-                  تجربه یکپارچه و قابل اعتماد.
+                  از مدیریت گروه تا همراهی مربی‌ها و اعضا؛ همه در یک تجربه
+                  یکپارچه و قابل اعتماد.
                 </p>
               </div>
               <div className="relative grid grid-cols-2 gap-3">
@@ -69,7 +69,7 @@ export default async function AuthLayout({
               </div>
               <span
                 aria-hidden
-                className="absolute bottom-8 start-8 opacity-[0.045]"
+                className="absolute start-8 bottom-6 opacity-[0.045]"
               >
                 <HamOwjBrand className="h-28 w-36" />
               </span>

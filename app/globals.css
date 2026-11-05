@@ -769,3 +769,43 @@
 .dark .shepherd-modal-overlay-container {
     fill: rgb(0 0 0 / 0.65) !important;
 }
+/* ------------------------------------------------------------------ */
+/* Auth visual: the animated body-map card on the sign-in banner.      */
+/* ------------------------------------------------------------------ */
+.auth-body.bodymap {
+    background: transparent;
+    min-height: 240px;
+    max-height: 300px;
+}
+
+.auth-body .bm-v {
+    height: 100%;
+    max-height: 296px;
+}
+
+.auth-scan {
+    animation: auth-scan 5.2s cubic-bezier(.45, .05, .55, .95) infinite;
+}
+
+.auth-aurora {
+    animation: auth-aurora 9s ease-in-out infinite alternate;
+}
+
+@keyframes auth-scan {
+    0% { transform: translateY(-4rem); opacity: 0; }
+    15% { opacity: 1; }
+    85% { opacity: 1; }
+    100% { transform: translateY(19rem); opacity: 0; }
+}
+
+@keyframes auth-aurora {
+    from { transform: translate3d(0, -1.5rem, 0) scale(0.92); opacity: .55; }
+    to { transform: translate3d(2.5rem, 2rem, 0) scale(1.12); opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .auth-scan,
+    .auth-aurora {
+        animation: none;
+    }
+}
