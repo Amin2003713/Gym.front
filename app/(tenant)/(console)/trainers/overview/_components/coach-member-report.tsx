@@ -432,16 +432,8 @@ export function CoachMemberReport() {
                   </h3>
                   {Object.keys(report.recuperation).length > 0 ? (
                     <div className="mt-3">
-                      <BodyMapPanel
-                        palette="recovery"
-                        load={report.recuperation}
-                        thresholds={[
-                          { at: 0, level: 0 },
-                          { at: 1, level: 1, exclusive: true },
-                          { at: 2, level: 2 },
-                          { at: 3, level: 4 },
-                        ]}
-                      />
+                      {/* `recuperation` already holds 0–4 levels; the recovery palette maps them absolutely. */}
+                      <BodyMapPanel palette="recovery" load={report.recuperation} />
                       <p className="text-muted-foreground mt-3 text-[11px] leading-5">
                         {report.recoveringMuscles.length > 0
                           ? `${fa(report.recoveringMuscles.length)} گروه عضلانی هنوز در حال ریکاوری است؛ امروز روی آن‌ها فشار نگذارید.`

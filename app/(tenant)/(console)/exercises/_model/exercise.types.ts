@@ -78,7 +78,25 @@ export interface ExerciseListItem {
   mechanic?: string | null
   force?: string | null
   exerciseType?: string | null
+  /** Canonical tool group computed by the API (machine, cable, ...); null when unfilled. */
+  equipmentGroup?: string | null
   cover?: ExerciseMedia | null
+}
+
+export interface ExerciseEquipmentOption {
+  code: string
+  label: string
+  count: number
+}
+
+export interface ExerciseEquipmentOptions {
+  equipment: ExerciseEquipmentOption[]
+  /** Muscle-group (body part) values from the same data, ordered by how many use them. */
+  bodyParts: ExerciseEquipmentOption[]
+  /** Difficulty values, beginner → expert. */
+  levels: ExerciseEquipmentOption[]
+  /** Exercises with no equipment value at all, so they can be found and fixed. */
+  missing: number
 }
 
 export interface ExerciseInput {
@@ -107,6 +125,8 @@ export type ListExercisesFilter = {
   category?: string
   bodyPart?: string
   equipment?: string
+  /** Comma-separated canonical tool groups; multi-select chips send their codes here. */
+  equipments?: string
   target?: string
   level?: string
   mechanic?: string

@@ -308,9 +308,12 @@ export function recoveryLevels(
   const levels: Record<string, number> = {}
   const pcts: Record<string, RecoveryInfo> = {}
   for (const slug of MUSCLES) {
-    const info = computeRecovery(perMuscle[slug], nowMs)
+    // The hook starts from an empty map, so a panel can render before the first session
+    // arrives; a missing entry is "not trained", not a crash.
+    const use = perMuscle[slug] as MuscleUse | undefined
+    const info = computeRecovery(use, nowMs)
     pcts[slug] = info
-    const urgentlyLow = info.pct < 30 && (perMuscle[slug].primarySets + perMuscle[slug].secondarySets) > 0
+    const urgentlyLow = info.pct < 30 && (use?.primarySets ?? 0) + (use?.secondarySets ?? 0) > 0
     levels[slug] = info.pct >= 90
       ? 4
       : info.pct >= 75

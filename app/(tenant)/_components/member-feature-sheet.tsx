@@ -28,10 +28,10 @@ export function MemberFeatureSheet({ active }: { active?: string }) {
         <button
           type="button"
           aria-label="همه امکانات"
-          className="text-muted-foreground flex flex-col items-center gap-1 py-2.5 text-[11px] font-semibold transition-colors hover:text-primary"
+          className="text-muted-foreground flex min-w-0 flex-col items-center gap-1 py-2 text-[11px] font-semibold transition-colors hover:text-primary"
         >
-          <span className="flex h-8 w-11 items-center justify-center rounded-full">
-            <LayoutGrid className="size-[18px]" aria-hidden />
+          <span className="flex h-8 w-10 items-center justify-center rounded-full">
+            <LayoutGrid className="size-5" aria-hidden />
           </span>
           همه
         </button>

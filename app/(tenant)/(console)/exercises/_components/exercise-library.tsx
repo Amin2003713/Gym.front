@@ -9,11 +9,12 @@ import { muscleLoad } from '@/lib/muscle-mapping'
 import { toast } from '@/lib/toast'
 
 import { exerciseApi, exerciseCoverUrl, exerciseThumbUrl } from '../_api/exercise-api'
-import {
-  SHARED_EXERCISE_NOTICE,
-  isUserOwnedExercise,
-} from '../_model/exercise-ownership'
-import type { ExerciseListItem } from '../_model/exercise.types'
+import { equipmentLabel } from '../_model/exercise-equipment'
+import { SHARED_EXERCISE_NOTICE, isUserOwnedExercise } from '../_model/exercise-ownership'
+import type {
+  ExerciseEquipmentOption,
+  ExerciseListItem,
+} from '../_model/exercise.types'
 
 import ExerciseDetailDialog from './exercise-detail-dialog'
 import ExerciseError from './exercise-error'
@@ -41,6 +42,17 @@ export default function ExerciseLibrary() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
+  // Equipment chips: multi-select, and kept here (not in the filter bar) so opening an
+  // exercise and closing it again leaves the selection untouched.
+  const [equipment, setEquipment] = useState<string[]>([])
+  const [bodyPart, setBodyPart] = useState<string | null>(null)
+  const [level, setLevel] = useState<string | null>(null)
+  const [equipmentOptions, setEquipmentOptions] = useState<ExerciseEquipmentOption[]>([])
+  const [bodyPartOptions, setBodyPartOptions] = useState<ExerciseEquipmentOption[]>([])
+  const [levelOptions, setLevelOptions] = useState<ExerciseEquipmentOption[]>([])
+  const [missingEquipment, setMissingEquipment] = useState(0)
+  const equipmentParam = useMemo(() => equipment.join(','), [equipment])
+
   const [detailId, setDetailId] = useState<string | null>(null)
   const [formOpen, setFormOpen] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -61,6 +73,9 @@ export default function ExerciseLibrary() {
   const resetFilters = useCallback(() => {
     setSearchInput('')
     setSearch('')
+    setEquipment([])
+    setBodyPart(null)
+    setLevel(null)
   }, [])
 
   const sentinelRef = useRef<HTMLDivElement>(null)
@@ -83,6 +98,9 @@ export default function ExerciseLibrary() {
           pageNumber: targetPage,
           pageSize: PAGE_SIZE,
           search: search.trim() || undefined,
+          equipments: equipmentParam || undefined,
+          bodyPart: bodyPart || undefined,
+          level: level || undefined,
           languageCode: 'fa',
         })
         if (seq !== requestSeq.current) return
@@ -107,13 +125,34 @@ export default function ExerciseLibrary() {
         if (seq === requestSeq.current) setLoading(false)
       }
     },
-    [search],
+    [bodyPart, equipmentParam, level, search],
   )
 
   // First load, search changes and refreshes always fetch page 1.
   useEffect(() => {
     void fetchPage(1)
   }, [fetchPage])
+
+  // Chip counts come from the catalog itself; a failed call hides the chips but never
+  // blocks the library itself.
+  const loadEquipmentOptions = useCallback(async () => {
+    try {
+      const result = await exerciseApi.equipmentOptions()
+      setEquipmentOptions(result.equipment ?? [])
+      setBodyPartOptions(result.bodyParts ?? [])
+      setLevelOptions(result.levels ?? [])
+      setMissingEquipment(result.missing ?? 0)
+    } catch {
+      setEquipmentOptions([])
+      setBodyPartOptions([])
+      setLevelOptions([])
+      setMissingEquipment(0)
+    }
+  }, [])
+
+  useEffect(() => {
+    void loadEquipmentOptions()
+  }, [loadEquipmentOptions])
 
   const hasMore = page < pageCount
 
@@ -183,6 +222,7 @@ export default function ExerciseLibrary() {
       try {
         await exerciseApi.delete(item.id)
         toast.success('حرکت حذف شد.')
+        void loadEquipmentOptions()
         await fetchPage(1)
       } catch (e) {
         const err = e as { message?: string }
@@ -191,7 +231,7 @@ export default function ExerciseLibrary() {
         setDeletingId(null)
       }
     },
-    [fetchPage],
+    [fetchPage, loadEquipmentOptions],
   )
 
   const gridItems = useMemo(
@@ -204,6 +244,9 @@ export default function ExerciseLibrary() {
         // dialog upgrades to preview/original.
         imageUrl: exerciseThumbUrl(item.cover) ?? exerciseCoverUrl(item.cover),
         muscleLevels: muscleLoad([{ bodyPart: item.bodyPart, target: item.target }]),
+        equipment: item.equipmentGroup
+          ? equipmentLabel(item.equipmentGroup, item.equipment)
+          : (item.equipment ?? null),
         gender: figureGender,
       })),
     [figureGender, items],
@@ -222,6 +265,16 @@ export default function ExerciseLibrary() {
       <ExerciseFilters
         search={searchInput}
         onSearchChange={setSearchInput}
+        options={equipmentOptions}
+        selected={equipment}
+        onSelectedChange={setEquipment}
+        bodyParts={bodyPartOptions}
+        bodyPart={bodyPart}
+        onBodyPartChange={setBodyPart}
+        levels={levelOptions}
+        level={level}
+        onLevelChange={setLevel}
+        missing={missingEquipment}
         onReset={resetFilters}
       />
 
@@ -230,7 +283,8 @@ export default function ExerciseLibrary() {
       ) : (
         <>
           <p className="text-sm text-muted-foreground">
-            {rowCount.toLocaleString('fa-IR')} حرکت در فهرست سرور
+            {rowCount.toLocaleString('fa-IR')} حرکت
+            {equipmentParam || bodyPart || level || search.trim() ? ' · نتیجهٔ فیلترها' : ''}
           </p>
 
           <ExerciseGrid
@@ -294,7 +348,10 @@ export default function ExerciseLibrary() {
           open={formOpen}
           editingId={editingId}
           onOpenChange={setFormOpen}
-          onSaved={() => void fetchPage(1)}
+          onSaved={() => {
+            void fetchPage(1)
+            void loadEquipmentOptions()
+          }}
         />
       )}
 

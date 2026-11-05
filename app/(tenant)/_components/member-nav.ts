@@ -20,6 +20,8 @@ import {
 export type MemberNavItem = {
   href: string
   label: string
+  /** Tab-bar label for the five daily routes; the sidebar keeps the full name. */
+  shortLabel?: string
   icon: LucideIcon
 }
 
@@ -31,7 +33,7 @@ export const MEMBER_NAV: MemberNavItem[] = [
   { href: '/home', label: 'خانه', icon: House },
   { href: '/plan', label: 'برنامه', icon: CalendarDays },
   { href: '/workout', label: 'تمرین', icon: Dumbbell },
-  { href: '/library', label: 'کتابخانه', icon: BookOpen },
+  { href: '/library', label: 'کتابخانه', shortLabel: 'حرکات', icon: BookOpen },
   { href: '/stats', label: 'آمار', icon: ChartNoAxesColumn },
 ]
 

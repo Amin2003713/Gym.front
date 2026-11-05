@@ -7,6 +7,7 @@ import {
 
 import type {
   ExerciseDetail,
+  ExerciseEquipmentOptions,
   ExerciseInput,
   ExerciseListItem,
   ExerciseMedia,
@@ -28,6 +29,9 @@ const queryString = (values: Record<string, unknown>) => {
 export const exerciseApi = {
   list: (filter: ListExercisesFilter) =>
     readData<ExercisePage<ExerciseListItem>>(`${route}?${queryString(filter)}`),
+  /** Equipment chips with counts, grouped from the values the catalog actually stores. */
+  equipmentOptions: () =>
+    readData<ExerciseEquipmentOptions>(`${route}/equipment-options`),
   get: (id: string, languageCode?: string) =>
     readData<ExerciseDetail>(
       `${route}/${encodeURIComponent(id)}${languageCode ? `?${queryString({ languageCode })}` : ''}`,

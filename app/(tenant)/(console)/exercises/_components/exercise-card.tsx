@@ -1,6 +1,6 @@
 'use client'
 
-import { Eye, LoaderCircle, Pencil, Trash2 } from 'lucide-react'
+import { Dumbbell, Eye, LoaderCircle, Pencil, Trash2, TriangleAlert } from 'lucide-react'
 
 import BodyMapPanel from '@/app/(tenant)/_components/progress/body-map-panel'
 
@@ -15,6 +15,8 @@ export interface ExerciseCardItem {
   muscleLevels?: Record<string, number>
   /** Figure the card draws; the library passes the signed-in member's. */
   gender?: 'male' | 'female'
+  /** Persian tool label; null flags an exercise whose equipment was never filled in. */
+  equipment?: string | null
 }
 
 interface ExerciseCardProps {
@@ -68,6 +70,18 @@ export default function ExerciseCard({
         >
           {exercise.name}
         </button>
+
+        {exercise.equipment ? (
+          <span className="text-muted-foreground inline-flex w-fit items-center gap-1 rounded-full border px-2 py-0.5 text-[10px]">
+            <Dumbbell className="size-3" aria-hidden />
+            {exercise.equipment}
+          </span>
+        ) : (
+          <span className="inline-flex w-fit items-center gap-1 rounded-full border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold text-amber-700 dark:text-amber-400">
+            <TriangleAlert className="size-3" aria-hidden />
+            بدون تجهیزات
+          </span>
+        )}
 
         <div className="flex items-start gap-2">
           <p className="text-muted-foreground line-clamp-3 min-h-5 flex-1 text-sm leading-6">

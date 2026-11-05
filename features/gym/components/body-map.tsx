@@ -5,6 +5,13 @@ import {useEffect, useState} from 'react'
 import {t} from '@/lib/i18n'
 import {MUSCLES, INERT, MUSCLE_NAME, levelsOf} from '@/lib/muscles'
 
+/**
+ * Recovery callers hand in finished 0–4 levels (0 = just trained, 4 = fully rested). Scaling
+ * them relative to the strongest muscle — the default for the load map — repainted a whole body
+ * of level-1 muscles as fully recovered, so recovery always uses absolute levels.
+ */
+const RECOVERY_LEVELS = [0, 1, 2, 3, 4].map(level => ({at: level, level}))
+
 type Gender = 'male' | 'female'
 type ViewData = { vb: string; p: Record<string, string[]> }
 type BodyPaths = Record<Gender, { front: ViewData; back: ViewData }>
@@ -95,7 +102,10 @@ export default function BodyMap({
                                     roles
                                 }: BodyMapProps) {
     const paths = useBodyPaths()
-    const levels = levelsOf(load, thresholds)
+    const levels = levelsOf(
+        load,
+        thresholds ?? (palette === 'recovery' ? RECOVERY_LEVELS : undefined),
+    )
     const g = paths && (paths[body] || paths.male)
     return (
         <div className={'bodymap ' + className} data-palette={palette} data-size={size}>
@@ -113,7 +123,7 @@ const legends = {
         'بیش‌کارکرد'],
     recovery: ['نیاز به ریکاوری', <div className="hm-c r0" key="r0"/>, <div className="hm-c r1" key="r1"/>,
         <div className="hm-c b1" key="b1"/>, <div className="hm-c b2" key="b2"/>, <div className="hm-c b3" key="b3"/>,
-        'رکاوری کامل'],
+        'ریکاوری کامل'],
 } as const
 
 export function BodyMapLegend({palette = 'load'}: { palette?: BodyMapPalette }) {

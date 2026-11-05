@@ -52,7 +52,7 @@ export default function ExerciseGrid({
       <div className="rounded-lg border border-dashed p-10 text-center">
         <p className="font-medium">حرکتی پیدا نشد</p>
         <p className="text-muted-foreground mt-2 text-sm">
-          عبارت جستجو را تغییر دهید یا یک حرکت جدید اضافه کنید.
+          عبارت جستجو یا فیلتر تجهیزات را تغییر دهید یا یک حرکت جدید اضافه کنید.
         </p>
         {onReset && (
           <button
@@ -60,7 +60,7 @@ export default function ExerciseGrid({
             onClick={onReset}
             className="bg-primary text-primary-foreground mt-4 inline-flex h-10 items-center justify-center rounded-lg px-4 text-sm font-semibold"
           >
-            نمایش همه حرکات
+            پاک کردن فیلترها
           </button>
         )}
       </div>
