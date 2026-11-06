@@ -8,6 +8,7 @@ import { useCallback, useTransition } from 'react'
 import { signOutAction } from '@/actions/auth'
 import { HamOwjBrand } from '@/components/branding/hamowj-mark'
 import { ModeToggle } from '@/components/mode-toggle'
+import { OfflineIndicator } from '@/components/offline/offline-indicator'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import {
@@ -87,13 +88,14 @@ export function MemberShell({ user, error, children }: MemberShellProps) {
                     </Link>
                   </Button>
                 )}
+                <OfflineIndicator />
                 <ModeToggle onThemeChange={persistTheme} />
                 <MemberUserMenu user={user} error={error} />
               </div>
             </div>
           </header>
 
-          <main className="mx-auto w-full max-w-6xl flex-1 px-3 pt-4 pb-28 sm:px-4 md:pb-10">
+          <main className="mx-auto w-full min-w-0 max-w-6xl flex-1 overflow-x-clip px-3 pt-4 pb-28 sm:px-4 md:pb-10">
             {children}
           </main>
 

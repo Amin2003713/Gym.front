@@ -4,7 +4,6 @@ import { useEffect } from 'react'
 
 import { toast } from '@/lib/toast'
 
-import { OfflineStatusBar } from './offline-status-bar'
 import { PwaInstallPrompt } from './pwa-install-prompt'
 
 const SYNC_INTERVAL_MS = 30_000
@@ -75,10 +74,7 @@ export function OfflineProvider() {
     }
   }, [])
 
-  return (
-    <>
-      <OfflineStatusBar />
-      <PwaInstallPrompt />
-    </>
-  )
+  // Connectivity is shown as a pill beside the account menu (see OfflineIndicator), so this
+  // provider only owns background sync and the install prompt.
+  return <PwaInstallPrompt />
 }

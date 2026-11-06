@@ -33,8 +33,10 @@ export default async function ConsoleLayout({
             On phones that area was shorter than the visible viewport (browser chrome, a
             two-row header) and clipped the last cards; the sidebar stays fixed on desktop.
           */}
-          <SidebarInset className="@container/main min-w-0 flex-1">
-            <div className="w-full flex-1 p-2 sm:p-3 lg:p-4">{children}</div>
+          <SidebarInset className="@container/main min-w-0 flex-1 overflow-x-clip">
+            {/* A single over-wide card must never turn the whole dashboard into a sideways
+                scroll surface on a phone; wide tables keep their own local scroller. */}
+            <div className="w-full min-w-0 flex-1 p-2 sm:p-3 lg:p-4">{children}</div>
           </SidebarInset>
         </div>
       </SidebarProvider>

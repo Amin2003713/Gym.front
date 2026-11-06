@@ -31,9 +31,15 @@ export function ModeToggle({
         setTheme(next)
         onThemeChange?.(next)
       }}
-      className="relative border-border bg-card text-foreground shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground"
+      className="shrink-0 relative border-border bg-card text-foreground hover:bg-accent hover:text-accent-foreground size-9 shadow-sm transition-colors"
     >
-      {mounted ? (isDark ? <Sun className="size-5" aria-hidden="true" /> : <Moon className="size-5" aria-hidden="true" />) : (
+      {mounted ? (
+        isDark ? (
+          <Sun className="size-5" aria-hidden="true" />
+        ) : (
+          <Moon className="size-5" aria-hidden="true" />
+        )
+      ) : (
         <span className="size-5" aria-hidden="true" />
       )}
       <span className="sr-only">تغییر پوسته روشن و تیره</span>

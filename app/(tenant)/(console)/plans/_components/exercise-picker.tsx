@@ -1,9 +1,11 @@
 'use client'
 
-import { ChevronUp, LoaderCircle, RefreshCw, Search } from '@/components/icons'
+import { ChevronUp, LoaderCircle, RefreshCw, Search, X } from '@/components/icons'
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 
 import { useAppLocale } from '@/hooks/use-app-locale'
+import { useIsMobile } from '@/hooks/use-mobile'
 
 import { exerciseApi, exerciseThumbUrl } from '../../exercises/_api/exercise-api'
 import type { ExerciseListItem } from '../../exercises/_model/exercise.types'
@@ -35,6 +37,10 @@ interface ExercisePickerProps {
  * Dropdown that lists exercises from the real exercise API with a search box, muscle filter and
  * infinite scroll. Each row shows the catalog thumbnail so the coach recognises the movement
  * before opening it.
+ *
+ * On phones the same panel is portalled to the document as a bottom sheet: an absolutely
+ * positioned list inside a scrolling dialog (the plan builder) was clipped and its name column was
+ * squeezed to a few pixels by the meta text, which made the exercise menu unreadable.
  */
 export default function ExercisePicker({
   value,
@@ -44,6 +50,7 @@ export default function ExercisePicker({
   muscleIds = [],
 }: ExercisePickerProps) {
   const locale = useAppLocale()
+  const isMobile = useIsMobile()
   const [open, setOpen] = useState(false)
   const [items, setItems] = useState<ExerciseListItem[]>([])
   const [query, setQuery] = useState('')
@@ -171,14 +178,116 @@ export default function ExercisePicker({
   }
 
   const rowClass =
-    'flex w-full items-center gap-3 rounded-lg px-3 py-2 text-right text-sm transition hover:bg-muted/50 aria-selected:bg-muted'
+    'flex min-h-12 w-full items-center gap-3 rounded-lg px-2 py-2 text-start text-sm transition hover:bg-muted/50 aria-selected:bg-muted sm:min-h-0 sm:px-3'
+
+  const panel = (
+    <>
+      <div className="relative border-b p-2">
+        <Search className="text-muted-foreground pointer-events-none absolute top-1/2 right-4 size-4 -translate-y-1/2" />
+        <input
+          autoFocus
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="جستجوی نام حرکت…"
+          aria-label="جستجوی حرکت"
+          inputMode="search"
+          className="bg-background h-11 w-full rounded-lg border pr-9 pl-3 text-base outline-none sm:h-9 sm:text-sm"
+        />
+      </div>
+
+      <div
+        ref={listRef}
+        role="listbox"
+        onScroll={handleScroll}
+        className="max-h-[60svh] overflow-y-auto overscroll-contain p-1 sm:max-h-80"
+      >
+        {loading ? (
+          <div className="flex items-center justify-center py-8">
+            <LoaderCircle className="text-primary size-5 animate-spin" />
+          </div>
+        ) : error ? (
+          <div className="text-muted-foreground space-y-2 p-4 text-center text-sm">
+            <p>{error}</p>
+            <button
+              type="button"
+              onClick={retry}
+              className="text-primary inline-flex items-center gap-1 text-xs"
+            >
+              <RefreshCw className="size-3" /> تلاش دوباره
+            </button>
+          </div>
+        ) : items.length === 0 ? (
+          <p className="text-muted-foreground py-8 text-center text-sm">
+            {muscleIds.length > 0
+              ? 'برای عضلات انتخاب‌شده حرکتی پیدا نشد؛ جستجو را بازتر کنید.'
+              : 'حرکتی پیدا نشد.'}
+          </p>
+        ) : (
+          items.map((item) => {
+            const thumb = exerciseThumbUrl(item.cover)
+            const meta =
+              [item.category, item.equipment, item.target].filter(Boolean).join(' · ') ||
+              item.exerciseType ||
+              ''
+
+            return (
+              <button
+                key={item.id}
+                type="button"
+                role="option"
+                aria-selected={item.id === value}
+                onClick={() => {
+                  onSelect({ id: item.id, name: item.name })
+                  close()
+                }}
+                className={rowClass}
+              >
+                <span className="bg-muted flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-md">
+                  {thumb ? (
+                    // Remote catalog thumbnail (already sized for lists).
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={thumb} alt="" className="size-10 object-cover" />
+                  ) : (
+                    <span className="text-muted-foreground text-[10px]">—</span>
+                  )}
+                </span>
+
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate font-semibold sm:font-medium">{item.name}</span>
+                  {/* Phones get the meta on its own line so the exercise name keeps its width. */}
+                  <span className="text-muted-foreground mt-0.5 block truncate text-[11px] sm:hidden">
+                    {meta}
+                  </span>
+                </span>
+
+                <span className="text-muted-foreground hidden shrink-0 text-xs sm:inline">
+                  {meta}
+                </span>
+              </button>
+            )
+          })
+        )}
+
+        {loadingMore && (
+          <div className="flex items-center justify-center py-3">
+            <LoaderCircle className="text-primary size-4 animate-spin" />
+          </div>
+        )}
+        {!loading && !loadingMore && items.length > 0 && page >= pageCount && (
+          <p className="text-muted-foreground border-t py-2 text-center text-xs">
+            همه حرکات نمایش داده شدند
+          </p>
+        )}
+      </div>
+    </>
+  )
 
   return (
     <div className="relative w-full">
       <button
         type="button"
         onClick={() => (open ? close() : openPicker())}
-        className="border-input bg-background flex h-10 w-full items-center justify-between gap-2 rounded-md border px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        className="border-input bg-background focus-visible:ring-ring flex h-10 w-full items-center justify-between gap-2 rounded-md border px-3 text-sm outline-none focus-visible:ring-2"
         aria-haspopup="listbox"
         aria-expanded={open}
       >
@@ -200,99 +309,55 @@ export default function ExercisePicker({
               حذف
             </span>
           )}
-          <ChevronUp className={`size-4 text-muted-foreground transition ${open ? '' : 'rotate-180'}`} />
+          <ChevronUp
+            className={`text-muted-foreground size-4 transition ${open ? '' : 'rotate-180'}`}
+          />
         </span>
       </button>
 
-      {open && (
-        <div className="bg-card absolute z-50 mt-1 w-full overflow-hidden rounded-lg border shadow-lg">
-          <div className="relative border-b p-2">
-            <Search className="pointer-events-none absolute top-1/2 right-4 size-4 -translate-y-1/2 text-muted-foreground" />
-            <input
-              autoFocus
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="جستجوی نام حرکت…"
-              aria-label="جستجوی حرکت"
-              className="h-9 w-full rounded-lg border pr-9 pl-3 text-sm outline-none"
-            />
-          </div>
+      {open && isMobile && typeof document !== 'undefined'
+        ? createPortal(
+            <div className="fixed inset-0 z-[80] sm:hidden" role="dialog" aria-modal="true">
+              <button
+                type="button"
+                aria-label="بستن فهرست حرکات"
+                onClick={close}
+                className="absolute inset-0 bg-black/50 backdrop-blur-[1px]"
+              />
 
-          <div
-            ref={listRef}
-            role="listbox"
-            onScroll={handleScroll}
-            className="max-h-80 overflow-y-auto p-1"
-          >
-            {loading ? (
-              <div className="flex items-center justify-center py-8">
-                <LoaderCircle className="size-5 animate-spin text-primary" />
-              </div>
-            ) : error ? (
-              <div className="space-y-2 p-4 text-center text-sm text-muted-foreground">
-                <p>{error}</p>
-                <button
-                  type="button"
-                  onClick={retry}
-                  className="text-primary inline-flex items-center gap-1 text-xs"
-                >
-                  <RefreshCw className="size-3" /> تلاش دوباره
-                </button>
-              </div>
-            ) : items.length === 0 ? (
-              <p className="text-muted-foreground py-8 text-center text-sm">
-                {muscleIds.length > 0
-                  ? 'برای عضلات انتخاب‌شده حرکتی پیدا نشد؛ جستجو را بازتر کنید.'
-                  : 'حرکتی پیدا نشد.'}
-              </p>
-            ) : (
-              items.map((item) => {
-                const thumb = exerciseThumbUrl(item.cover)
-                return (
+              <div className="bg-card absolute inset-x-0 bottom-0 flex max-h-[88svh] flex-col overflow-hidden rounded-t-2xl border-t pb-[max(0.5rem,env(safe-area-inset-bottom))] shadow-2xl">
+                <div className="flex items-center justify-between gap-2 px-3 pt-3">
+                  <div>
+                    <p className="text-sm font-extrabold">انتخاب حرکت</p>
+                    <p className="text-muted-foreground mt-0.5 text-[11px]">
+                      {muscleIds.length > 0
+                        ? 'فهرست بر اساس عضلات انتخاب‌شده فیلتر شده است.'
+                        : 'جستجو کنید یا از فهرست انتخاب کنید.'}
+                    </p>
+                  </div>
+
                   <button
-                    key={item.id}
                     type="button"
-                    role="option"
-                    aria-selected={item.id === value}
-                    onClick={() => {
-                      onSelect({ id: item.id, name: item.name })
-                      close()
-                    }}
-                    className={rowClass}
+                    onClick={close}
+                    aria-label="بستن"
+                    className="focus-visible:ring-ring inline-flex size-10 shrink-0 items-center justify-center rounded-lg outline-none focus-visible:ring-[3px]"
                   >
-                    <span className="bg-muted flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-md">
-                      {thumb ? (
-                        // Remote catalog thumbnail (already sized for lists).
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={thumb} alt="" className="size-10 object-cover" />
-                      ) : (
-                        <span className="text-muted-foreground text-[10px]">—</span>
-                      )}
-                    </span>
-                    <span className="min-w-0 flex-1 truncate font-medium">{item.name}</span>
-                    <span className="text-muted-foreground shrink-0 text-xs">
-                      {[item.category, item.equipment, item.target].filter(Boolean).join(' · ') ||
-                        item.exerciseType ||
-                        ''}
-                    </span>
+                    <X className="size-4" aria-hidden />
                   </button>
-                )
-              })
-            )}
+                </div>
 
-            {loadingMore && (
-              <div className="flex items-center justify-center py-3">
-                <LoaderCircle className="size-4 animate-spin text-primary" />
+                <div className="bg-muted mx-auto my-2 h-1 w-10 shrink-0 rounded-full" aria-hidden />
+
+                <div className="flex min-h-0 flex-1 flex-col">{panel}</div>
               </div>
-            )}
-            {!loading && !loadingMore && items.length > 0 && page >= pageCount && (
-              <p className="text-muted-foreground border-t py-2 text-center text-xs">
-                همه حرکات نمایش داده شدند
-              </p>
-            )}
-          </div>
-        </div>
-      )}
+            </div>,
+            document.body,
+          )
+        : open && (
+            <div className="bg-card border-border absolute z-50 mt-1 w-full overflow-hidden rounded-lg border shadow-lg">
+              {panel}
+            </div>
+          )}
     </div>
   )
 }
