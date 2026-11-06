@@ -75,13 +75,20 @@ export function PasskeysPanel() {
   const register = async () => {
     if (registering) return
 
-    if (
-      typeof window === 'undefined' ||
-      !window.isSecureContext ||
-      !('PublicKeyCredential' in window) ||
-      !('credentials' in navigator)
-    ) {
-      toast.error('ثبت کلید عبور در این مرورگر پشتیبانی نمی‌شود.')
+    if (typeof window === 'undefined') return
+
+    // WebAuthn only runs on HTTPS (or localhost). Saying so is more useful than a generic
+    // "browser not supported" message when the site is opened over plain HTTP.
+    if (!window.isSecureContext) {
+      toast.error('ثبت کلید عبور فقط روی HTTPS کار می‌کند.', {
+        description:
+          'این صفحه را روی دامنه باشگاه با https باز کنید و دوباره تلاش کنید.',
+      })
+      return
+    }
+
+    if (!('PublicKeyCredential' in window) || !('credentials' in navigator)) {
+      toast.error('این مرورگر از کلید عبور پشتیبانی نمی‌کند.')
       return
     }
 
@@ -113,15 +120,23 @@ export function PasskeysPanel() {
       toast.success('کلید عبور ثبت شد')
       await load()
     } catch (error) {
-      if (
-        error instanceof Error &&
-        /cancel|abort|notallowed/i.test(`${error.name} ${error.message}`)
-      )
+      const name = error instanceof Error ? error.name : ''
+      const message = error instanceof Error ? error.message : String(error)
+
+      // The user dismissing the OS prompt is expected, not an error worth shouting about.
+      if (name !== 'SecurityError' && /notallowed|abort|cancel/i.test(`${name} ${message}`))
         return
 
-      toast.error('ثبت کلید عبور ناموفق بود.', {
-        description: error instanceof Error ? error.message : undefined,
-      })
+      // A relying-party/origin mismatch means the page is not on the gym's real host.
+      if (name === 'SecurityError' || /rp id|origin|relying party/i.test(message)) {
+        toast.error('دامنه ثبت کلید عبور با دامنه فعلی هم‌خوان نیست.', {
+          description:
+            'صفحه را روی دامنه اصلی باشگاه با https باز کنید و دوباره تلاش کنید.',
+        })
+        return
+      }
+
+      toast.error('ثبت کلید عبور ناموفق بود.', { description: message })
     } finally {
       setRegistering(false)
     }

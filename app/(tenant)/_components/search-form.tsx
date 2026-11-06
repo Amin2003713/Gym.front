@@ -13,7 +13,7 @@ export function SearchForm({ ...props }: React.ComponentProps<"form">) {
         <SidebarInput
           id="search"
           placeholder="جستجو ..."
-          className="h-8 pl-7 transition-all duration-300 sm:w-[200px] sm:focus:w-[320px]"
+          className="h-10 pl-7 transition-all duration-300 sm:h-8 sm:w-[200px] sm:focus:w-[320px]"
         />
         <Search className="pointer-events-none absolute left-2 top-1/2 size-4 -translate-y-1/2 select-none opacity-50" />
       </div>

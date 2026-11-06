@@ -48,7 +48,7 @@ export const MEMBER_MORE: MemberNavItem[] = [
   { href: '/measurements', label: 'اندازه‌گیری', icon: Ruler },
   { href: '/progress-photos', label: 'عکس پیشرفت', icon: ImageIcon },
   { href: '/coach', label: 'مربی', icon: MessagesSquare },
-  { href: '/live', label: 'پخش زنده', icon: Radio },
+  { href: '/live', label: 'کلاس آنلاین', icon: Radio },
   { href: '/support', label: 'پشتیبانی', icon: LifeBuoy },
   { href: '/contact', label: 'ارتباط با ما', icon: LifeBuoy },
   { href: '/settings', label: 'تنظیمات', icon: Settings },

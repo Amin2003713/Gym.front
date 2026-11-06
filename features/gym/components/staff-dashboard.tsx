@@ -127,8 +127,8 @@ export function StaffDashboard() {
   }, [assignments])
 
   return (
-    <main dir="rtl" className="mx-auto w-full max-w-[1440px] space-y-5">
-      <section className="bg-card relative overflow-hidden rounded-2xl border p-5 shadow-sm sm:p-7">
+    <main dir="rtl" className="mx-auto w-full min-w-0 max-w-[1440px] space-y-5">
+      <section className="bg-card relative overflow-hidden rounded-2xl border p-4 shadow-sm sm:p-7">
         <div className="bg-primary/10 pointer-events-none absolute -top-16 -left-10 size-48 rounded-full blur-3xl" />
         <div className="relative flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
@@ -318,8 +318,8 @@ export function StaffDashboard() {
 
               return (
                 <li key={member.id} className="rounded-xl border p-3">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="truncate text-sm font-semibold">{member.name}</span>
+                  <div className="flex flex-wrap items-start justify-between gap-2">
+                    <span className="min-w-0 flex-1 truncate text-sm font-semibold">{member.name}</span>
                     <span className="text-muted-foreground shrink-0 text-xs">
                       {fa(member.completed)} / {fa(member.total)} · {fa(percent)}٪
                     </span>

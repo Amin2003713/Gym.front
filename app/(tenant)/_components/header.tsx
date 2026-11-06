@@ -52,19 +52,31 @@ export default function Header({ data: user, error }: HeaderProps) {
     return <BreadcrumbItem>{decodeSlug(segment)}</BreadcrumbItem>
   }
 
+  const lastSegment = pathSegments[pathSegments.length - 1]
+  const currentTitle = lastSegment
+    ? (itemsPageSegments[lastSegment]?.title ?? decodeSlug(lastSegment))
+    : 'داشبورد'
+
   return (
-    <header className="bg-card/95 supports-[backdrop-filter]:bg-card/85 sticky top-0 z-50 flex w-full items-center border-b backdrop-blur">
-      <div className="flex h-[var(--header-height)] w-full items-center gap-2 px-4">
+    <header className="bg-card/95 supports-[backdrop-filter]:bg-card/85 sticky top-0 z-50 w-full border-b backdrop-blur">
+      {/*
+        One row on tablet and up. On phones the search drops to a second row instead of
+        squeezing the title and the account menu out of the viewport.
+      */}
+      <div className="flex w-full flex-wrap items-center gap-2 px-2 py-2 sm:h-[var(--header-height)] sm:flex-nowrap sm:px-4 sm:py-0">
         <Button
-          className="h-8 w-8"
+          className="size-9 shrink-0"
           variant="ghost"
           size="icon"
           onClick={toggleSidebar}
+          aria-label="باز و بسته کردن منو"
         >
           <SidebarIcon />
         </Button>
-        <Separator orientation="vertical" className="mr-2 h-4" />
-        <Breadcrumb className="hidden sm:block">
+
+        <Separator orientation="vertical" className="mx-1 hidden h-4 sm:block" />
+
+        <Breadcrumb className="hidden min-w-0 md:block">
           <BreadcrumbList>
             <BreadcrumbItem>
               <BreadcrumbLink href="/">داشبورد</BreadcrumbLink>
@@ -85,13 +97,19 @@ export default function Header({ data: user, error }: HeaderProps) {
             })}
           </BreadcrumbList>
         </Breadcrumb>
-        <SearchForm className="w-full sm:ml-auto sm:w-auto" />
-        <Separator orientation="vertical" className="hidden h-full sm:block" />
-        <div className="w-1/12 md:w-1/4 lg:w-1/7 xl:w-1/10">
+
+        {/* Phones get the current page name; a breadcrumb would truncate to nothing. */}
+        <span className="min-w-0 flex-1 truncate text-sm font-semibold md:hidden">
+          {currentTitle}
+        </span>
+
+        <SearchForm className="order-5 w-full sm:order-4 sm:ms-auto sm:w-auto" />
+
+        <div className="order-4 ms-auto flex shrink-0 items-center gap-1 sm:order-5 sm:ms-0 sm:gap-2">
           <NavUser isHeader data={user} error={error} />
+          <Separator orientation="vertical" className="hidden h-6 sm:block" />
+          <ModeToggle />
         </div>
-        <Separator orientation="vertical" className="hidden h-full sm:block" />
-        <ModeToggle />
       </div>
     </header>
   )

@@ -8,6 +8,7 @@ import {
   LockKeyhole,
   LifeBuoy,
   MessagesSquare,
+  Radio,
   Settings2,
   ShieldCheck,
   Users,
@@ -58,6 +59,18 @@ const SIDEBAR_OPTIONS: { tree: SidebarItem[] } = {
         { name: 'برنامه‌ریزی تمرین', path: '/plans', icon: <BookOpen className="size-4" />, colorClass: 'text-primary' },
         { name: 'تخصیص برنامه', path: '/assignments', icon: <CalendarCheck className="size-4" />, colorClass: 'text-primary' },
         { name: 'پیگیری پیشرفت شاگرد', path: '/trainers/overview', icon: <ChartNoAxesCombined className="size-4" />, colorClass: 'text-[#788584]' },
+      ],
+    },
+    {
+      // Classes live on their own: hosting a live class is a different job from planning a
+      // member's program, and it needs its own entry on small screens.
+      name: 'کلاس‌های آنلاین',
+      icon: <Radio className="size-4" />,
+      colorClass: 'text-primary',
+      role: STAFF_ROLES,
+      children: [
+        { name: 'میزبانی کلاس زنده', path: '/console/live-console', icon: <Radio className="size-4" />, colorClass: 'text-primary' },
+        { name: 'ورود به کلاس', path: '/live', icon: <Users className="size-4" />, colorClass: 'text-[#788584]' },
       ],
     },
     {

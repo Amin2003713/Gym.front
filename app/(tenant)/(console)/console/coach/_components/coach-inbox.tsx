@@ -114,8 +114,9 @@ export function CoachInbox() {
           </p>
         </div>
       ) : (
-        <div className="grid gap-3 lg:grid-cols-[20rem_1fr]">
-          <ul className="divide-y overflow-hidden rounded-2xl border bg-card shadow-sm">
+        <div className="grid min-w-0 gap-3 lg:grid-cols-[20rem_1fr]">
+          {/* Phones: keep the queue short so the conversation is not pushed off-screen. */}
+          <ul className="divide-y max-h-[42svh] overflow-y-auto rounded-2xl border bg-card shadow-sm lg:max-h-[calc(100svh-16rem)] lg:overflow-hidden">
             {threads.map((thread) => {
               const isOpen = thread.status === CoachConversationStatus.Open
 
@@ -159,7 +160,7 @@ export function CoachInbox() {
             })}
           </ul>
 
-          <section className="overflow-hidden rounded-2xl border bg-card shadow-sm">
+          <section className="min-w-0 overflow-hidden rounded-2xl border bg-card shadow-sm">
             {activeId ? (
               <CoachChat
                 key={activeId}

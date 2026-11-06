@@ -55,7 +55,7 @@ export function MainSidebar({ data: user, error, ...props }: MainSidebarProps) {
   return (
     <Sidebar
       side="right"
-      className="border-border top-[calc(--spacing(14))] h-[calc(100svh-calc(--spacing(14)))]!"
+      className="border-border md:top-14 md:h-[calc(100svh-3.5rem)]"
       {...props}
     >
       {/* HamOwj lockup: mark + Persian and Latin wordmarks (guide: approved lockup). */}
@@ -63,7 +63,7 @@ export function MainSidebar({ data: user, error, ...props }: MainSidebarProps) {
         <Link
           href="/"
           aria-label="هم‌اوج؛ داشبورد"
-          className="focus-visible:ring-ring flex flex-row items-center gap-3 rounded-lg betwee outline-none focus-visible:ring-[3px] focus-visible:ring-offset-2"
+          className="focus-visible:ring-ring flex flex-row items-center justify-between gap-3 rounded-lg outline-none focus-visible:ring-[3px] focus-visible:ring-offset-2"
         >
           <span className="bg-foreground text-background flex size-12 shrink-0 items-center justify-center rounded-lg">
             <HamOwjBrand className="size-9" />
