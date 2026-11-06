@@ -809,3 +809,37 @@
         animation: none;
     }
 }
+
+/* ------------------------------------------------------------------ */
+/* Performance                                                        */
+/* ------------------------------------------------------------------ */
+
+/* Long lists and card grids: the browser skips layout/paint for rows that are
+   off-screen until they are scrolled into view. A single class instead of a
+   virtualization dependency, and it works with RTL scroll containers. */
+@layer utilities {
+    .cv-auto {
+        content-visibility: auto;
+        contain-intrinsic-size: auto 320px;
+    }
+}
+
+/* Set by NetworkQualityProvider from the Network Information API. On a slow
+   or data-saver connection the same screen drops blur, looping decoration and
+   long transitions instead of blocking the first paint. */
+html[data-network='slow'] [class*='backdrop-blur'] {
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+}
+
+html[data-network='slow'] .animate-pulse,
+html[data-network='slow'] .auth-scan,
+html[data-network='slow'] .auth-aurora {
+    animation: none !important;
+}
+
+html[data-network='slow'] .transition,
+html[data-network='slow'] .transition-colors,
+html[data-network='slow'] .transition-opacity {
+    transition-duration: 0ms !important;
+}

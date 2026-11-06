@@ -1,6 +1,7 @@
-import classNames from 'classnames'
 import { forwardRef, useImperativeHandle } from 'react'
 import { useTimer } from 'react-timer-hook'
+
+import { cn } from '@/lib/utils'
 
 import { TimerProgress } from './timer-progress'
 
@@ -54,12 +55,7 @@ export const Timer = forwardRef<TimerRef, TimerProps>(
         expiryTimestamp,
       })
 
-    const classes = classNames(
-      'timer',
-      className,
-      { [sizeClasses[size]]: size },
-      { [`timer-${variant}`]: variant },
-    )
+    const classes = cn('timer', className, sizeClasses[size], `timer-${variant}`)
 
     useImperativeHandle(ref, () => ({
       start,

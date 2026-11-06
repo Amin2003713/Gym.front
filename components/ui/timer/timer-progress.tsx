@@ -1,6 +1,6 @@
-import classNames from 'classnames'
 import { ReactNode, useEffect, useState } from 'react'
 
+import { cn } from '@/lib/utils'
 import { padWithZero } from '@/utils/string'
 
 type TimerProgressProps = {
@@ -42,9 +42,7 @@ export const TimerProgress: React.FC<TimerProgressProps> = ({
     setOffset(progress)
   }, [progress])
 
-  const classes = classNames('timer-progress', className, {
-    [`timer-progress-${variant}`]: variant,
-  })
+  const classes = cn('timer-progress', className, `timer-progress-${variant}`)
 
   return (
     <div className={classes} lang="en">

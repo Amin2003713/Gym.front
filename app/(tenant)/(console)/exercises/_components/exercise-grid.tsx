@@ -90,15 +90,18 @@ export default function ExerciseGrid({
         {exercises.map((exercise) => (
           <li
             key={exercise.id}
-            className="border-border hover:bg-muted/20 flex items-center gap-2 border-b px-1 py-2"
+            className="border-border hover:bg-muted/20 cv-auto flex items-center gap-2 border-b px-1 py-2"
           >
             {exercise.imageUrl && (
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={exercise.imageUrl}
                 alt={exercise.name}
+                width={40}
+                height={40}
                 className="bg-muted size-10 shrink-0 rounded-md object-contain p-0.5"
                 loading="lazy"
+                decoding="async"
               />
             )}
             <button
@@ -206,7 +209,7 @@ function ExerciseListRow({
   deleting?: boolean
 }) {
   return (
-    <article className="bg-card hover:border-primary/40 flex items-center gap-4 rounded-lg border p-3 transition hover:shadow-sm">
+    <article className="bg-card hover:border-primary/40 cv-auto flex items-center gap-4 rounded-lg border p-3 transition hover:shadow-sm">
       <button
         type="button"
         onClick={() => onView(exercise.id)}
@@ -218,8 +221,11 @@ function ExerciseListRow({
           <img
             src={exercise.imageUrl}
             alt={exercise.name}
+            width={128}
+            height={80}
             className="h-full w-full object-contain p-1"
             loading="lazy"
+            decoding="async"
           />
         ) : (
           <span className="text-muted-foreground text-xs">بدون تصویر</span>

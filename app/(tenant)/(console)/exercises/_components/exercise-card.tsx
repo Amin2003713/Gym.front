@@ -40,7 +40,7 @@ export default function ExerciseCard({
   deleting = false,
 }: ExerciseCardProps) {
   return (
-    <article className="bg-card flex overflow-hidden rounded-xl border transition hover:border-primary/40 hover:shadow-sm">
+    <article className="bg-card cv-auto flex overflow-hidden rounded-xl border transition hover:border-primary/40 hover:shadow-sm">
       <button
         type="button"
         onClick={() => onView(exercise.id)}
@@ -52,8 +52,12 @@ export default function ExerciseCard({
           <img
             src={exercise.imageUrl}
             alt={exercise.name}
+            width={144}
+            height={144}
             className="h-full w-full object-cover"
             loading="lazy"
+            decoding="async"
+            fetchPriority="low"
           />
         ) : (
           <span className="text-muted-foreground px-2 text-center text-xs">

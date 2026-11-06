@@ -91,12 +91,47 @@ const httpService = axios.create({
   },
 })
 
+type ClientSession = Awaited<ReturnType<typeof getSession>>
+
+let clientSession: Promise<ClientSession> | null = null
+let clientSessionAt = 0
+const CLIENT_SESSION_TTL_MS = 15_000
+
+const resetClientSession = () => {
+  clientSession = null
+  clientSessionAt = 0
+}
+
+/**
+ * `getSession()` reads /api/auth/session over the network. Calling it before every API request
+ * doubled the traffic on mobile; a 15s memo collapses a screen's burst of calls into one read.
+ * Server renders keep using `auth()` per request — never shared between users.
+ */
+const readSession = () => {
+  if (typeof window === 'undefined') return auth()
+
+  const now = Date.now()
+
+  if (!clientSession || now - clientSessionAt > CLIENT_SESSION_TTL_MS) {
+    clientSessionAt = now
+    clientSession = getSession().catch((error) => {
+      resetClientSession()
+      throw error
+    })
+  }
+
+  return clientSession
+}
+
 httpService.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error?.response) {
       const statusCode = error.response.status
       const errorData: ApiError = error.response.data
+
+      // The cached token no longer works (sign-out, expiry): force a fresh session next call.
+      if (statusCode === 401) resetClientSession()
 
       errorHandler[statusCode]?.(errorData)
     } else {
@@ -112,8 +147,7 @@ const apiBase = async <T>(
   url: string,
   options?: AxiosRequestConfig,
 ): Promise<T> => {
-  const session = await (typeof window !== 'undefined' ? getSession() : auth())
-
+  const session = await readSession()
 
   const baseURL = await getBaseURL()
   const fullURL = `${baseURL.baseURL}/api/${url}`
@@ -197,7 +231,7 @@ const readBlob = async (
   url: string,
   otherConfigs?: Omit<AxiosRequestConfig, 'method' | 'responseType'>,
 ): Promise<Blob> => {
-  const session = await (typeof window !== 'undefined' ? getSession() : auth())
+  const session = await readSession()
   const baseURL = await getBaseURL()
   const fullURL = `${baseURL.baseURL}/api/${url}`
 

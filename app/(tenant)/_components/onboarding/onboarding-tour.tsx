@@ -4,7 +4,6 @@ import { HelpCircle } from '@/components/icons'
 import { usePathname } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import { useCallback, useEffect, useMemo, useRef } from 'react'
-import Shepherd from 'shepherd.js'
 
 import { Button } from '@/components/ui/button'
 import { useUserRoles } from '@/hooks/use-user-roles'
@@ -238,7 +237,7 @@ export function OnboardingTour() {
   const activeTour = useRef<{ cancel: () => void } | null>(null)
   const autoStarted = useRef(false)
 
-  const startTour = useCallback(() => {
+  const startTour = useCallback(async () => {
     activeTour.current?.cancel()
     activeTour.current = null
 
@@ -254,6 +253,10 @@ export function OnboardingTour() {
     const steps = available.length > 0 ? available : all.filter((step) => !step.selector)
 
     if (steps.length === 0) return
+
+    // The tour library is large and only needed once the guide is opened: fetch it on demand so
+    // it stays out of the initial bundle of every tenant page.
+    const { default: Shepherd } = await import('shepherd.js')
 
     const savedStep = (() => {
       try {
@@ -370,13 +373,17 @@ export function OnboardingTour() {
     if (done) return
 
     autoStarted.current = true
-    const timer = window.setTimeout(startTour, 900)
+    const timer = window.setTimeout(() => {
+      void startTour()
+    }, 900)
     return () => window.clearTimeout(timer)
   }, [completionKey, startTour])
 
   // A settings button (or any surface) can re-open the guide through this event.
   useEffect(() => {
-    const handler = () => startTour()
+    const handler = () => {
+      void startTour()
+    }
     window.addEventListener(START_TOUR_EVENT, handler)
     return () => window.removeEventListener(START_TOUR_EVENT, handler)
   }, [startTour])
@@ -391,7 +398,9 @@ export function OnboardingTour() {
       className="bg-background fixed bottom-5 left-5 z-40 size-11 rounded-full shadow-lg"
       aria-label="راهنمای سریع"
       title="راهنمای سریع"
-      onClick={startTour}
+      onClick={() => {
+        void startTour()
+      }}
     >
       <HelpCircle className="size-5" />
     </Button>

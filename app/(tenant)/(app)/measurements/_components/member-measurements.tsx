@@ -195,11 +195,17 @@ export function MemberMeasurements() {
   }
 
   const remove = async (id: string) => {
+    // Optimistic: the row disappears immediately and the list refetches in the background.
+    // If the server rejects the delete, the snapshot comes back and the user sees why.
+    const snapshot = history
+
+    setHistory((current) => current.filter((entry) => entry.id !== id))
+
     try {
       await deleteMeasurement(id)
       toast.success('اندازه‌گیری حذف شد')
-      reload()
     } catch (error) {
+      setHistory(snapshot)
       toast.error('حذف ناموفق بود', {
         description: error instanceof Error ? error.message : undefined,
       })

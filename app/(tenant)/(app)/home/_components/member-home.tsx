@@ -92,6 +92,7 @@ export function MemberHome() {
   const [loading, setLoading] = useState(true)
   const [weight, setWeight] = useState('')
   const [savingWeight, setSavingWeight] = useState(false)
+  const [optimisticWeight, setOptimisticWeight] = useState<number | null>(null)
   const [version, setVersion] = useState(0)
   const [publicPlan, setPublicPlan] = useState<PlanSummary | null>(null)
   const [enrolling, setEnrolling] = useState(false)
@@ -204,14 +205,23 @@ export function MemberHome() {
     const value = Number(weight.replace(',', '.'))
     if (!home || !Number.isFinite(value) || value <= 0) return
 
+    // Optimistic: the new weight is on screen before the round trip finishes; the server value
+    // replaces it on success and the old one comes back if the save fails. No full reload here —
+    // the rest of the dashboard did not change, so three extra requests would be wasted.
+    setOptimisticWeight(value)
+    setWeight('')
     setSavingWeight(true)
 
     try {
-      await upsertMeasurement({ date: home.today, weightKg: value })
-      setWeight('')
+      const saved = await upsertMeasurement({ date: home.today, weightKg: value })
+      setHome((current) =>
+        current ? { ...current, latestMeasurement: saved } : current,
+      )
+      setOptimisticWeight(null)
       toast.success('وزن امروز ثبت شد')
-      reload()
     } catch (error) {
+      setOptimisticWeight(null)
+      setWeight(String(value))
       toast.error('ثبت وزن ناموفق بود', {
         description: error instanceof Error ? error.message : undefined,
       })
@@ -356,8 +366,8 @@ export function MemberHome() {
         <DashboardStat
           label="وزن من"
           value={
-            home?.latestMeasurement?.weightKg
-              ? `${fa(Number(home.latestMeasurement.weightKg))} kg`
+            (optimisticWeight ?? home?.latestMeasurement?.weightKg)
+              ? `${fa(Number(optimisticWeight ?? home?.latestMeasurement?.weightKg))} kg`
               : 'ثبت نشده'
           }
           detail={
