@@ -28,22 +28,27 @@ export const queryClient = new QueryClient({
 
   defaultOptions: {
     queries: {
-      // 60s of freshness is invisible to users but removes most repeat traffic.
-      staleTime: 60 * 1000,
-      // Keep screens instant when navigating back, without holding a day of data in memory.
-      gcTime: 30 * 60 * 1000,
+      // Five minutes of freshness matches the offline cache: moving between screens on a
+      // weak link should reuse data instead of firing a request per mount.
+      staleTime: 5 * 60 * 1000,
+      // Keep screens instant when navigating back, including an offline reload.
+      gcTime: 24 * 60 * 60 * 1000,
       refetchOnWindowFocus: false,
       // A reconnect is a real state change (e.g. phone regained signal) — refresh then.
       refetchOnReconnect: true,
+      // Do not pause queries just because navigator.onLine is false: the IndexedDB cache
+      // answers them immediately and the queue handles workout writes.
+      networkMode: 'offlineFirst',
       throwOnError: false,
-      // One retry with a short backoff; three retries on a flaky mobile link just multiplies load.
-      retry: 1,
-      retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 8000),
+      // Two retries with a short backoff; more on a flaky mobile link just multiplies load.
+      retry: 2,
+      retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 6000),
       // Avoids re-rendering lists when the payload is structurally identical.
       structuralSharing: true,
     },
     mutations: {
       retry: 0,
+      networkMode: 'offlineFirst',
     },
   },
 })

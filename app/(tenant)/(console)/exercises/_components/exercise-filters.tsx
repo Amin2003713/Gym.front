@@ -6,12 +6,13 @@ import BodyMapPanel from '@/app/(tenant)/_components/progress/body-map-panel'
 import { Search, SlidersHorizontal, TriangleAlert, X } from '@/components/icons'
 import { Button } from '@/components/ui/button'
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
+  Drawer,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+} from '@/components/ui/drawer'
 import { MUSCLE_FA } from '@/lib/muscles'
 
 import {
@@ -43,6 +44,7 @@ export interface ExerciseFiltersProps {
   /** Exercises with no equipment value, offered as their own chip so they can be fixed. */
   missing: number
   onReset: () => void
+  resultCount?: number
 }
 
 export default function ExerciseFilters(props: ExerciseFiltersProps) {
@@ -56,29 +58,35 @@ export default function ExerciseFilters(props: ExerciseFiltersProps) {
     (props.search.trim() ? 1 : 0)
 
   return (
-    <div className="space-y-3">
-      <div className="flex flex-wrap items-center gap-2">
+    <div className="space-y-2 md:space-y-3">
+      {/* Phone: one 48px search field, one filter button, and a one-tap reset. */}
+      <div className="flex items-center gap-2">
         <div className="relative min-w-0 flex-1">
-          <Search className="text-muted-foreground pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2" />
+          <Search
+            className="text-muted-foreground pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2"
+            aria-hidden
+          />
 
           <input
             value={props.search}
             onChange={(event) => props.onSearchChange(event.target.value)}
             placeholder="جستجوی حرکت..."
             aria-label="جستجوی حرکات"
-            className="bg-background focus:ring-primary h-11 w-full rounded-lg border pr-10 pl-3 text-sm outline-none focus:ring-2"
+            inputMode="search"
+            enterKeyHint="search"
+            className="bg-background focus:ring-primary h-12 w-full rounded-xl border pr-10 pl-3 text-base outline-none focus:ring-2 md:h-11 md:rounded-lg md:text-sm"
           />
         </div>
 
         <Button
           type="button"
           variant="outline"
-          className="h-11 gap-2 md:hidden"
+          className="h-12 shrink-0 gap-2 rounded-xl px-3 md:hidden"
           onClick={() => setOpen(true)}
-          aria-label="باز کردن فیلترهای کتابخانه حرکات"
+          aria-label={`باز کردن فیلترهای کتابخانه حرکات${activeCount ? `، ${activeCount.toLocaleString('fa-IR')} فیلتر فعال` : ''}`}
         >
           <SlidersHorizontal className="size-4" aria-hidden />
-          فیلترها
+          <span className="text-sm font-bold">فیلتر</span>
           {activeCount > 0 && (
             <span className="bg-primary text-primary-foreground rounded-full px-1.5 text-[11px] leading-5 tabular-nums">
               {activeCount.toLocaleString('fa-IR')}
@@ -90,49 +98,161 @@ export default function ExerciseFilters(props: ExerciseFiltersProps) {
           <button
             type="button"
             onClick={props.onReset}
-            className="focus-visible:ring-ring inline-flex h-11 items-center gap-2 rounded-lg border px-3 text-sm outline-none focus-visible:ring-[3px] focus-visible:ring-offset-2"
+            aria-label="پاک کردن همه فیلترها"
+            className="focus-visible:ring-ring inline-flex size-12 shrink-0 items-center justify-center rounded-xl border text-muted-foreground outline-none focus-visible:ring-[3px] md:hidden"
           >
             <X className="size-4" aria-hidden />
-            پاک کردن
           </button>
         )}
+
+        <div className="hidden items-center gap-2 md:flex">
+          {activeCount > 0 && (
+            <button
+              type="button"
+              onClick={props.onReset}
+              className="focus-visible:ring-ring inline-flex h-11 items-center gap-2 rounded-lg border px-3 text-sm outline-none focus-visible:ring-[3px] focus-visible:ring-offset-2"
+            >
+              <X className="size-4" aria-hidden />
+              پاک کردن
+            </button>
+          )}
+        </div>
       </div>
 
-      {/* Desktop keeps the controls inline; phones open the same set inside the dialog. */}
+      {activeCount > 0 && <ActiveFilterSummary {...props} />}
+
+      {/* Desktop keeps every control visible; phones use the sheet below. */}
       <div className="hidden space-y-3 md:block">
         <FilterGroups {...props} />
         <MuscleMapFilter muscles={props.muscles} onChange={props.onMusclesChange} />
       </div>
 
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-h-[88svh] overflow-y-auto sm:max-w-lg">
-          <DialogHeader className="text-start">
-            <DialogTitle>فیلتر حرکات</DialogTitle>
-            <DialogDescription>
-              تجهیزات، عضله و سطح دشواری را انتخاب کنید؛ نتیجه بلافاصله اعمال می‌شود.
-            </DialogDescription>
-          </DialogHeader>
+      <Drawer open={open} onOpenChange={setOpen} direction="bottom">
+        <DrawerContent className="max-h-[92svh]">
+          <DrawerHeader className="border-b pb-3 text-start">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <DrawerTitle>فیلتر حرکات</DrawerTitle>
+                <DrawerDescription className="mt-1 leading-6">
+                  تجهیزات، عضله و سطح دشواری را انتخاب کنید. نتیجه با بستن این پنجره اعمال
+                  می‌شود.
+                </DrawerDescription>
+              </div>
 
-          <div className="space-y-4">
-            <FilterGroups {...props} />
+              <button
+                type="button"
+                onClick={() => setOpen(false)}
+                aria-label="بستن فیلترها"
+                className="focus-visible:ring-ring -me-1 inline-flex size-10 shrink-0 items-center justify-center rounded-lg outline-none focus-visible:ring-[3px]"
+              >
+                <X className="size-4" aria-hidden />
+              </button>
+            </div>
+          </DrawerHeader>
+
+          <div className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain px-4 py-4">
+            <FilterGroups {...props} mobile />
             <MuscleMapFilter muscles={props.muscles} onChange={props.onMusclesChange} />
           </div>
 
-          <div className="flex flex-wrap items-center justify-between gap-2 border-t pt-3">
-            <button
+          <DrawerFooter className="flex-row gap-2 border-t bg-background pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+            <Button
               type="button"
+              variant="outline"
               onClick={props.onReset}
-              className="text-muted-foreground hover:text-foreground inline-flex h-11 items-center rounded-lg px-2 text-sm font-semibold"
+              className="h-11 shrink-0 px-4"
             >
-              پاک کردن فیلترها
-            </button>
-
-            <Button type="button" onClick={() => setOpen(false)} className="h-11">
-              نمایش نتیجه
+              پاک کردن
             </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+
+            <Button
+              type="button"
+              onClick={() => setOpen(false)}
+              className="h-11 flex-1"
+            >
+              نمایش {typeof props.resultCount === 'number' ? props.resultCount.toLocaleString('fa-IR') : ''} حرکت
+            </Button>
+          </DrawerFooter>
+        </DrawerContent>
+      </Drawer>
+    </div>
+  )
+}
+
+function ActiveFilterSummary(props: ExerciseFiltersProps) {
+  const chips: Array<{ key: string; label: string; remove: () => void }> = []
+
+  props.selected.forEach((code) => {
+    const option = props.options.find((item) => item.code === code)
+    chips.push({
+      key: `equipment-${code}`,
+      label: equipmentLabel(code, option?.label ?? code),
+      remove: () =>
+        props.onSelectedChange(props.selected.filter((item) => item !== code)),
+    })
+  })
+
+  if (props.bodyPart) {
+    const option = props.bodyParts.find((item) => item.code === props.bodyPart)
+    chips.push({
+      key: `body-${props.bodyPart}`,
+      label: bodyPartLabel(props.bodyPart, option?.label ?? props.bodyPart),
+      remove: () => props.onBodyPartChange(null),
+    })
+  }
+
+  if (props.level) {
+    const option = props.levels.find((item) => item.code === props.level)
+    chips.push({
+      key: `level-${props.level}`,
+      label: levelLabel(props.level, option?.label ?? props.level),
+      remove: () => props.onLevelChange(null),
+    })
+  }
+
+  props.muscles.forEach((slug) => {
+    chips.push({
+      key: `muscle-${slug}`,
+      label: MUSCLE_FA[slug] ?? slug,
+      remove: () =>
+        props.onMusclesChange(props.muscles.filter((item) => item !== slug)),
+    })
+  })
+
+  if (props.search.trim()) {
+    chips.push({
+      key: 'search',
+      label: `جستجو: ${props.search.trim()}`,
+      remove: () => props.onSearchChange(''),
+    })
+  }
+
+  if (chips.length === 0) return null
+
+  return (
+    <div className="flex min-w-0 items-center gap-1.5 overflow-x-auto pb-1 md:hidden">
+      {chips.map((chip) => (
+        <button
+          key={chip.key}
+          type="button"
+          onClick={chip.remove}
+          className="bg-primary/10 text-primary focus-visible:ring-ring inline-flex h-8 shrink-0 items-center gap-1 rounded-full py-0 pr-2.5 pl-1 text-xs font-semibold outline-none focus-visible:ring-[3px]"
+          aria-label={`حذف فیلتر ${chip.label}`}
+        >
+          <span className="max-w-40 truncate">{chip.label}</span>
+          <X className="size-3" aria-hidden />
+        </button>
+      ))}
+
+      {chips.length > 1 && (
+        <button
+          type="button"
+          onClick={props.onReset}
+          className="text-muted-foreground focus-visible:ring-ring inline-flex h-8 shrink-0 items-center rounded-full border px-2.5 text-xs font-semibold outline-none focus-visible:ring-[3px]"
+        >
+          پاک کردن همه
+        </button>
+      )}
     </div>
   )
 }
@@ -148,7 +268,8 @@ function FilterGroups({
   level,
   onLevelChange,
   missing,
-}: ExerciseFiltersProps) {
+  mobile = false,
+}: ExerciseFiltersProps & { mobile?: boolean }) {
   const toggle = (code: string) =>
     onSelectedChange(
       selected.includes(code)
@@ -157,7 +278,7 @@ function FilterGroups({
     )
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       <ChipRow label="تجهیزات" ariaLabel="فیلتر تجهیزات">
         <FilterChip active={selected.length === 0} onClick={() => onSelectedChange([])}>
           همه
@@ -190,7 +311,7 @@ function FilterGroups({
       </ChipRow>
 
       {bodyParts.length > 0 && (
-        <ChipRow label="عضله" ariaLabel="فیلتر عضله">
+        <ChipRow label="عضله" ariaLabel="فیلتر عضله" wrap={mobile}>
           <FilterChip active={bodyPart === null} onClick={() => onBodyPartChange(null)}>
             همه
           </FilterChip>
@@ -213,7 +334,7 @@ function FilterGroups({
       )}
 
       {levels.length > 0 && (
-        <ChipRow label="سطح" ariaLabel="فیلتر سطح دشواری">
+        <ChipRow label="سطح" ariaLabel="فیلتر سطح دشواری" wrap={mobile}>
           <FilterChip active={level === null} onClick={() => onLevelChange(null)}>
             همه
           </FilterChip>
@@ -257,7 +378,7 @@ function MuscleMapFilter({
   const load = Object.fromEntries(muscles.map((slug) => [slug, 4]))
 
   return (
-    <div className="rounded-lg border p-3">
+    <div className="rounded-xl border p-3 md:rounded-lg">
       <div className="mb-2 flex items-center justify-between gap-2">
         <p className="text-xs font-semibold">انتخاب عضله از نقشه بدن</p>
 
@@ -265,7 +386,7 @@ function MuscleMapFilter({
           <button
             type="button"
             onClick={() => onChange([])}
-            className="text-muted-foreground hover:text-foreground text-xs font-semibold"
+            className="text-muted-foreground hover:text-foreground focus-visible:ring-ring text-xs font-semibold outline-none focus-visible:ring-[3px]"
           >
             پاک کردن عضله‌ها
           </button>
@@ -284,7 +405,7 @@ function MuscleMapFilter({
                 type="button"
                 onClick={() => toggle(slug)}
                 aria-label={`حذف ${MUSCLE_FA[slug] ?? slug} از فیلتر`}
-                className="hover:bg-primary/20 inline-flex size-6 items-center justify-center rounded-full"
+                className="hover:bg-primary/20 focus-visible:ring-ring inline-flex size-7 items-center justify-center rounded-full outline-none focus-visible:ring-[3px]"
               >
                 <X className="size-3" aria-hidden />
               </button>
@@ -299,7 +420,7 @@ function MuscleMapFilter({
         size="card"
         legend={false}
         onMuscle={toggle}
-        className="mx-auto max-w-60"
+        className="mx-auto max-w-64"
       />
 
       <p className="text-muted-foreground mt-2 text-center text-[11px] leading-5">
@@ -312,15 +433,17 @@ function MuscleMapFilter({
 function ChipRow({
   label,
   ariaLabel,
+  wrap = false,
   children,
 }: {
   label: string
   ariaLabel: string
+  wrap?: boolean
   children: React.ReactNode
 }) {
   return (
-    <div className="flex items-start gap-2">
-      <span className="text-muted-foreground mt-1.5 flex shrink-0 items-center gap-1.5 text-xs font-semibold">
+    <div className="space-y-1.5">
+      <span className="text-muted-foreground flex items-center gap-1.5 text-xs font-semibold">
         <SlidersHorizontal className="size-3.5" aria-hidden />
         {label}
       </span>
@@ -328,7 +451,11 @@ function ChipRow({
       <div
         role="group"
         aria-label={ariaLabel}
-        className="-mx-1 flex flex-1 gap-2 overflow-x-auto px-1 pb-1"
+        className={
+          wrap
+            ? 'flex flex-wrap gap-2'
+            : '-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 [scrollbar-width:thin]'
+        }
       >
         {children}
       </div>

@@ -3,6 +3,13 @@ import { getSession } from 'next-auth/react'
 
 import { auth } from '@/auth'
 import { API_URL } from '@/configs/global'
+import { buildHttpCacheKey, readHttpCache, writeHttpCache } from '@/lib/offline/http-cache'
+import {
+  enqueueMutation,
+  isQueueableMutation,
+  type QueuedMutation,
+  queuedMutationResult,
+} from '@/lib/offline/mutation-queue'
 import { ApiError } from '@/types/http-errors.interface'
 
 import { errorHandler, networkErrorStrategy } from './http-error-strategies'
@@ -85,6 +92,8 @@ const getBaseURL = async (): Promise<{ baseURL: string; tenant: string | null }>
 
 
 const httpService = axios.create({
+  // A dead 3G link should fail over to the cache instead of hanging the screen forever.
+  timeout: 25_000,
   headers: {
     'X-Device-Type': 'Browser',
     'X-Accept-Language': 'fa-IR',
@@ -135,23 +144,66 @@ httpService.interceptors.response.use(
 
       errorHandler[statusCode]?.(errorData)
     } else {
+      const method = String(error?.config?.method ?? 'GET').toUpperCase()
+      const requestUrl = String(error?.config?.url ?? '')
 
-      networkErrorStrategy()
+      // GETs can be served from the offline cache and workout writes can be queued;
+      // warning the user about the network before those fallbacks run is misleading.
+      if (!(method === 'GET' || isQueueableMutation(requestUrl, method))) {
+        networkErrorStrategy()
+      }
     }
 
     return Promise.reject(error)
   },
 )
 
+const CACHE_EXCLUDED = /^(auth|user\/passkeys|notifications|coach\/chat|live)/
+
+const cacheableGet = (url: string, method: string): boolean =>
+  method === 'GET' && !CACHE_EXCLUDED.test(url)
+
+const isNetworkFailure = (error: unknown): boolean =>
+  axios.isAxiosError(error) && !error.response
+
+const userCacheKey = (session: ClientSession): string => {
+  const user = session?.user as
+    | { email?: string | null; id?: string | null; sub?: string | null }
+    | undefined
+  return user?.email ?? user?.id ?? user?.sub ?? 'anonymous'
+}
+
+const queuedHeaders = (
+  headers: Record<string, unknown> | undefined,
+): Record<string, string> =>
+  Object.fromEntries(
+    Object.entries(headers ?? {})
+      .filter(([key, value]) => {
+        if (['authorization', 'x-tenant'].includes(key.toLowerCase())) return false
+        return value !== undefined && value !== null && value !== ''
+      })
+      .map(([key, value]) => [key, String(value)]),
+  )
+
 const apiBase = async <T>(
   url: string,
   options?: AxiosRequestConfig,
+  internal?: { skipQueue?: boolean },
 ): Promise<T> => {
   const session = await readSession()
 
   const baseURL = await getBaseURL()
   const fullURL = `${baseURL.baseURL}/api/${url}`
-
+  const method = String(options?.method ?? 'GET').toUpperCase()
+  const cacheKey = cacheableGet(url, method)
+    ? buildHttpCacheKey({
+        baseURL: baseURL.baseURL,
+        url,
+        tenant: baseURL.tenant,
+        userKey: userCacheKey(session),
+        params: options?.params,
+      })
+    : ''
 
   const headers = {
     ...options?.headers,
@@ -163,14 +215,80 @@ const apiBase = async <T>(
     }),
   }
 
-  const response = await httpService(fullURL, {
-    ...options,
-    headers,
-  })
+  const offline = typeof navigator !== 'undefined' && navigator.onLine === false
 
+  // Offline-first read: an already-cached screen opens immediately, even on a dead link.
+  if (cacheKey && offline) {
+    const cached = await readHttpCache<T>(cacheKey)
+    if (cached) return cached.data
+  }
 
+  // Queue workout writes before spending time on a request that cannot leave the device.
+  if (
+    !internal?.skipQueue &&
+    offline &&
+    isQueueableMutation(url, method)
+  ) {
+    await enqueueMutation({
+      url,
+      method,
+      data: options?.data,
+      headers: queuedHeaders(
+        options?.headers as Record<string, unknown> | undefined,
+      ),
+    })
+    return queuedMutationResult(url, method) as T
+  }
 
-  return response.data as T
+  try {
+    const response = await httpService(fullURL, {
+      ...options,
+      headers,
+    })
+
+    if (cacheKey) void writeHttpCache(cacheKey, response.data)
+
+    return response.data as T
+  } catch (error) {
+    // A flaky link should degrade to the last good payload instead of an empty screen.
+    if (cacheKey) {
+      const cached = await readHttpCache<T>(cacheKey)
+      if (cached) return cached.data
+    }
+
+    if (
+      !internal?.skipQueue &&
+      isNetworkFailure(error) &&
+      isQueueableMutation(url, method)
+    ) {
+      await enqueueMutation({
+        url,
+        method,
+        data: options?.data,
+        headers: queuedHeaders(
+          options?.headers as Record<string, unknown> | undefined,
+        ),
+      })
+      return queuedMutationResult(url, method) as T
+    }
+
+    throw error
+  }
+}
+
+/** Used by the sync worker; failures are surfaced to the queue instead of being re-queued. */
+export const flushQueuedMutation = async (
+  item: QueuedMutation,
+): Promise<void> => {
+  await apiBase(
+    item.url,
+    {
+      method: item.method,
+      data: item.data,
+      headers: item.headers,
+    },
+    { skipQueue: true },
+  )
 }
 
 const readData = async <T>(

@@ -4,6 +4,7 @@ import './globals.css'
 import NextTopLoader from 'nextjs-toploader'
 
 import { NetworkQualityProvider } from '@/components/network-quality'
+import { OfflineProvider } from '@/components/offline/offline-provider'
 import { ThemeProvider } from '@/components/theme-provider'
 import { Toaster } from '@/components/ui/sonner'
 import ShadCnDirProvider from '@/providers/direction-provider'
@@ -28,7 +29,16 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: 'هم‌اوج | مدیریت گروه‌های ورزشی',
   applicationName: 'HamOwj',
-  icons: { icon: '/hamowj-mark.svg' },
+  manifest: '/manifest.webmanifest',
+  icons: {
+    icon: '/hamowj-mark.svg',
+    apple: '/icons/apple-touch-icon.png',
+  },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'هم‌اوج',
+  },
   description: 'هم‌اوج؛ سامانه یکپارچه مدیریت گروه‌های ورزشی، مربی‌ها و اعضا.',
 }
 
@@ -55,6 +65,7 @@ export default function RootLayout({
         <NetworkQualityProvider />
         <NextTopLoader showSpinner={false} />
         <ReactQueryProvider>
+          <OfflineProvider />
           <ShadCnDirProvider>
             <ThemeProvider
               attribute="class"

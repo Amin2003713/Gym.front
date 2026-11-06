@@ -328,6 +328,7 @@ export default function ExerciseLibrary() {
         onMusclesChange={setMuscles}
         missing={missingEquipment}
         onReset={resetFilters}
+        resultCount={rowCount}
       />
 
       {error && items.length === 0 ? (

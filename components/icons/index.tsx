@@ -2,8 +2,9 @@
    Every frontend icon import goes through this module so the HamOwj visual language
    (24px grid, 1.75 stroke, RTL mirroring) is used instead of raw lucide defaults.
    The pack has no media-control glyphs, so those few keep the same stroke family. */
-import { forwardRef } from 'react'
 import type { LucideIcon, LucideProps } from 'lucide-react'
+import { forwardRef } from 'react'
+
 import { HW_ICONS, HW_MIRROR_IN_RTL } from './hamowj-icons'
 
 function packIcon(name: keyof typeof HW_ICONS): LucideIcon {
@@ -195,6 +196,7 @@ export const Video = packIcon('camera')
 export const VideoOff = packIcon('camera')
 export const Wallet = packIcon('payments')
 export const Weight = packIcon('weight')
+export const WifiOff = packIcon('offline')
 export const Wrench = packIcon('settings')
 export const X = packIcon('close')
 export const XCircle = packIcon('error')

@@ -1,20 +1,10 @@
 'use client'
 
 
-import {
-  CheckCircle2,
-  ChevronLeft,
-  ChevronRight,
-  Dumbbell,
-  Info,
-  Loader2,
-  Plus,
-  RefreshCw,
-  Trash2,
-  X,
-} from '@/components/icons'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
+import { listMyAssignments } from '@/app/(tenant)/_api/assignment-api'
+import { getPreferences } from '@/app/(tenant)/_api/preferences-api'
 import {
   abandonWorkout,
   addWorkoutExercise,
@@ -28,8 +18,6 @@ import {
   updateLoggedSet,
   type WorkoutExerciseDetail,
 } from '@/app/(tenant)/_api/workout-api'
-import { listMyAssignments } from '@/app/(tenant)/_api/assignment-api'
-import { getPreferences } from '@/app/(tenant)/_api/preferences-api'
 import BodyMapPanel from '@/app/(tenant)/_components/progress/body-map-panel'
 import { PlanAssignmentStatus } from '@/app/(tenant)/_model/assignment.types'
 import {
@@ -44,6 +32,18 @@ import {
   normalizeSessionType,
 } from '@/app/(tenant)/_model/workout.types'
 import { ExerciseMedia } from '@/components/exercise/exercise-media'
+import {
+  CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
+  Dumbbell,
+  Info,
+  Loader2,
+  Plus,
+  RefreshCw,
+  Trash2,
+  X,
+} from '@/components/icons'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -194,6 +194,19 @@ export function WorkoutSessionPanel({
     return () => window.clearTimeout(timer)
   }, [load])
 
+  // After a queued offline set reaches the API, replace the optimistic row with server data.
+  useEffect(() => {
+    const onSync = (event: Event) => {
+      const detail = (
+        event as CustomEvent<{ state: string; sent?: number }>
+      ).detail
+      if (detail?.state === 'finished' && (detail.sent ?? 0) > 0) void load()
+    }
+
+    window.addEventListener('hamowj:sync', onSync)
+    return () => window.removeEventListener('hamowj:sync', onSync)
+  }, [load])
+
   const exercises = useMemo(() => session?.exercises ?? [], [session])
 
   /**
@@ -319,6 +332,8 @@ export function WorkoutSessionPanel({
 
     const target = exercise.targetSets ?? 0
     const logged = (exercise.sets?.length ?? 0) + 1
+    const wasOffline =
+      typeof navigator !== 'undefined' && navigator.onLine === false
 
     setBusy(true)
     try {
@@ -346,10 +361,39 @@ export function WorkoutSessionPanel({
         ...old,
         [exercise.exerciseId]: { ...values, isWarmup: false },
       }))
-      toast.success('ست ثبت شد')
+
+      if (wasOffline) {
+        const optimistic: LoggedSetItem = {
+          setId: `offline-${clientRequestId}`,
+          setNumber,
+          reps: Number(values.reps),
+          weightKg: Number(values.weightKg),
+          ...(values.rir !== '' ? { rir: Number(values.rir) } : {}),
+          isWarmup: values.isWarmup,
+        }
+
+        setSession((previous) =>
+          previous
+            ? {
+                ...previous,
+                exercises: previous.exercises.map((row) =>
+                  row.exerciseId === exercise.exerciseId
+                    ? { ...row, sets: [...(row.sets ?? []), optimistic] }
+                    : row,
+                ),
+              }
+            : previous,
+        )
+        toast.info('ست آفلاین ذخیره شد', {
+          description: 'به‌محض برگشت اینترنت خودکار به سرور فرستاده می‌شود.',
+        })
+      } else {
+        toast.success('ست ثبت شد')
+      }
+
       setRest({ key: requestKey, seconds: restFor(exercise) })
       setRestResult(null)
-      await load()
+      if (!wasOffline) await load()
 
       // Progress drives the step: once the exercise has its planned sets, move forward to the
       // next one that still needs work. The old code only recomputed the step from index 0,
@@ -426,12 +470,35 @@ export function WorkoutSessionPanel({
 
   const addExercise = async (exercise: ExerciseSearchItem) => {
     setBusy(true)
+    const wasOffline =
+      typeof navigator !== 'undefined' && navigator.onLine === false
     try {
       await addWorkoutExercise(sessionId, { exerciseId: exercise.id })
-      toast.success('حرکت اضافه شد')
       setSearchResults([])
       setSearch('')
-      await load()
+
+      if (wasOffline) {
+        const optimistic: SessionExerciseItem = {
+          exerciseId: exercise.id,
+          exerciseName: exercise.name,
+          exerciseOrder: (session?.exercises.length ?? 0) + 1,
+          isPlanned: false,
+          isExtra: true,
+          sets: [],
+        }
+
+        setSession((previous) =>
+          previous
+            ? { ...previous, exercises: [...previous.exercises, optimistic] }
+            : previous,
+        )
+        toast.info('حرکت آفلاین ذخیره شد', {
+          description: 'پس از اتصال، حرکت در جلسه تمرین همگام می‌شود.',
+        })
+      } else {
+        toast.success('حرکت اضافه شد')
+        await load()
+      }
     } catch (error) {
       toast.error('افزودن حرکت ناموفق بود', {
         description: error instanceof Error ? error.message : undefined,
@@ -496,6 +563,9 @@ export function WorkoutSessionPanel({
       return
     }
 
+    const wasOffline =
+      typeof navigator !== 'undefined' && navigator.onLine === false
+
     try {
       await updateLoggedSet(set.setId, {
         reps,
@@ -503,8 +573,30 @@ export function WorkoutSessionPanel({
         ...(set.rir != null ? { rir: set.rir } : {}),
         isWarmup: set.isWarmup,
       })
-      toast.success('ست ویرایش شد')
-      await load()
+
+      if (wasOffline) {
+        setSession((previous) =>
+          previous
+            ? {
+                ...previous,
+                exercises: previous.exercises.map((row) => ({
+                  ...row,
+                  sets: row.sets.map((rowSet) =>
+                    rowSet.setId === set.setId
+                      ? { ...rowSet, reps, weightKg: weight }
+                      : rowSet,
+                  ),
+                })),
+              }
+            : previous,
+        )
+        toast.info('ویرایش ست آفلاین ذخیره شد', {
+          description: 'پس از اتصال با سرور هماهنگ می‌شود.',
+        })
+      } else {
+        toast.success('ست ویرایش شد')
+        await load()
+      }
     } catch (error) {
       toast.error('ویرایش ست ناموفق بود', {
         description: error instanceof Error ? error.message : undefined,
@@ -525,10 +617,31 @@ export function WorkoutSessionPanel({
 
     if (!ok) return
 
+    const wasOffline =
+      typeof navigator !== 'undefined' && navigator.onLine === false
+
     try {
       await deleteLoggedSet(set.setId)
-      toast.success('ست حذف شد')
-      await load()
+
+      if (wasOffline) {
+        setSession((previous) =>
+          previous
+            ? {
+                ...previous,
+                exercises: previous.exercises.map((row) => ({
+                  ...row,
+                  sets: row.sets.filter((rowSet) => rowSet.setId !== set.setId),
+                })),
+              }
+            : previous,
+        )
+        toast.info('حذف ست آفلاین ذخیره شد', {
+          description: 'پس از اتصال با سرور هماهنگ می‌شود.',
+        })
+      } else {
+        toast.success('ست حذف شد')
+        await load()
+      }
     } catch (error) {
       toast.error('حذف ست ناموفق بود', {
         description: error instanceof Error ? error.message : undefined,

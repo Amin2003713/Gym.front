@@ -1,5 +1,10 @@
 'use client'
 
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { useTransition } from 'react'
+
+import { signOutAction } from '@/actions/auth'
 import {
   UserIcon,
   LogOut,
@@ -9,11 +14,6 @@ import {
   MessageCircleMore,
   BookText,
 } from '@/components/icons'
-import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import { useTransition } from 'react'
-
-import { signOutAction } from '@/actions/auth'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import {
@@ -53,6 +53,10 @@ export function NavUser({ isHeader, data: user, error }: NavUserProp) {
     startTransition(async () => {
       const response = await signOutAction()
       if (response.isSuccess) {
+        // Cached API pages and queued sets are user-specific; never leave them for the
+        // next account on a shared device.
+        const { clearOfflineData } = await import('@/lib/offline/clear')
+        await clearOfflineData()
         removeUserFromStore()
         router.push('/')
       }
