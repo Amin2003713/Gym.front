@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   Check,
   Copy,
+  Dumbbell,
   Hand,
   Info,
   LogIn,
@@ -30,6 +31,17 @@ import {
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
+import {
+  addWorkoutExercise,
+  getWorkout,
+  listMyWorkouts,
+  searchExercises,
+} from '@/app/(tenant)/_api/workout-api'
+import {
+  normalizeSessionStatus,
+  WorkoutSessionStatus,
+  type ExerciseSearchItem,
+} from '@/app/(tenant)/_model/workout.types'
 import { API_URL } from '@/configs/global'
 import { toast } from '@/lib/toast'
 
@@ -45,11 +57,18 @@ type LivePeer = {
   handRaised: boolean
 }
 
+type LiveExercise = {
+  exerciseId: string
+  exerciseName: string
+  order: number
+}
+
 type Snapshot = {
   code: string
   title: string
   mode: Mode
   hostConnectionId: string
+  currentExercise: LiveExercise | null
   peers: LivePeer[]
 }
 
@@ -129,6 +148,11 @@ export function LiveRoom({ staff = false }: { staff?: boolean }) {
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [draft, setDraft] = useState('')
   const [tab, setTab] = useState<'chat' | 'people'>('chat')
+  const [currentExercise, setCurrentExercise] = useState<LiveExercise | null>(null)
+  const [autoLog, setAutoLog] = useState(true)
+  const [exerciseQuery, setExerciseQuery] = useState('')
+  const [exerciseResults, setExerciseResults] = useState<ExerciseSearchItem[]>([])
+  const [searchingExercises, setSearchingExercises] = useState(false)
 
   const hubRef = useRef<HubConnection | null>(null)
   const roomRef = useRef<Snapshot | null>(null)
@@ -137,10 +161,18 @@ export function LiveRoom({ staff = false }: { staff?: boolean }) {
   const pcsRef = useRef<Map<string, RTCPeerConnection>>(new Map())
   const iceRef = useRef<Map<string, RTCIceCandidateInit[]>>(new Map())
   const chatEndRef = useRef<HTMLDivElement>(null)
+  const autoLogRef = useRef(true)
+  const loggedExerciseRef = useRef<Set<string>>(new Set())
+  const noSessionNotifiedRef = useRef(false)
 
   useEffect(() => {
     const savedName = localStorage.getItem('live-name')
     if (savedName) setDisplayName(savedName)
+    const savedAutoLog = localStorage.getItem('live-autolog')
+    if (savedAutoLog === 'off') {
+      autoLogRef.current = false
+      setAutoLog(false)
+    }
     const sharedCode = new URLSearchParams(window.location.search).get('code')
     if (sharedCode) setCode(sharedCode.toUpperCase())
   }, [])
@@ -179,6 +211,12 @@ export function LiveRoom({ staff = false }: { staff?: boolean }) {
     setHandRaised(false)
     setMessages([])
     setDraft('')
+    setCurrentExercise(null)
+    setExerciseQuery('')
+    setExerciseResults([])
+    setSearchingExercises(false)
+    loggedExerciseRef.current.clear()
+    noSessionNotifiedRef.current = false
     setRoom(null)
     roomRef.current = null
     setPhase('lobby')
@@ -336,6 +374,69 @@ export function LiveRoom({ staff = false }: { staff?: boolean }) {
     )
   }, [])
 
+  /**
+   * Adds the host's current exercise to the member's open workout. Only the exercise is added;
+   * reps/weight stay the member's own, so the training record is never fabricated.
+   */
+  const addExerciseToWorkout = useCallback(
+    async (exercise: LiveExercise, automatic: boolean) => {
+      try {
+        const mine = await listMyWorkouts(undefined, null, 10)
+        const rows = Array.isArray(mine) ? mine : (mine.items ?? mine.results ?? [])
+        const active = rows.find(
+          (row) => normalizeSessionStatus(row.status) === WorkoutSessionStatus.InProgress,
+        )
+
+        if (!active) {
+          if (automatic) {
+            if (noSessionNotifiedRef.current) return
+            noSessionNotifiedRef.current = true
+          }
+
+          toast.info('تمرین فعالی پیدا نشد', {
+            description:
+              'برای ثبت حرکات کلاس، از صفحه تمرین یک جلسه را شروع کنید.',
+          })
+          return
+        }
+
+        const sessionId = active.sessionId ?? active.id
+        const session = await getWorkout(sessionId)
+
+        if (session.exercises?.some((item) => item.exerciseId === exercise.exerciseId))
+          return
+
+        await addWorkoutExercise(sessionId, { exerciseId: exercise.exerciseId })
+        toast.success(`«${exercise.exerciseName}» به تمرین امروز اضافه شد`)
+      } catch (cause) {
+        if (!automatic)
+          toast.error('افزودن حرکت به تمرین ناموفق بود.', {
+            description: cause instanceof Error ? cause.message : undefined,
+          })
+      }
+    },
+    [],
+  )
+
+  const mirrorExercise = useCallback(
+    (exercise: LiveExercise) => {
+      setCurrentExercise(exercise)
+
+      if (!autoLogRef.current) return
+
+      const current = roomRef.current
+      const hub = hubRef.current
+
+      // Hosts run the class; only participants mirror into their own workout.
+      if (!current || !hub || current.hostConnectionId === hub.connectionId) return
+      if (loggedExerciseRef.current.has(exercise.exerciseId)) return
+
+      loggedExerciseRef.current.add(exercise.exerciseId)
+      void addExerciseToWorkout(exercise, true)
+    },
+    [addExerciseToWorkout],
+  )
+
   const attachHandlers = useCallback(
     (connection: HubConnection) => {
       connection.on('peer-joined', (peer: LivePeer) => {
@@ -395,6 +496,10 @@ export function LiveRoom({ staff = false }: { staff?: boolean }) {
       })
 
       connection.on('signal', (signal: Signal) => void applySignal(signal))
+      connection.on('exercise-selected', (exercise: LiveExercise) =>
+        mirrorExercise(exercise),
+      )
+      connection.on('exercise-cleared', () => setCurrentExercise(null))
       connection.on('chat', (message: ChatMessage) => {
         setMessages((previous) => [...previous.slice(-199), message])
       })
@@ -405,7 +510,7 @@ export function LiveRoom({ staff = false }: { staff?: boolean }) {
       connection.onreconnecting(() => setError('اتصال قطع شد؛ در حال اتصال دوباره...'))
       connection.onreconnected(() => setError(null))
     },
-    [applySignal, removePeer, teardown],
+    [applySignal, mirrorExercise, removePeer, teardown],
   )
 
   const connect = useCallback(async () => {
@@ -459,6 +564,7 @@ export function LiveRoom({ staff = false }: { staff?: boolean }) {
       )
       roomRef.current = snapshot
       setRoom(snapshot)
+      setCurrentExercise(null)
       setPhase('room')
       persistName(name)
       void connection.send('SetMediaState', true, true, false).catch(() => {})
@@ -490,8 +596,11 @@ export function LiveRoom({ staff = false }: { staff?: boolean }) {
       const snapshot = await connection.invoke<Snapshot>('JoinRoom', code.trim(), name)
       roomRef.current = snapshot
       setRoom(snapshot)
+      setCurrentExercise(snapshot.currentExercise ?? null)
       setPhase('room')
       persistName(name)
+
+      if (snapshot.currentExercise) mirrorExercise(snapshot.currentExercise)
 
       const isHost = snapshot.hostConnectionId === connection.connectionId
       if (snapshot.mode === 'support' || isHost) {
@@ -631,6 +740,76 @@ export function LiveRoom({ staff = false }: { staff?: boolean }) {
     }
   }
 
+  const selfId = hubRef.current?.connectionId
+  const isHost = !!room && room.hostConnectionId === selfId
+
+  useEffect(() => {
+    if (!isHost) return
+
+    const query = exerciseQuery.trim()
+
+    if (query.length < 2) {
+      setExerciseResults([])
+      setSearchingExercises(false)
+      return
+    }
+
+    let cancelled = false
+    setSearchingExercises(true)
+
+    const timer = window.setTimeout(() => {
+      void searchExercises({ query, pageSize: 12 })
+        .then((response) => {
+          if (!cancelled) setExerciseResults(response.items ?? [])
+        })
+        .catch(() => {
+          if (!cancelled) setExerciseResults([])
+        })
+        .finally(() => {
+          if (!cancelled) setSearchingExercises(false)
+        })
+    }, 300)
+
+    return () => {
+      cancelled = true
+      window.clearTimeout(timer)
+    }
+  }, [exerciseQuery, isHost])
+
+  const selectExercise = async (item: ExerciseSearchItem) => {
+    const hub = hubRef.current
+    if (!hub) return
+
+    try {
+      await hub.invoke(
+        'SetCurrentExercise',
+        item.id,
+        item.name,
+        (currentExercise?.order ?? 0) + 1,
+      )
+      setExerciseQuery('')
+      setExerciseResults([])
+    } catch (cause) {
+      toast.error('انتخاب حرکت برای کلاس ناموفق بود.', {
+        description: cause instanceof Error ? cause.message : undefined,
+      })
+    }
+  }
+
+  const clearExercise = async () => {
+    try {
+      await hubRef.current?.invoke('ClearCurrentExercise')
+    } catch {
+      // The host may have already closed the room.
+    }
+  }
+
+  const toggleAutoLog = (next: boolean) => {
+    autoLogRef.current = next
+    setAutoLog(next)
+    localStorage.setItem('live-autolog', next ? 'on' : 'off')
+  }
+
   if (phase === 'lobby' || !room) {
     return (
       <div dir="rtl" className="mx-auto w-full max-w-4xl space-y-5">
@@ -640,7 +819,7 @@ export function LiveRoom({ staff = false }: { staff?: boolean }) {
               <Radio className="size-5" />
             </span>
             <div>
-              <h1 className="text-xl font-extrabold sm:text-2xl">پخش زنده و وبینار</h1>
+              <h1 className="text-xl font-extrabold sm:text-2xl">کلاس آنلاین</h1>
               <p className="text-muted-foreground mt-1 text-sm">
                 {staff
                   ? 'یک جلسهٔ پشتیبانی تصویری یا وبینار داخلی بسازید.'
@@ -761,8 +940,6 @@ export function LiveRoom({ staff = false }: { staff?: boolean }) {
     )
   }
 
-  const selfId = hubRef.current?.connectionId
-  const isHost = room.hostConnectionId === selfId
   const tiles =
     room.mode === 'webinar'
       ? room.peers.filter(
@@ -822,6 +999,101 @@ export function LiveRoom({ staff = false }: { staff?: boolean }) {
           )}
         </div>
       </div>
+
+      {currentExercise && (
+        <div
+          aria-live="polite"
+          className="bg-card flex flex-wrap items-center gap-3 rounded-xl border p-3"
+        >
+          <span className="bg-primary/10 text-primary flex size-10 shrink-0 items-center justify-center rounded-lg">
+            <Dumbbell className="size-5" />
+          </span>
+
+          <div className="min-w-0 flex-1">
+            <p className="text-muted-foreground text-[11px] font-bold">
+              حرکت جاری کلاس · مرحله {currentExercise.order.toLocaleString('fa-IR')}
+            </p>
+            <p className="truncate text-sm font-extrabold">
+              {currentExercise.exerciseName}
+            </p>
+          </div>
+
+          {isHost ? (
+            <Button size="sm" variant="outline" onClick={() => void clearExercise()}>
+              پایان حرکت
+            </Button>
+          ) : (
+            <div className="flex flex-wrap items-center gap-2">
+              <label className="text-muted-foreground inline-flex items-center gap-1.5 text-xs">
+                <input
+                  type="checkbox"
+                  checked={autoLog}
+                  onChange={(event) => toggleAutoLog(event.target.checked)}
+                  className="size-4 accent-current"
+                />
+                ثبت خودکار
+              </label>
+
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => void addExerciseToWorkout(currentExercise, false)}
+              >
+                افزودن به تمرین امروز
+              </Button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {isHost && (
+        <div className="bg-card rounded-xl border p-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="text-sm font-extrabold">حرکت کلاس را انتخاب کنید</p>
+            <p className="text-muted-foreground text-[11px]">
+              شرکت‌کننده‌ها همین حرکت را در تمرین خود می‌بینند.
+            </p>
+          </div>
+
+          <Input
+            value={exerciseQuery}
+            onChange={(event) => setExerciseQuery(event.target.value)}
+            placeholder="جستجوی نام حرکت..."
+            className="mt-2"
+            aria-label="جستجوی حرکت برای کلاس"
+          />
+
+          {exerciseQuery.trim().length >= 2 && (
+            <ul className="mt-2 max-h-56 divide-y overflow-y-auto rounded-lg border">
+              {searchingExercises ? (
+                <li className="text-muted-foreground p-3 text-xs">در حال جستجو…</li>
+              ) : exerciseResults.length === 0 ? (
+                <li className="text-muted-foreground p-3 text-xs">حرکتی پیدا نشد.</li>
+              ) : (
+                exerciseResults.map((item) => (
+                  <li key={item.id}>
+                    <button
+                      type="button"
+                      onClick={() => void selectExercise(item)}
+                      className="hover:bg-muted flex w-full items-center gap-2 p-3 text-start"
+                    >
+                      <Dumbbell className="text-muted-foreground size-4 shrink-0" />
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-sm font-semibold">
+                          {item.name}
+                        </span>
+                        <span className="text-muted-foreground block truncate text-[11px]">
+                          {[item.target, item.equipment].filter(Boolean).join(' · ')}
+                        </span>
+                      </span>
+                    </button>
+                  </li>
+                ))
+              )}
+            </ul>
+          )}
+        </div>
+      )}
 
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_340px]">
         <div className="space-y-3">
@@ -885,7 +1157,7 @@ export function LiveRoom({ staff = false }: { staff?: boolean }) {
                 <MonitorUp className="size-5" />
               </ControlButton>
             )}
-            {!isHost && room.mode === 'webinar' && (
+            {!isHost && (
               <ControlButton
                 label={handRaised ? 'پایین آوردن دست' : 'بالا بردن دست'}
                 active={handRaised}
