@@ -1,7 +1,6 @@
 'use client'
 
 import { startRegistration } from '@simplewebauthn/browser'
-import { Fingerprint, KeyRound, Loader2, Pencil, Plus, Trash2, X } from '@/components/icons'
 import { useCallback, useEffect, useState } from 'react'
 
 import {
@@ -12,6 +11,7 @@ import {
   renamePasskeyAction,
   type PasskeyRecord,
 } from '@/actions/user/passkeys'
+import { Fingerprint, KeyRound, Loader2, Pencil, Plus, Trash2, X } from '@/components/icons'
 import { Button } from '@/components/ui/button'
 import { useConfirm } from '@/lib/confirm'
 import { toast } from '@/lib/toast'

@@ -1,5 +1,4 @@
 import { Search } from "@/components/icons"
-
 import { Label } from "@/components/ui/label"
 import { SidebarInput } from "@/components/ui/sidebar"
 

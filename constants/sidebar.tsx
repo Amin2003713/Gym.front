@@ -1,3 +1,5 @@
+import * as React from 'react'
+
 import {
   Activity,
   BookOpen,
@@ -14,8 +16,6 @@ import {
   Users,
   Wallet,
 } from '@/components/icons'
-import * as React from 'react'
-
 import { SidebarItem } from '@/components/ui/sidebar'
 import { ApiUserRole } from '@/features/users/api/users-api'
 

@@ -1,20 +1,7 @@
 'use client'
 
-import {
-  ArrowUpLeft,
-  CalendarDays,
-  CheckCircle2,
-  Dumbbell,
-  Inbox,
-  LayoutDashboard,
-  Play,
-  ShieldCheck,
-  TrendingUp,
-  Users,
-  type LucideIcon,
-} from '@/components/icons'
 import Link from 'next/link'
-import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
 import { listCoachAssignments } from '@/app/(tenant)/_api/assignment-api'
 import { listCoachConversations } from '@/app/(tenant)/_api/coach-api'
@@ -27,6 +14,17 @@ import {
   CoachConversationStatus,
   type CoachConversationSummary,
 } from '@/app/(tenant)/_model/coach'
+import {
+  ArrowUpLeft,
+  CheckCircle2,
+  Dumbbell,
+  Inbox,
+  LayoutDashboard,
+  Play,
+  ShieldCheck,
+  TrendingUp,
+  Users,
+} from '@/components/icons'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { DashboardModeCard, DashboardPanel, DashboardStat } from '@/features/gym/components/dashboard-kit'

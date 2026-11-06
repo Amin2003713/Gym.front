@@ -1,10 +1,10 @@
 'use client'
 
-import { SidebarIcon } from '@/components/icons'
 import { usePathname } from 'next/navigation'
 import { Fragment, useEffect } from 'react'
 
 import { NavUser } from '@/app/(tenant)/_components/nav-user'
+import { SidebarIcon } from '@/components/icons'
 import { ModeToggle } from '@/components/mode-toggle'
 import {
   Breadcrumb,

@@ -1,9 +1,9 @@
 'use client'
 
-import { Search, SlidersHorizontal, TriangleAlert, X } from '@/components/icons'
 import { useState } from 'react'
 
 import BodyMapPanel from '@/app/(tenant)/_components/progress/body-map-panel'
+import { Search, SlidersHorizontal, TriangleAlert, X } from '@/components/icons'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,

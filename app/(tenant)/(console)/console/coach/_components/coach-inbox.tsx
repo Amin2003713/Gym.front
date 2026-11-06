@@ -1,14 +1,14 @@
 'use client'
 
-import { Inbox, Loader2, MessageCircle, RefreshCw } from '@/components/icons'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
-import { listCoachQueue } from '@/app/(tenant)/console/_api/coach-queue-api'
 import { CoachChat } from '@/app/(tenant)/_components/coach/coach-chat'
 import {
   CoachConversationStatus,
   type CoachConversationSummary,
 } from '@/app/(tenant)/_model/coach'
+import { listCoachQueue } from '@/app/(tenant)/console/_api/coach-queue-api'
+import { Inbox, Loader2, MessageCircle, RefreshCw } from '@/components/icons'
 import { Button } from '@/components/ui/button'
 import { toast } from '@/lib/toast'
 
@@ -64,7 +64,8 @@ export function CoachInbox() {
   }, [])
 
   useEffect(() => {
-    void load()
+    const timer = window.setTimeout(() => void load(), 0)
+    return () => window.clearTimeout(timer)
   }, [load])
 
   // A request that arrives while the coach is on the page should not need a manual refresh.

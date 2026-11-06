@@ -1,12 +1,12 @@
 'use client'
 
-import { ChevronRight } from '@/components/icons'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import * as React from 'react'
 
 import { HamOwjBrand } from '@/components/branding/hamowj-mark'
+import { ChevronRight } from '@/components/icons'
 import {
   Collapsible,
   CollapsibleContent,
@@ -24,8 +24,8 @@ import {
   SidebarMenuItem,
   SidebarMenuSub,
 } from '@/components/ui/sidebar'
-import { normalizeApiUserRole } from '@/constants/user-role'
 import { SIDEBAR_OPTIONS } from '@/constants/sidebar'
+import { normalizeApiUserRole } from '@/constants/user-role'
 import { ApiUserRole } from '@/features/users/api/users-api'
 import { useIsMounted } from '@/hooks/use-is-mounted'
 import { ApiResponse } from '@/types/api-response.interface'

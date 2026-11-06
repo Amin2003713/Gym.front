@@ -1,15 +1,15 @@
 'use client'
 
-import { Loader2 } from '@/components/icons'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
+import { Loader2 } from '@/components/icons'
 import { useAppLocale } from '@/hooks/use-app-locale'
 import { useFigureGender } from '@/hooks/use-figure-gender'
 import { useUserRoles } from '@/hooks/use-user-roles'
 import { muscleLoad } from '@/lib/muscle-mapping'
+import { MUSCLE_MATCH_ALIASES } from '@/lib/muscles'
 import { toast } from '@/lib/toast'
 
-import { MUSCLE_MATCH_ALIASES } from '@/lib/muscles'
 
 import { exerciseApi, exerciseCoverUrl, exerciseThumbUrl } from '../_api/exercise-api'
 import { muscleApi } from '../_api/muscle-api'
@@ -73,10 +73,15 @@ export default function ExerciseLibrary() {
   // View format (card / list / compact), persisted per browser.
   const [view, setView] = useState<ExerciseViewMode>('card')
   useEffect(() => {
-    const saved = window.localStorage.getItem(VIEW_STORAGE_KEY)
-    if (saved === 'list' || saved === 'compact' || saved === 'card') {
-      setView(saved)
-    }
+    // Read the saved view after hydration so the first paint is deterministic.
+    const timer = window.setTimeout(() => {
+      const saved = window.localStorage.getItem(VIEW_STORAGE_KEY)
+      if (saved === 'list' || saved === 'compact' || saved === 'card') {
+        setView(saved)
+      }
+    }, 0)
+
+    return () => window.clearTimeout(timer)
   }, [])
   const changeView = useCallback((next: ExerciseViewMode) => {
     setView(next)
@@ -144,7 +149,8 @@ export default function ExerciseLibrary() {
 
   // First load, search changes and refreshes always fetch page 1.
   useEffect(() => {
-    void fetchPage(1)
+    const timer = window.setTimeout(() => void fetchPage(1), 0)
+    return () => window.clearTimeout(timer)
   }, [fetchPage])
 
   // Chip counts come from the catalog itself; a failed call hides the chips but never
@@ -194,7 +200,8 @@ export default function ExerciseLibrary() {
   }, [])
 
   useEffect(() => {
-    void loadEquipmentOptions()
+    const timer = window.setTimeout(() => void loadEquipmentOptions(), 0)
+    return () => window.clearTimeout(timer)
   }, [loadEquipmentOptions])
 
   const hasMore = page < pageCount
@@ -254,7 +261,7 @@ export default function ExerciseLibrary() {
       setEditingId(id)
       setFormOpen(true)
     })
-  }, [])
+  }, [ensureOwned])
 
   const remove = useCallback(
     async (item: ExerciseListItem) => {
@@ -274,7 +281,7 @@ export default function ExerciseLibrary() {
         setDeletingId(null)
       }
     },
-    [fetchPage, loadEquipmentOptions],
+    [ensureOwnedId, fetchPage, loadEquipmentOptions],
   )
 
   const gridItems = useMemo(

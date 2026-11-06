@@ -1,8 +1,26 @@
 'use client'
 
-import { useCallback, useEffect, useRef, useState } from 'react'
 import {
-  Check,
+  HubConnectionBuilder,
+  HubConnectionState,
+  LogLevel,
+  type HubConnection,
+} from '@microsoft/signalr'
+import { useCallback, useEffect, useRef, useState } from 'react'
+
+import {
+  addWorkoutExercise,
+  getWorkout,
+  listMyWorkouts,
+  searchExercises,
+} from '@/app/(tenant)/_api/workout-api'
+import {
+  normalizeSessionStatus,
+  WorkoutSessionStatus,
+  type ExerciseSearchItem,
+} from '@/app/(tenant)/_model/workout.types'
+import {
+
   Copy,
   Dumbbell,
   Hand,
@@ -21,27 +39,9 @@ import {
   Video,
   VideoOff,
 } from '@/components/icons'
-import {
-  HubConnectionBuilder,
-  HubConnectionState,
-  LogLevel,
-  type HubConnection,
-} from '@microsoft/signalr'
-
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import {
-  addWorkoutExercise,
-  getWorkout,
-  listMyWorkouts,
-  searchExercises,
-} from '@/app/(tenant)/_api/workout-api'
-import {
-  normalizeSessionStatus,
-  WorkoutSessionStatus,
-  type ExerciseSearchItem,
-} from '@/app/(tenant)/_model/workout.types'
 import { API_URL } from '@/configs/global'
 import { toast } from '@/lib/toast'
 
@@ -153,6 +153,7 @@ export function LiveRoom({ staff = false }: { staff?: boolean }) {
   const [exerciseQuery, setExerciseQuery] = useState('')
   const [exerciseResults, setExerciseResults] = useState<ExerciseSearchItem[]>([])
   const [searchingExercises, setSearchingExercises] = useState(false)
+  const [selfId, setSelfId] = useState<string | null>(null)
 
   const hubRef = useRef<HubConnection | null>(null)
   const roomRef = useRef<Snapshot | null>(null)
@@ -165,16 +166,21 @@ export function LiveRoom({ staff = false }: { staff?: boolean }) {
   const loggedExerciseRef = useRef<Set<string>>(new Set())
   const noSessionNotifiedRef = useRef(false)
 
+  // Browser storage is only available after hydration, so read it on the next tick.
   useEffect(() => {
-    const savedName = localStorage.getItem('live-name')
-    if (savedName) setDisplayName(savedName)
-    const savedAutoLog = localStorage.getItem('live-autolog')
-    if (savedAutoLog === 'off') {
-      autoLogRef.current = false
-      setAutoLog(false)
-    }
-    const sharedCode = new URLSearchParams(window.location.search).get('code')
-    if (sharedCode) setCode(sharedCode.toUpperCase())
+    const timer = window.setTimeout(() => {
+      const savedName = localStorage.getItem('live-name')
+      if (savedName) setDisplayName(savedName)
+      const savedAutoLog = localStorage.getItem('live-autolog')
+      if (savedAutoLog === 'off') {
+        autoLogRef.current = false
+        setAutoLog(false)
+      }
+      const sharedCode = new URLSearchParams(window.location.search).get('code')
+      if (sharedCode) setCode(sharedCode.toUpperCase())
+    }, 0)
+
+    return () => window.clearTimeout(timer)
   }, [])
 
   useEffect(() => {
@@ -219,6 +225,7 @@ export function LiveRoom({ staff = false }: { staff?: boolean }) {
     noSessionNotifiedRef.current = false
     setRoom(null)
     roomRef.current = null
+    setSelfId(null)
     setPhase('lobby')
   }, [])
 
@@ -524,6 +531,7 @@ export function LiveRoom({ staff = false }: { staff?: boolean }) {
     attachHandlers(connection)
     await connection.start()
     hubRef.current = connection
+    setSelfId(connection.connectionId ?? null)
     return connection
   }, [attachHandlers])
 
@@ -602,8 +610,8 @@ export function LiveRoom({ staff = false }: { staff?: boolean }) {
 
       if (snapshot.currentExercise) mirrorExercise(snapshot.currentExercise)
 
-      const isHost = snapshot.hostConnectionId === connection.connectionId
-      if (snapshot.mode === 'support' || isHost) {
+      const joiningAsHost = snapshot.hostConnectionId === connection.connectionId
+      if (snapshot.mode === 'support' || joiningAsHost) {
         await acquireMedia()
         void connection.send('SetMediaState', true, true, false).catch(() => {})
       }
@@ -740,24 +748,18 @@ export function LiveRoom({ staff = false }: { staff?: boolean }) {
     }
   }
 
-  const selfId = hubRef.current?.connectionId
   const isHost = !!room && room.hostConnectionId === selfId
 
   useEffect(() => {
     if (!isHost) return
 
     const query = exerciseQuery.trim()
-
-    if (query.length < 2) {
-      setExerciseResults([])
-      setSearchingExercises(false)
-      return
-    }
+    if (query.length < 2) return
 
     let cancelled = false
-    setSearchingExercises(true)
 
     const timer = window.setTimeout(() => {
+      if (cancelled) return
       void searchExercises({ query, pageSize: 12 })
         .then((response) => {
           if (!cancelled) setExerciseResults(response.items ?? [])
@@ -1057,7 +1059,14 @@ export function LiveRoom({ staff = false }: { staff?: boolean }) {
 
           <Input
             value={exerciseQuery}
-            onChange={(event) => setExerciseQuery(event.target.value)}
+            onChange={(event) => {
+              const next = event.target.value
+              setExerciseQuery(next)
+              if (next.trim().length < 2) {
+                setExerciseResults([])
+                setSearchingExercises(false)
+              }
+            }}
             placeholder="جستجوی نام حرکت..."
             className="mt-2"
             aria-label="جستجوی حرکت برای کلاس"
@@ -1322,9 +1331,12 @@ function VideoTile({
   const videoRef = useRef<HTMLVideoElement>(null)
 
   useEffect(() => {
-    if (videoRef.current) videoRef.current.srcObject = stream
+    const video = videoRef.current
+    if (!video) return
+
+    video.srcObject = stream
     return () => {
-      if (videoRef.current) videoRef.current.srcObject = null
+      video.srcObject = null
     }
   }, [stream])
 
