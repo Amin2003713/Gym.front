@@ -33,7 +33,7 @@ function PersonalInfoForm({ form }: StepFormProps) {
         position: 'top-right',
       })
     } else if (signupState.isSuccess) {
-      toast.success('کد تایید به شماره همراه شما ارسال شد', {
+      toast.success('کد تأیید به ایمیل شما ارسال شد', {
         duration: 5000,
         position: 'top-right',
       })

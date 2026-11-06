@@ -50,12 +50,14 @@ export default function VerifyAccountForm() {
   useEffect(() => { setParams(new URLSearchParams(window.location.search)) }, [])
 
   const phoneNumber = params?.get('u') ?? ''
+  const email = params?.get('e') ?? ''
   const domain = params?.get('d') ?? ''
 
   const form = useForm<VerificationValues>({
     resolver: zodResolver(ThirdFormSchema),
     defaultValues: {
       domain: domain || '',
+      email: email || '',
       phoneNumber: phoneNumber || '',
       code: '',
     },
@@ -79,12 +81,12 @@ export default function VerifyAccountForm() {
   // code — they got here because their login attempt hit the 403
   // "not verified" problem and we redirected them to this page.
   useEffect(() => {
-    if (!phoneNumber || autoSendRef.current) return
+    if ((!phoneNumber && !email) || autoSendRef.current) return
     autoSendRef.current = true
     startNewCodeTransition(() =>
-      newCodeAction({ phoneNumber, domain }),
+      newCodeAction({ email, phoneNumber, domain }),
     )
-  }, [phoneNumber, domain, newCodeAction])
+  }, [email, phoneNumber, domain, newCodeAction])
 
   useEffect(() => {
     if (
@@ -95,7 +97,7 @@ export default function VerifyAccountForm() {
       timerRef.current?.restart(getTwoMinutesFromNow())
       setExpired(false)
       toast.success('کد تأیید برای شما ارسال شد', {
-        description: 'کد تأیید یکبار‌مصرف پیامک شد؛ لطفاً آن را وارد کنید.',
+        description: 'کد یک‌بارمصرف به ایمیل حساب ارسال شد؛ لطفاً آن را وارد کنید.',
       })
     } else if (
       newCodeStateAction &&
@@ -145,13 +147,14 @@ export default function VerifyAccountForm() {
     form.clearErrors()
     startNewCodeTransition(() =>
       newCodeAction({
-        phoneNumber: form.getValues('phoneNumber'),
+        email: form.getValues('email') || email,
+        phoneNumber: form.getValues('phoneNumber') || phoneNumber,
         domain: form.getValues('domain') || domain,
       }),
     )
   }
 
-  if (!phoneNumber) {
+  if (!phoneNumber && !email) {
     return (
       <div className="bg-card flex flex-col items-center gap-4 rounded-lg border border-border p-6 text-center shadow-sm">
         <HamOwjBrand className="text-foreground size-10" />
@@ -186,7 +189,7 @@ export default function VerifyAccountForm() {
                   تأیید حساب کاربری
                 </h3>
                 <p className="text-muted-foreground mt-1 text-xs leading-6">
-                  کد ارسال‌شده را وارد کن تا حساب شما فعال شود.
+                  کد ارسال‌شده به ایمیل حساب را وارد کنید تا حساب فعال شود.
                 </p>
               </div>
             </div>
@@ -228,7 +231,7 @@ export default function VerifyAccountForm() {
                   ref={timerRef}
                 />
                 <FormDescription>
-                  کد تأیید یکبار مصرفی را که برای شما پیامک شده است وارد کنید.
+                  کد یک‌بارمصرفی که به ایمیل حساب شما ارسال شده را وارد کنید.
                 </FormDescription>
                 <FormMessage />
               </FormItem>

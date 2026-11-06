@@ -42,16 +42,18 @@ const getTwoMinutesFromNow = (): Date => {
 
 type VerifyFormType = {
   domain: string
-  phoneNumber: string
+  email?: string
+  phoneNumber?: string
 }
 
 // no need for whole form
-function VerifyForm({ domain, phoneNumber }: VerifyFormType) {
+function VerifyForm({ domain, email, phoneNumber }: VerifyFormType) {
   const validationForm = useForm<VerificationValues>({
     resolver: zodResolver(ThirdFormSchema),
     defaultValues: {
       domain: domain,
-      phoneNumber: phoneNumber,
+      email: email ?? '',
+      phoneNumber: phoneNumber ?? '',
       code: '',
     },
   })
@@ -60,6 +62,7 @@ function VerifyForm({ domain, phoneNumber }: VerifyFormType) {
   const timerRef = useRef<TimerRef>(null)
 
   const [expired, setExpired] = useState(false)
+  const autoSendRef = useRef(false)
 
   const [isPending, startTransition] = useTransition()
   const [newCodePending, startNewCodeTransition] = useTransition()
@@ -79,11 +82,21 @@ function VerifyForm({ domain, phoneNumber }: VerifyFormType) {
 
     startNewCodeTransition(() =>
       newCodeAction({
-        phoneNumber: validationForm.getValues('phoneNumber'),
+        email: validationForm.getValues('email') || email,
+        phoneNumber: validationForm.getValues('phoneNumber') || phoneNumber,
         domain: validationForm.getValues('domain') || domain,
       }),
     )
   }
+
+  // The first code is emailed as soon as this step opens; the user should only need their inbox.
+  useEffect(() => {
+    if (autoSendRef.current || (!email && !phoneNumber)) return
+    autoSendRef.current = true
+    startNewCodeTransition(() =>
+      newCodeAction({ email, phoneNumber, domain }),
+    )
+  }, [domain, email, newCodeAction, phoneNumber])
 
   useEffect(() => {
     if (
@@ -94,7 +107,7 @@ function VerifyForm({ domain, phoneNumber }: VerifyFormType) {
       timerRef.current?.restart(getTwoMinutesFromNow())
       setExpired(false)
       toast.success(
-        `کد تأیید مجددا برای شماره ${validationForm.getValues().phoneNumber} ارسال شد`,
+        `کد تأیید دوباره به ${validationForm.getValues('email') || email || 'ایمیل حساب'} ارسال شد`,
       )
     } else if (
       newCodeStateAction &&
@@ -163,8 +176,7 @@ function VerifyForm({ domain, phoneNumber }: VerifyFormType) {
                   ref={timerRef}
                 />
                 <FormDescription>
-                  کد تأیید یکبار مصرفی را که به شماره همراه شما ارسال شده را
-                  وارد کنید.
+                  کد یک‌بارمصرفی که به ایمیل حساب شما ارسال شد را وارد کنید.
                 </FormDescription>
                 <FormMessage />
               </FormItem>

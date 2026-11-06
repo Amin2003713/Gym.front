@@ -9,7 +9,10 @@ import { useUserRoles } from '@/hooks/use-user-roles'
 import { muscleLoad } from '@/lib/muscle-mapping'
 import { toast } from '@/lib/toast'
 
+import { MUSCLE_MATCH_ALIASES } from '@/lib/muscles'
+
 import { exerciseApi, exerciseCoverUrl, exerciseThumbUrl } from '../_api/exercise-api'
+import { muscleApi } from '../_api/muscle-api'
 import { equipmentLabel } from '../_model/exercise-equipment'
 import { SHARED_EXERCISE_NOTICE, isUserOwnedExercise } from '../_model/exercise-ownership'
 import type {
@@ -49,11 +52,18 @@ export default function ExerciseLibrary() {
   const [equipment, setEquipment] = useState<string[]>([])
   const [bodyPart, setBodyPart] = useState<string | null>(null)
   const [level, setLevel] = useState<string | null>(null)
+  // Muscles picked on the body map; resolved to server ids once the muscle list arrives.
+  const [muscles, setMuscles] = useState<string[]>([])
+  const [muscleIdBySlug, setMuscleIdBySlug] = useState<Record<string, string>>({})
   const [equipmentOptions, setEquipmentOptions] = useState<ExerciseEquipmentOption[]>([])
   const [bodyPartOptions, setBodyPartOptions] = useState<ExerciseEquipmentOption[]>([])
   const [levelOptions, setLevelOptions] = useState<ExerciseEquipmentOption[]>([])
   const [missingEquipment, setMissingEquipment] = useState(0)
   const equipmentParam = useMemo(() => equipment.join(','), [equipment])
+  const muscleIdsParam = useMemo(
+    () => muscles.map((slug) => muscleIdBySlug[slug]).filter(Boolean).join(','),
+    [muscleIdBySlug, muscles],
+  )
 
   const [detailId, setDetailId] = useState<string | null>(null)
   const [formOpen, setFormOpen] = useState(false)
@@ -78,6 +88,7 @@ export default function ExerciseLibrary() {
     setEquipment([])
     setBodyPart(null)
     setLevel(null)
+    setMuscles([])
   }, [])
 
   const sentinelRef = useRef<HTMLDivElement>(null)
@@ -103,6 +114,7 @@ export default function ExerciseLibrary() {
           equipments: equipmentParam || undefined,
           bodyPart: bodyPart || undefined,
           level: level || undefined,
+          muscleIds: muscleIdsParam || undefined,
           languageCode: locale,
         })
         if (seq !== requestSeq.current) return
@@ -127,7 +139,7 @@ export default function ExerciseLibrary() {
         if (seq === requestSeq.current) setLoading(false)
       }
     },
-    [bodyPart, equipmentParam, level, locale, search],
+    [bodyPart, equipmentParam, level, locale, muscleIdsParam, search],
   )
 
   // First load, search changes and refreshes always fetch page 1.
@@ -139,16 +151,45 @@ export default function ExerciseLibrary() {
   // blocks the library itself.
   const loadEquipmentOptions = useCallback(async () => {
     try {
-      const result = await exerciseApi.equipmentOptions()
+      // Two independent catalog reads in one round trip.
+      const [result, muscleRows] = await Promise.all([
+        exerciseApi.equipmentOptions(),
+        muscleApi.list(),
+      ])
+
       setEquipmentOptions(result.equipment ?? [])
       setBodyPartOptions(result.bodyParts ?? [])
       setLevelOptions(result.levels ?? [])
       setMissingEquipment(result.missing ?? 0)
+
+      // The catalog names muscles canonically ("pectorals", "glutes"); the body map uses
+      // plan slugs ("chest", "gluteal"). Match on normalized text through the alias table.
+      const normalize = (value: string) =>
+        value.toLowerCase().replace(/[_-]+/g, ' ').replace(/\s+/g, ' ').trim()
+
+      const byName = new Map<string, string>()
+      for (const muscle of muscleRows) {
+        byName.set(normalize(muscle.code), muscle.id)
+        byName.set(normalize(muscle.anatomicalName), muscle.id)
+      }
+
+      const bySlug: Record<string, string> = {}
+      for (const [slug, aliases] of Object.entries(MUSCLE_MATCH_ALIASES)) {
+        for (const alias of aliases) {
+          const id = byName.get(normalize(alias))
+          if (id) {
+            bySlug[slug] = id
+            break
+          }
+        }
+      }
+      setMuscleIdBySlug(bySlug)
     } catch {
       setEquipmentOptions([])
       setBodyPartOptions([])
       setLevelOptions([])
       setMissingEquipment(0)
+      setMuscleIdBySlug({})
     }
   }, [])
 
@@ -276,6 +317,8 @@ export default function ExerciseLibrary() {
         levels={levelOptions}
         level={level}
         onLevelChange={setLevel}
+        muscles={muscles}
+        onMusclesChange={setMuscles}
         missing={missingEquipment}
         onReset={resetFilters}
       />
@@ -286,7 +329,9 @@ export default function ExerciseLibrary() {
         <>
           <p className="text-sm text-muted-foreground">
             {rowCount.toLocaleString('fa-IR')} حرکت
-            {equipmentParam || bodyPart || level || search.trim() ? ' · نتیجهٔ فیلترها' : ''}
+            {equipmentParam || bodyPart || level || muscles.length || search.trim()
+              ? ' · نتیجهٔ فیلترها'
+              : ''}
           </p>
 
           <ExerciseGrid

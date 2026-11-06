@@ -17,7 +17,6 @@ export interface ApiUser {
   username?: string | null
   email?: string | null
   phoneNumber?: string | null
-  phoneCountryCode?: string | null
   firstName?: string | null
   lastName?: string | null
   avatar?: string | null

@@ -272,9 +272,7 @@ export default function UserManager({ role, title, description }: UserManagerPro
                       </td>
                       <td className="p-3">{userRoleLabel(user)}</td>
                       <td className="p-3" dir="ltr">
-                        {user.phoneNumber
-                          ? `${user.phoneCountryCode ?? ''} ${user.phoneNumber}`
-                          : '—'}
+                        {user.phoneNumber ?? '—'}
                       </td>
                       <td className="p-3">
                         <Badge

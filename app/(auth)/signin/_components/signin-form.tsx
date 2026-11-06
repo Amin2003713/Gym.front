@@ -32,7 +32,7 @@ export function SigninForm() {
 
   useEffect(() => {
     if (loginState && !loginState.isSuccess && loginState.error) {
-      // 403 = account not verified by admins yet → activate it via SMS code.
+      // 403 = account not verified by admins yet → activate it with an emailed code.
       if (
         loginState.error.status === 403 ||
         loginState.error.title === 'FORBIDDEN'
@@ -40,7 +40,7 @@ export function SigninForm() {
         const userName = lastAttemptedUserName.current
 
         toast.error('حساب شما تأیید نشده است!', {
-          description: 'برای فعال‌سازی حساب، کد تأیید برای شما ارسال می‌شود.',
+          description: 'برای فعال‌سازی، کد تأیید به ایمیل حساب شما ارسال می‌شود.',
         })
 
         startTransition(async () => {

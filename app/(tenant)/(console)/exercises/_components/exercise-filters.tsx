@@ -1,6 +1,18 @@
 'use client'
 
 import { Search, SlidersHorizontal, TriangleAlert, X } from '@/components/icons'
+import { useState } from 'react'
+
+import BodyMapPanel from '@/app/(tenant)/_components/progress/body-map-panel'
+import { Button } from '@/components/ui/button'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import { MUSCLE_FA } from '@/lib/muscles'
 
 import {
   MISSING_EQUIPMENT,
@@ -10,7 +22,7 @@ import {
 } from '../_model/exercise-equipment'
 import type { ExerciseEquipmentOption } from '../_model/exercise.types'
 
-interface ExerciseFiltersProps {
+export interface ExerciseFiltersProps {
   search: string
   onSearchChange: (value: string) => void
   /** Comes from the API, so a new tool in the data appears without a client change. */
@@ -25,14 +37,107 @@ interface ExerciseFiltersProps {
   levels: ExerciseEquipmentOption[]
   level: string | null
   onLevelChange: (next: string | null) => void
+  /** Muscles picked on the body map (slugs from lib/muscles). */
+  muscles: string[]
+  onMusclesChange: (next: string[]) => void
   /** Exercises with no equipment value, offered as their own chip so they can be fixed. */
   missing: number
   onReset: () => void
 }
 
-export default function ExerciseFilters({
-  search,
-  onSearchChange,
+export default function ExerciseFilters(props: ExerciseFiltersProps) {
+  const [open, setOpen] = useState(false)
+
+  const activeCount =
+    props.selected.length +
+    (props.bodyPart ? 1 : 0) +
+    (props.level ? 1 : 0) +
+    props.muscles.length +
+    (props.search.trim() ? 1 : 0)
+
+  return (
+    <div className="space-y-3">
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="relative min-w-0 flex-1">
+          <Search className="text-muted-foreground pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2" />
+
+          <input
+            value={props.search}
+            onChange={(event) => props.onSearchChange(event.target.value)}
+            placeholder="جستجوی حرکت..."
+            aria-label="جستجوی حرکات"
+            className="bg-background focus:ring-primary h-11 w-full rounded-lg border pr-10 pl-3 text-sm outline-none focus:ring-2"
+          />
+        </div>
+
+        <Button
+          type="button"
+          variant="outline"
+          className="h-11 gap-2 md:hidden"
+          onClick={() => setOpen(true)}
+          aria-label="باز کردن فیلترهای کتابخانه حرکات"
+        >
+          <SlidersHorizontal className="size-4" aria-hidden />
+          فیلترها
+          {activeCount > 0 && (
+            <span className="bg-primary text-primary-foreground rounded-full px-1.5 text-[11px] leading-5 tabular-nums">
+              {activeCount.toLocaleString('fa-IR')}
+            </span>
+          )}
+        </Button>
+
+        {activeCount > 0 && (
+          <button
+            type="button"
+            onClick={props.onReset}
+            className="focus-visible:ring-ring inline-flex h-11 items-center gap-2 rounded-lg border px-3 text-sm outline-none focus-visible:ring-[3px] focus-visible:ring-offset-2"
+          >
+            <X className="size-4" aria-hidden />
+            پاک کردن
+          </button>
+        )}
+      </div>
+
+      {/* Desktop keeps the controls inline; phones open the same set inside the dialog. */}
+      <div className="hidden space-y-3 md:block">
+        <FilterGroups {...props} />
+        <MuscleMapFilter muscles={props.muscles} onChange={props.onMusclesChange} />
+      </div>
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="max-h-[88svh] overflow-y-auto sm:max-w-lg">
+          <DialogHeader className="text-start">
+            <DialogTitle>فیلتر حرکات</DialogTitle>
+            <DialogDescription>
+              تجهیزات، عضله و سطح دشواری را انتخاب کنید؛ نتیجه بلافاصله اعمال می‌شود.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <FilterGroups {...props} />
+            <MuscleMapFilter muscles={props.muscles} onChange={props.onMusclesChange} />
+          </div>
+
+          <div className="flex flex-wrap items-center justify-between gap-2 border-t pt-3">
+            <button
+              type="button"
+              onClick={props.onReset}
+              className="text-muted-foreground hover:text-foreground inline-flex h-11 items-center rounded-lg px-2 text-sm font-semibold"
+            >
+              پاک کردن فیلترها
+            </button>
+
+            <Button type="button" onClick={() => setOpen(false)} className="h-11">
+              نمایش نتیجه
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </div>
+  )
+}
+
+function FilterGroups({
   options,
   selected,
   onSelectedChange,
@@ -43,7 +148,6 @@ export default function ExerciseFilters({
   level,
   onLevelChange,
   missing,
-  onReset,
 }: ExerciseFiltersProps) {
   const toggle = (code: string) =>
     onSelectedChange(
@@ -52,36 +156,8 @@ export default function ExerciseFilters({
         : [...selected, code],
     )
 
-  const active =
-    selected.length > 0 || bodyPart !== null || level !== null || search.trim().length > 0
-
   return (
     <div className="space-y-3">
-      <div className="flex flex-wrap items-center gap-3">
-        <div className="relative min-w-0 flex-1">
-          <Search className="text-muted-foreground pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2" />
-
-          <input
-            value={search}
-            onChange={(event) => onSearchChange(event.target.value)}
-            placeholder="جستجوی حرکت..."
-            aria-label="جستجوی حرکات"
-            className="bg-background focus:ring-primary h-11 w-full rounded-lg border pr-10 pl-3 text-sm outline-none focus:ring-2"
-          />
-        </div>
-
-        {active && (
-          <button
-            type="button"
-            onClick={onReset}
-            className="focus-visible:ring-ring inline-flex h-11 items-center gap-2 rounded-lg border px-3 text-sm outline-none focus-visible:ring-[3px] focus-visible:ring-offset-2"
-          >
-            <X className="size-4" />
-            پاک کردن فیلترها
-          </button>
-        )}
-      </div>
-
       <ChipRow label="تجهیزات" ariaLabel="فیلتر تجهیزات">
         <FilterChip active={selected.length === 0} onClick={() => onSelectedChange([])}>
           همه
@@ -160,6 +236,79 @@ export default function ExerciseFilters({
   )
 }
 
+/**
+ * Multi-select muscle filter on the body map. The map's `load` prop paints every selected slug,
+ * so several muscles can stay highlighted while the list narrows with one `muscleIds` query.
+ */
+function MuscleMapFilter({
+  muscles,
+  onChange,
+}: {
+  muscles: string[]
+  onChange: (next: string[]) => void
+}) {
+  const toggle = (slug: string) =>
+    onChange(
+      muscles.includes(slug)
+        ? muscles.filter((item) => item !== slug)
+        : [...muscles, slug],
+    )
+
+  const load = Object.fromEntries(muscles.map((slug) => [slug, 4]))
+
+  return (
+    <div className="rounded-lg border p-3">
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <p className="text-xs font-semibold">انتخاب عضله از نقشه بدن</p>
+
+        {muscles.length > 0 && (
+          <button
+            type="button"
+            onClick={() => onChange([])}
+            className="text-muted-foreground hover:text-foreground text-xs font-semibold"
+          >
+            پاک کردن عضله‌ها
+          </button>
+        )}
+      </div>
+
+      {muscles.length > 0 && (
+        <div className="mb-2 flex flex-wrap gap-1.5">
+          {muscles.map((slug) => (
+            <span
+              key={slug}
+              className="bg-primary/12 text-primary inline-flex items-center gap-1 rounded-full py-1 ps-3 pe-1 text-xs font-semibold"
+            >
+              {MUSCLE_FA[slug] ?? slug}
+              <button
+                type="button"
+                onClick={() => toggle(slug)}
+                aria-label={`حذف ${MUSCLE_FA[slug] ?? slug} از فیلتر`}
+                className="hover:bg-primary/20 inline-flex size-6 items-center justify-center rounded-full"
+              >
+                <X className="size-3" aria-hidden />
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
+
+      <BodyMapPanel
+        load={load}
+        palette="load"
+        size="card"
+        legend={false}
+        onMuscle={toggle}
+        className="mx-auto max-w-60"
+      />
+
+      <p className="text-muted-foreground mt-2 text-center text-[11px] leading-5">
+        روی عضله بزنید تا به فیلتر اضافه یا از آن حذف شود.
+      </p>
+    </div>
+  )
+}
+
 function ChipRow({
   label,
   ariaLabel,
@@ -203,7 +352,7 @@ function FilterChip({
       type="button"
       onClick={onClick}
       aria-pressed={active}
-      className={`focus-visible:ring-ring inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full border px-3 text-xs font-semibold transition outline-none focus-visible:ring-[3px] focus-visible:ring-offset-2 ${
+      className={`focus-visible:ring-ring inline-flex h-10 shrink-0 items-center gap-1.5 rounded-full border px-3 text-sm font-semibold transition outline-none focus-visible:ring-[3px] focus-visible:ring-offset-2 md:h-8 md:text-xs ${
         active
           ? 'border-primary bg-primary text-primary-foreground'
           : warn

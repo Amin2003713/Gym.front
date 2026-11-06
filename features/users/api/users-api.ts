@@ -6,7 +6,6 @@ export interface UserDto {
   username: string
   email: string
   phoneNumber?: string | null
-  phoneCountryCode?: string | null
   firstName: string
   lastName: string
   fullName?: string | null
@@ -35,7 +34,6 @@ export interface CreateUserInput {
   lastName: string
   email: string
   phoneNumber?: string | null
-  phoneCountryCode: string
   avatar?: string | null
   gender?: number | null
   role: ApiUserRole

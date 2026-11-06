@@ -17,7 +17,7 @@ import type { SignupValues } from '../_types/signup.interface'
 const steps = [
   { label: 'مشخصات باشگاه', description: 'نام گروه و آدرس اختصاصی' },
   { label: 'مدیر گروه', description: 'اطلاعات مالک حساب' },
-  { label: 'تأیید شماره', description: 'فعال‌سازی حساب مدیر' },
+  { label: 'تأیید ایمیل', description: 'فعال‌سازی حساب مدیر' },
 ]
 
 export const SignupForm = () => {
@@ -40,6 +40,7 @@ export const SignupForm = () => {
     <PersonalInfoForm key="personal-info" form={form} />,
     <VerifyForm
       key="verify"
+      email={form.watch('email')}
       phoneNumber={form.watch('phoneNumber')}
       domain={form.getValues('domain')}
     />,

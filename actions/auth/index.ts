@@ -33,16 +33,20 @@ export const signupCompanyAction = async (
   )
 }
 
+/**
+ * Verifies the one-time code that was emailed to the account. The phone number remains the
+ * login identity; the code itself is delivered by email.
+ */
 export const verifyPhoneNumber = async (
   formState: OperationResult<string> | null,
   data: VerificationValues,
 ) => {
-  const { phoneNumber, code, domain } = data
+  const { email, phoneNumber, code, domain } = data
   const headers = domain ? { 'X-Tenant': domain } : undefined
   return serverActionWrapper(() =>
-    updateData<Omit<VerificationValues, 'domain'>, string>(
+    updateData<{ email?: string; phoneNumber?: string; code: string }, string>(
       'user/verify',
-      { phoneNumber, code },
+      { email, phoneNumber, code },
       headers,
     ),
   )
@@ -167,9 +171,9 @@ export const signOutAction = async (): Promise<OperationResult<void>> => {
 
 export const sendActivationCodeAction = async (
   prevState: OperationResult<void> | undefined,
-  data: { phoneNumber: string; domain: string },
+  data: { email?: string; phoneNumber?: string; domain: string },
 ) => {
-  const { phoneNumber, domain } = data
+  const { email, phoneNumber, domain } = data
 
   const headers: AxiosRequestHeaders | undefined = domain
     ? ({ 'X-Tenant': domain } as unknown as AxiosRequestHeaders)
@@ -177,9 +181,9 @@ export const sendActivationCodeAction = async (
 
   return serverActionWrapper(
     async () =>
-      await createData<{ phoneNumber: string }, void>(
+      await createData<{ email?: string; phoneNumber?: string }, void>(
         'user/send-activation-code',
-        { phoneNumber },
+        { email, phoneNumber },
         headers,
       ),
   )

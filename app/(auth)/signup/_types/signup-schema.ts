@@ -33,11 +33,19 @@ export const SecondFormSchema = z.object({
   confirmPassword: passwordSchema,
 })
 
-export const ThirdFormSchema = z.object({
-  phoneNumber: z.string(),
-  domain: z.string(), // optional ?
-  code: z.string().length(6, 'کد تأیید نامعتبر است'),
-})
+export const ThirdFormSchema = z
+  .object({
+    /** Code delivery address; the phone number stays the login. */
+    email: z.string(),
+    /** Fallback for the sign-in "not verified" flow, where only the phone is known. */
+    phoneNumber: z.string(),
+    domain: z.string(), // optional ?
+    code: z.string().length(6, 'کد تأیید نامعتبر است'),
+  })
+  .refine((data) => Boolean(data.email.trim() || data.phoneNumber.trim()), {
+    message: 'ایمیل حساب را وارد کنید.',
+    path: ['email'],
+  })
 
 export const SignupSchema = z
   .object({

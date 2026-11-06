@@ -8,6 +8,54 @@ export const MUSCLES = [
 
 export type MuscleSlug = (typeof MUSCLES)[number]
 
+/** Persian labels for the body-map picker (the map itself keeps the anatomical slugs). */
+export const MUSCLE_FA: Record<string, string> = {
+    trapezius: 'ذوزنقه‌ای',
+    deltoids: 'سرشانه',
+    chest: 'سینه',
+    'upper-back': 'پشت بالایی',
+    serratus: 'دندانه‌ای',
+    biceps: 'دوسر بازو',
+    triceps: 'سه‌سر بازو',
+    forearm: 'ساعد',
+    abs: 'شکم',
+    obliques: 'پهلوها',
+    'lower-back': 'کمر',
+    gluteal: 'سرینی',
+    quadriceps: 'چهارسر ران',
+    hamstring: 'همسترینگ',
+    adductors: 'نزدیک‌کننده ران',
+    'hip-flexors': 'خم‌کننده ران',
+    calves: 'ساق',
+    tibialis: 'درشت‌نی',
+}
+
+/**
+ * Alternative server muscle codes/names for each body-map slug. The catalog stores canonical
+ * labels ("pectorals", "glutes", "latissimus dorsi"), while the map and plan validators use
+ * slugs ("chest", "gluteal", "upper-back"). Matching is done on the normalized text.
+ */
+export const MUSCLE_MATCH_ALIASES: Record<string, string[]> = {
+    trapezius: ['trapezius', 'traps', 'upper trapezius'],
+    deltoids: ['deltoids', 'delts', 'shoulders'],
+    chest: ['chest', 'pectorals', 'pecs', 'pectoralis major'],
+    'upper-back': ['upper back', 'latissimus dorsi', 'lats', 'rhomboids', 'middle back'],
+    serratus: ['serratus', 'serratus anterior'],
+    biceps: ['biceps', 'biceps brachii'],
+    triceps: ['triceps', 'triceps brachii'],
+    forearm: ['forearm', 'forearms', 'brachioradialis'],
+    abs: ['abs', 'abdominals', 'core', 'rectus abdominis'],
+    obliques: ['obliques', 'oblique', 'external obliques'],
+    'lower-back': ['lower back', 'erector spinae', 'lumbar', 'spine'],
+    gluteal: ['gluteal', 'glutes', 'gluteus maximus'],
+    quadriceps: ['quadriceps', 'quads'],
+    hamstring: ['hamstring', 'hamstrings'],
+    adductors: ['adductors', 'adductor', 'groin', 'inner thighs'],
+    'hip-flexors': ['hip flexors', 'hip flexor', 'iliopsoas'],
+    calves: ['calves', 'calf', 'gastrocnemius', 'soleus'],
+    tibialis: ['tibialis', 'tibialis anterior', 'shins'],
+}
+
 // Drawn as the silhouette, never shaded.
 export const INERT = ['head', 'hair', 'neck', 'hands', 'feet', 'knees', 'ankles'] as const
 
