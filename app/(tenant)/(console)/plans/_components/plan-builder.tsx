@@ -1,7 +1,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import MemberPicker from '@/app/(tenant)/(console)/assignments/_components/member-picker'
 import { MUSCLE_LABEL } from '@/app/(tenant)/_model/muscle-labels'
@@ -25,6 +25,7 @@ import {
   validateDays,
   validateDetails,
   validateExercises,
+  withFreshKeys,
 } from '../_model/plan-draft'
 import { GOAL_LABELS, LEVEL_LABELS } from '../_model/plan-labels'
 import {
@@ -45,6 +46,55 @@ const LAST_STEP = STEPS.length - 1
 
 const fieldClass = 'bg-background h-10 w-full rounded-md border px-3 text-sm'
 
+const DRAFT_STORAGE_VERSION = 1
+const DRAFT_SAVE_DELAY_MS = 500
+
+/** What the builder keeps per browser so a half-made plan survives a closed tab. */
+type CachedDraft = {
+  version: number
+  savedAt: number
+  step: number
+  activeDay: number
+  activeExercise: number
+  draft: PlanDraft
+}
+
+const draftStorageKey = (planId?: string) => `plan-builder-draft:${planId ?? 'new'}`
+
+const readCachedDraft = (key: string): CachedDraft | null => {
+  try {
+    const raw = window.localStorage.getItem(key)
+    if (!raw) return null
+
+    const parsed = JSON.parse(raw) as CachedDraft
+    const days = parsed?.draft?.days
+
+    if (
+      parsed?.version !== DRAFT_STORAGE_VERSION ||
+      !Array.isArray(days) ||
+      days.length === 0 ||
+      days.some((day) => !Array.isArray(day?.exercises))
+    )
+      return null
+
+    return parsed
+  } catch {
+    // Corrupt draft: fall back to the server copy instead of failing the screen.
+    return null
+  }
+}
+
+const clearCachedDraft = (key: string) => {
+  try {
+    window.localStorage.removeItem(key)
+  } catch {
+    // Storage disabled: the builder still works, it just cannot restore.
+  }
+}
+
+const formatSavedAt = (value: number) =>
+  new Intl.DateTimeFormat('fa-IR', { dateStyle: 'short', timeStyle: 'short' }).format(value)
+
 export function PlanBuilder({ planId }: { planId?: string }) {
   const router = useRouter()
   const [draft, setDraft] = useState<PlanDraft>(blankDraft)
@@ -55,13 +105,27 @@ export function PlanBuilder({ planId }: { planId?: string }) {
   const [activeExercise, setActiveExercise] = useState(0)
   const [muscles, setMuscles] = useState<MuscleOption[]>([])
 
+  // Browser draft cache: reopening the screen continues exactly where the coach left off.
+  const [hydrated, setHydrated] = useState(false)
+  const [dirty, setDirty] = useState(false)
+  const [restoredAt, setRestoredAt] = useState<number | null>(null)
+  const restoredRef = useRef(false)
+  const serverDraftRef = useRef<PlanDraft | null>(null)
+
   useEffect(() => {
     if (!planId) return
 
     let alive = true
     getPlan(planId)
       .then((detail) => {
-        if (alive) setDraft(draftFromDetail(detail))
+        if (!alive) return
+
+        const next = draftFromDetail(detail)
+        serverDraftRef.current = next
+
+        // A cached draft is the last thing the coach actually edited; server data must not
+        // replace it, or an unfinished edit silently disappears on refresh.
+        if (!restoredRef.current) setDraft(next)
       })
       .catch((error: unknown) => {
         toast.error('دریافت برنامه ناموفق بود', {
@@ -89,22 +153,87 @@ export function PlanBuilder({ planId }: { planId?: string }) {
     return () => clearTimeout(timer)
   }, [])
 
+  useEffect(() => {
+    const key = draftStorageKey(planId)
+
+    // Deferred a tick: restoring is a one-time read from an external store, and React asks that
+    // an effect not cascade state synchronously during its own body.
+    const timer = setTimeout(() => {
+      const cached = readCachedDraft(key)
+
+      if (cached) {
+        const dayIndex = Math.min(Math.max(cached.activeDay, 0), cached.draft.days.length - 1)
+        const exerciseCount = cached.draft.days[dayIndex]?.exercises.length ?? 0
+
+        setDraft(withFreshKeys(cached.draft))
+        setStep(Math.min(Math.max(cached.step, 0), LAST_STEP))
+        setActiveDay(dayIndex)
+        setActiveExercise(Math.min(Math.max(cached.activeExercise, 0), Math.max(exerciseCount - 1, 0)))
+        setRestoredAt(cached.savedAt)
+        setDirty(true)
+        restoredRef.current = true
+
+        // The cached draft is already the right screen; do not make the coach wait for a fetch
+        // whose result is going to be ignored anyway.
+        if (planId) setLoading(false)
+      } else {
+        restoredRef.current = false
+      }
+
+      setHydrated(true)
+    }, 0)
+
+    return () => clearTimeout(timer)
+  }, [planId])
+
+  // Debounced autosave, skipped until the restore above has run so a blank first render cannot
+  // overwrite a real draft.
+  useEffect(() => {
+    if (!hydrated || !dirty) return
+
+    const key = draftStorageKey(planId)
+    const timer = setTimeout(() => {
+      const payload: CachedDraft = {
+        version: DRAFT_STORAGE_VERSION,
+        savedAt: Date.now(),
+        step,
+        activeDay,
+        activeExercise,
+        draft,
+      }
+
+      try {
+        window.localStorage.setItem(key, JSON.stringify(payload))
+      } catch {
+        // Storage full or blocked; keep editing and stop promising a restore.
+      }
+    }, DRAFT_SAVE_DELAY_MS)
+
+    return () => clearTimeout(timer)
+  }, [activeDay, activeExercise, dirty, draft, hydrated, planId, step])
+
   const patchDraft = useCallback(
-    (patch: Partial<PlanDraft>) => setDraft((current) => ({ ...current, ...patch })),
+    (patch: Partial<PlanDraft>) => {
+      setDirty(true)
+      setDraft((current) => ({ ...current, ...patch }))
+    },
     [],
   )
 
   const patchDay = useCallback(
-    (index: number, patch: Partial<DayDraft>) =>
+    (index: number, patch: Partial<DayDraft>) => {
+      setDirty(true)
       setDraft((current) => ({
         ...current,
         days: current.days.map((day, dayIndex) => (dayIndex === index ? { ...day, ...patch } : day)),
-      })),
+      }))
+    },
     [],
   )
 
   const patchExercise = useCallback(
-    (dayIndex: number, exerciseIndex: number, patch: Partial<ExerciseDraft>) =>
+    (dayIndex: number, exerciseIndex: number, patch: Partial<ExerciseDraft>) => {
+      setDirty(true)
       setDraft((current) => ({
         ...current,
         days: current.days.map((day, index) =>
@@ -117,7 +246,8 @@ export function PlanBuilder({ planId }: { planId?: string }) {
               }
             : day,
         ),
-      })),
+      }))
+    },
     [],
   )
 
@@ -150,6 +280,18 @@ export function PlanBuilder({ planId }: { planId?: string }) {
 
   const goBack = () => setStep((current) => Math.max(0, current - 1))
 
+  const discardDraft = () => {
+    clearCachedDraft(draftStorageKey(planId))
+
+    const fresh = planId && serverDraftRef.current ? serverDraftRef.current : blankDraft()
+    setDraft(withFreshKeys(fresh))
+    setStep(0)
+    setActiveDay(0)
+    setActiveExercise(0)
+    setRestoredAt(null)
+    setDirty(false)
+  }
+
   const save = async () => {
     const problem =
       validateDetails(draft, !planId) ?? validateDays(draft) ?? validateExercises(draft)
@@ -160,6 +302,9 @@ export function PlanBuilder({ planId }: { planId?: string }) {
       const payload = draftToPayload(draft)
       if (planId) await updatePlan(planId, payload)
       else await createPlan(payload)
+
+      // The server now holds this draft; a stale browser copy would shadow the saved version.
+      clearCachedDraft(draftStorageKey(planId))
       toast.success(planId ? 'برنامه به‌روزرسانی شد' : 'برنامه ایجاد شد')
       router.push('/plans')
     } catch (error) {
@@ -206,6 +351,21 @@ export function PlanBuilder({ planId }: { planId?: string }) {
           بازگشت به فهرست
         </Button>
       </header>
+
+      {restoredAt && (
+        <div
+          role="status"
+          className="bg-primary/10 border-primary/30 flex flex-wrap items-center justify-between gap-2 rounded-lg border px-3 py-2 text-xs"
+        >
+          <span>
+            پیش‌نویس این برنامه در مرورگر ذخیره شده بود و بازیابی شد.
+            <span className="text-muted-foreground"> آخرین ذخیره: {formatSavedAt(restoredAt)}</span>
+          </span>
+          <Button type="button" size="sm" variant="ghost" onClick={discardDraft}>
+            شروع از نو
+          </Button>
+        </div>
+      )}
 
       <StepIndicator step={step} />
 

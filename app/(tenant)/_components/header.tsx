@@ -100,6 +100,10 @@ export default function Header({ data: user, error }: HeaderProps) {
           {currentTitle}
         </span>
 
+        <div className="col-span-3 row-start-2 min-w-0 sm:order-none sm:col-span-1 sm:row-auto sm:ms-auto sm:w-72 lg:w-96">
+          <SearchForm className="w-full min-w-0" />
+        </div>
+
         <div className="col-start-3 row-start-1 flex min-w-0 shrink-0 items-center justify-end gap-1 sm:order-none sm:ms-0 sm:gap-2">
           <OfflineIndicator />
           <NavUser isHeader data={user} error={error} />

@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react'
 
 import { getPreferences } from '@/app/(tenant)/_api/preferences-api'
 import { AppTheme, type MemberPreferences } from '@/app/(tenant)/_model/preferences'
+import { hasLocalThemeChoice } from '@/lib/theme-choice'
 
 const THEME_NAME: Record<AppTheme, 'system' | 'light' | 'dark'> = {
   [AppTheme.System]: 'system',
@@ -30,7 +31,12 @@ export function ThemeSync() {
 
         if (cancelled) return
 
+        // Colours still apply; only the theme is guarded, because a click that happened while
+        // this read was in flight is newer than the response.
         setPreferences(loaded)
+
+        if (hasLocalThemeChoice()) return
+
         setTheme(THEME_NAME[loaded.theme] ?? 'system')
       } catch {
         // Look settings are cosmetic: a failed read keeps the gym defaults.

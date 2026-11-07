@@ -108,6 +108,19 @@ export const blankDraft = (): PlanDraft => ({
   days: [blankDay(0)],
 })
 
+/**
+ * Re-key a draft restored from browser storage: the key sequence restarts on reload, so cached
+ * keys can collide with the next blank day/exercise and break React list identity.
+ */
+export const withFreshKeys = (draft: PlanDraft): PlanDraft => ({
+  ...draft,
+  days: draft.days.map((day) => ({
+    ...day,
+    key: nextKey(),
+    exercises: day.exercises.map((exercise) => ({ ...exercise, key: nextKey() })),
+  })),
+})
+
 const numberOrNull = (value: string): number | null =>
   value.trim() === '' ? null : Number(value)
 

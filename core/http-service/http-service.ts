@@ -45,7 +45,12 @@ const getTenantFromClientHost = (clientHost: string): string | null => {
 }
 
 
-const getBaseURL = async (): Promise<{ baseURL: string; tenant: string | null }> => {
+/**
+ * Resolves the API origin for the current host, including the tenant subdomain in production.
+ * Exported so other transports that must hit the same backend (the SignalR live hub) do not
+ * reinvent the tenant rules and accidentally talk to the bare base domain.
+ */
+export const getBaseURL = async (): Promise<{ baseURL: string; tenant: string | null }> => {
   const configuredApiUrl = API_URL?.trim()
 
   if (!configuredApiUrl) {

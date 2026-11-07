@@ -1,10 +1,21 @@
 'use client'
 
-import { Moon, Sun } from '@/components/icons'
 import { useTheme } from 'next-themes'
-import { useEffect, useState } from 'react'
+import { useSyncExternalStore } from 'react'
 
+import { Moon, Sun } from '@/components/icons'
 import { Button } from '@/components/ui/button'
+import { markThemeChoice } from '@/lib/theme-choice'
+
+// Hydration-safe "mounted" flag without a setState-in-effect cascade.
+const subscribe = () => () => {}
+
+const useMounted = () =>
+  useSyncExternalStore(
+    subscribe,
+    () => true,
+    () => false,
+  )
 
 export function ModeToggle({
   onThemeChange,
@@ -13,10 +24,7 @@ export function ModeToggle({
   onThemeChange?: (theme: 'light' | 'dark') => void
 }) {
   const { resolvedTheme, setTheme } = useTheme()
-  const [mounted, setMounted] = useState(false)
-
-  useEffect(() => setMounted(true), [])
-
+  const mounted = useMounted()
   const isDark = mounted && resolvedTheme === 'dark'
 
   return (
@@ -28,6 +36,7 @@ export function ModeToggle({
       title={isDark ? 'حالت روشن' : 'حالت تیره'}
       onClick={() => {
         const next = isDark ? 'light' : 'dark'
+        markThemeChoice()
         setTheme(next)
         onThemeChange?.(next)
       }}

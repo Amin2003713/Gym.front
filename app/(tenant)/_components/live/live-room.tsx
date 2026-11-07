@@ -42,7 +42,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { API_URL } from '@/configs/global'
+import { getBaseURL } from '@/core/http-service/http-service'
 import { toast } from '@/lib/toast'
 
 type Mode = 'support' | 'webinar'
@@ -76,10 +76,22 @@ type ChatMessage = { from: string; name: string; body: string; at: string }
 
 type Signal = { from: string; kind: 'offer' | 'answer' | 'ice'; payload: string }
 
-const API_BASE = API_URL?.trim() ?? ''
-const HUB_URL = API_BASE
-  ? `${/^[a-z][a-z0-9+.-]*:\/\//i.test(API_BASE) ? API_BASE : `http://${API_BASE}`}/hubs/live`
-  : '/hubs/live'
+/**
+ * The hub must live on the same origin as the REST API, tenant subdomain included. Using the raw
+ * NEXT_PUBLIC_API_URL sent a tenant page's signaling to https://gymgroup.cv, a different origin,
+ * where credentialed SignalR requests fail CORS (the API answers `Access-Control-Allow-Origin: *`).
+ */
+async function resolveHubUrl() {
+  try {
+    const { baseURL } = await getBaseURL()
+    return secureHubUrl(`${baseURL}/hubs/live`)
+  } catch {
+    // No API URL configured: stay on the page origin instead of guessing a host.
+    return secureHubUrl(
+      typeof window === 'undefined' ? '/hubs/live' : `${window.location.origin}/hubs/live`,
+    )
+  }
+}
 
 const ICE_SERVERS: RTCIceServer[] = [
   { urls: process.env.NEXT_PUBLIC_STUN_URL || 'stun:stun.l.google.com:19302' },
@@ -133,7 +145,8 @@ export function LiveRoom({ staff = false }: { staff?: boolean }) {
   const [phase, setPhase] = useState<'lobby' | 'room'>('lobby')
   const [mode, setMode] = useState<Mode>('support')
   const [title, setTitle] = useState('جلسهٔ زنده')
-  const [displayName, setDisplayName] = useState('')
+  // Staff can start a room with the defaults; a saved name or an edit replaces it before creation.
+  const [displayName, setDisplayName] = useState(staff ? 'میزبان' : '')
   const [code, setCode] = useState('')
   const [room, setRoom] = useState<Snapshot | null>(null)
   const [busy, setBusy] = useState(false)
@@ -526,7 +539,7 @@ export function LiveRoom({ staff = false }: { staff?: boolean }) {
   const connect = useCallback(async () => {
     if (hubRef.current) return hubRef.current
     const connection = new HubConnectionBuilder()
-      .withUrl(secureHubUrl(HUB_URL))
+      .withUrl(await resolveHubUrl())
       .withAutomaticReconnect([0, 2000, 5000, 10000])
       .configureLogging(LogLevel.Warning)
       .build()
