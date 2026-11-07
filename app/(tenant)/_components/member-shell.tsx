@@ -1,12 +1,14 @@
 'use client'
 
-import { LayoutDashboard, LogOut, UserIcon } from '@/components/icons'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useCallback, useTransition } from 'react'
 
 import { signOutAction } from '@/actions/auth'
+import { getPreferences, savePreferences } from '@/app/(tenant)/_api/preferences-api'
+import { AppTheme } from '@/app/(tenant)/_model/preferences'
 import { HamOwjBrand } from '@/components/branding/hamowj-mark'
+import { LayoutDashboard, LogOut, UserIcon } from '@/components/icons'
 import { ModeToggle } from '@/components/mode-toggle'
 import { OfflineIndicator } from '@/components/offline/offline-indicator'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -21,8 +23,6 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar'
-import { getPreferences, savePreferences } from '@/app/(tenant)/_api/preferences-api'
-import { AppTheme } from '@/app/(tenant)/_model/preferences'
 import { useUserRoles } from '@/hooks/use-user-roles'
 import { Problem } from '@/types/http-errors.interface'
 import { PublicUser } from '@/types/user.interface'
@@ -95,13 +95,13 @@ export function MemberShell({ user, error, children }: MemberShellProps) {
             </div>
           </header>
 
-          <main className="mx-auto w-full min-w-0 max-w-6xl flex-1 overflow-x-clip px-3 pt-4 pb-28 sm:px-4 md:pb-10">
+          <main className="mx-auto w-full min-w-0 max-w-6xl flex-1 overflow-x-clip px-3 pt-4 pb-[calc(7rem+env(safe-area-inset-bottom))] sm:px-4 md:pb-10">
             {children}
           </main>
 
           <nav
             aria-label="ناوبری اصلی"
-            className="bg-card/95 supports-[backdrop-filter]:bg-card/85 fixed inset-x-0 bottom-0 z-40 border-t backdrop-blur md:hidden"
+            className="bg-card/95 supports-[backdrop-filter]:bg-card/85 safe-bottom fixed inset-x-0 bottom-0 z-40 border-t backdrop-blur md:hidden"
           >
             <div className="mx-auto grid max-w-lg grid-cols-6">
               {MEMBER_NAV.map(({ href, label, icon: Icon }) => {
@@ -112,7 +112,7 @@ export function MemberShell({ user, error, children }: MemberShellProps) {
                     key={href}
                     href={href}
                     aria-current={active ? 'page' : undefined}
-                    className={`flex flex-col items-center gap-1 py-2.5 text-[9px] font-semibold sm:text-[10px] transition-colors ${
+                    className={`flex min-h-11 flex-col items-center gap-1 py-2.5 text-[9px] font-semibold transition-colors sm:text-[10px] ${
                       active ? 'text-primary' : 'text-muted-foreground'
                     }`}
                   >

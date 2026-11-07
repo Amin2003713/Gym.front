@@ -1,8 +1,9 @@
 'use client'
 
-import {Activity, Award, CalendarDays, Dumbbell, Flame, Info, Target, TrendingUp, Weight} from '@/components/icons'
 import {useMemo, useState, type ReactNode} from 'react'
 import {Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis} from 'recharts'
+
+import {Activity, Award, CalendarDays, Dumbbell, Flame, Info, Target, TrendingUp, Weight} from '@/components/icons'
 
 import {MuscleExplorer} from './muscle-explorer'
 
@@ -209,7 +210,7 @@ function Overview() {
 
                 <Panel title="پیوستگی تمرین" description="نقشه فعالیت یک سال اخیر">
                     <ActivityHeatmap/>
-                    <div className="mt-4 grid grid-cols-3 gap-2 border-t pt-4 text-center">
+                    <div className="mt-4 grid grid-cols-1 gap-2 border-t pt-4 text-center min-[360px]:grid-cols-3">
                         <div><p className="text-xl font-extrabold">۶</p><p
                             className="mt-1 text-xs text-muted-foreground">روز پیوسته</p></div>
                         <div><p className="text-xl font-extrabold">۳</p><p

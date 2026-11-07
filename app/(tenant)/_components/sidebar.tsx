@@ -6,25 +6,13 @@ import { useSession } from 'next-auth/react'
 import * as React from 'react'
 
 import { HamOwjBrand } from '@/components/branding/hamowj-mark'
-import { ChevronRight } from '@/components/icons'
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from '@/components/ui/collapsible'
 import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarItem,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  SidebarMenuSub,
+  type SidebarItem,
 } from '@/components/ui/sidebar'
-import { SIDEBAR_OPTIONS } from '@/constants/sidebar'
+import { SIDEBAR_SECTIONS } from '@/constants/sidebar'
 import { normalizeApiUserRole } from '@/constants/user-role'
 import { ApiUserRole } from '@/features/users/api/users-api'
 import { useIsMounted } from '@/hooks/use-is-mounted'
@@ -51,29 +39,32 @@ function useSessionRoles(): ApiUserRole[] {
 
 export function MainSidebar({ data: user, error, ...props }: MainSidebarProps) {
   const userRoles = useSessionRoles()
+  const isMounted = useIsMounted()
+  const pathname = usePathname()
 
   return (
     <Sidebar
       side="right"
-      className="border-border md:top-14 md:h-[calc(100svh-3.5rem)]"
+      className="border-border bg-sidebar md:top-14 md:h-[calc(100svh-3.5rem)]"
       {...props}
     >
-      {/* HamOwj lockup: mark + Persian and Latin wordmarks (guide: approved lockup). */}
-      <div className="bg-card mx-3 my-3 rounded-lg border px-3 py-4 shadow-sm">
+      {/* HamOwj lockup: orange mark tile on the ivory surface (guide: approved lockup). */}
+      <div className="mx-3 mt-3 mb-2">
         <Link
           href="/"
           aria-label="هم‌اوج؛ داشبورد"
-          className="focus-visible:ring-ring flex flex-row items-center justify-between gap-3 rounded-lg outline-none focus-visible:ring-[3px] focus-visible:ring-offset-2"
+          className="focus-visible:ring-ring flex items-center gap-3 rounded-xl border border-transparent p-1 outline-none focus-visible:ring-[3px] focus-visible:ring-offset-2"
         >
-          <span className="bg-foreground text-background flex size-12 shrink-0 items-center justify-center rounded-lg">
-            <HamOwjBrand className="size-9" />
+          <span className="bg-primary text-primary-foreground flex size-11 shrink-0 items-center justify-center rounded-xl shadow-sm">
+            <HamOwjBrand className="size-8" />
           </span>
-
-          <span className="flex min-w-0 flex-col items-start">
-            <span className="font-extrabold tracking-tight">هم‌اوج</span>
+          <span className="flex min-w-0 flex-col">
+            <span className="text-base leading-6 font-extrabold tracking-tight">
+              هم‌اوج
+            </span>
             <span
               dir="ltr"
-              className="text-muted-foreground text-xs font-semibold"
+              className="text-muted-foreground text-[11px] leading-4 font-semibold"
             >
               HamOwj
             </span>
@@ -81,103 +72,88 @@ export function MainSidebar({ data: user, error, ...props }: MainSidebarProps) {
         </Link>
       </div>
 
-      <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {SIDEBAR_OPTIONS.tree.map((item, index) => (
-                <Tree
-                  key={`${item.name}-${index}`}
-                  item={item}
-                  userRoles={userRoles}
-                />
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+      <SidebarContent className="gap-1 px-2 pb-3">
+        {isMounted &&
+          SIDEBAR_SECTIONS.map((section) => {
+            const allowed =
+              section.role.length === 0 ||
+              section.role.some((value) => userRoles.includes(value))
+            if (!allowed) return null
+
+            const visible = section.items.filter(
+              (item) =>
+                !item.role?.length ||
+                item.role.some((value) => userRoles.includes(value)),
+            )
+            if (!visible.length) return null
+
+            return (
+              <section key={section.title} className="pt-2">
+                <p className="text-muted-foreground/90 px-2 pb-1.5 text-[10px] font-extrabold tracking-[0.14em]">
+                  {section.title}
+                </p>
+                <ul className="space-y-0.5">
+                  {visible.map((item) => (
+                    <SidebarRow
+                      key={`${section.title}-${item.name}`}
+                      item={item}
+                      pathname={pathname}
+                    />
+                  ))}
+                </ul>
+              </section>
+            )
+          })}
       </SidebarContent>
-      <SidebarFooter>
+
+      <SidebarFooter className="border-sidebar-border border-t p-2">
         <NavUser data={user} error={error} />
       </SidebarFooter>
     </Sidebar>
   )
 }
 
-function Tree({
+function SidebarRow({
   item,
-  userRoles,
-  inheritedRoles = [],
+  pathname,
 }: {
   item: SidebarItem
-  userRoles: ApiUserRole[]
-  /** Roles of the parent node; a child without its own `role` is limited to these. */
-  inheritedRoles?: ApiUserRole[]
+  pathname: string
 }) {
-  const isMounted = useIsMounted()
-  const pathname = usePathname()
-  const { name, path, icon, colorClass, children, role } = item
-  const href = path ? (path === '/' ? '/' : path) : undefined
+  if (!item.path) return null
 
-  const effectiveRoles = role && role.length > 0 ? role : inheritedRoles
-  const hasRoleAccess =
-    effectiveRoles.length === 0 ||
-    effectiveRoles.some((value) => userRoles.includes(value))
-
-  // Prevent hydration mismatch: the session role is only known on the client.
-  if (!isMounted) return null
-  if (!hasRoleAccess) return null
-
-  if (!children?.length) {
-    return (
-      <SidebarMenuButton
-        asChild
-        isActive={href ? pathname === href : false}
-        className="data-[active=true]:bg-primary/15 data-[active=true]:text-foreground data-[active=true]:before:bg-primary hover:bg-muted focus-visible:ring-ring relative rounded-sm transition-colors focus-visible:ring-[3px] focus-visible:ring-offset-2 data-[active=true]:font-semibold data-[active=true]:before:absolute data-[active=true]:before:inset-y-1.5 data-[active=true]:before:start-0 data-[active=true]:before:w-1 data-[active=true]:before:rounded-full data-[active=true]:before:content-['']"
-      >
-        {href ? (
-          <Link
-            href={href}
-            className="hover:bg-muted focus-visible:ring-ring flex items-center gap-2 rounded-sm transition-colors focus-visible:ring-[3px] focus-visible:ring-offset-2"
-          >
-            <span className={colorClass}>{icon}</span>
-            {name}
-          </Link>
-        ) : (
-          <>
-            <span className={colorClass}>{icon}</span>
-            {name}
-          </>
-        )}
-      </SidebarMenuButton>
-    )
-  }
+  const active =
+    item.path === '/' ? pathname === '/' : pathname.startsWith(item.path)
 
   return (
-    <SidebarMenuItem>
-      <Collapsible
-        className="group/collapsible [&[data-state=open]>button>svg:first-child]:rotate-90"
-        defaultOpen
+    <li>
+      <Link
+        href={item.path}
+        aria-current={active ? 'page' : undefined}
+        className={`group relative flex min-h-10 items-center gap-2.5 rounded-lg px-2 py-1.5 text-[13px] transition-colors focus-visible:ring-[3px] focus-visible:ring-ring focus-visible:outline-none ${
+          active
+            ? 'bg-sidebar-accent text-sidebar-accent-foreground font-extrabold'
+            : 'text-sidebar-foreground/85 hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground font-semibold'
+        }`}
       >
-        <CollapsibleTrigger asChild>
-          <SidebarMenuButton className="hover:bg-muted focus-visible:ring-ring flex items-center gap-2 rounded-sm transition-colors focus-visible:ring-[3px] focus-visible:ring-offset-2">
-            <ChevronRight className="h-4 w-4 transition-transform" />
-            <span className={colorClass}>{icon}</span>
-            {name}
-          </SidebarMenuButton>
-        </CollapsibleTrigger>
-        <CollapsibleContent>
-          <SidebarMenuSub>
-            {children.map((subItem, index) => (
-              <Tree
-                key={`${subItem.name}-${index}`}
-                item={subItem}
-                userRoles={userRoles}
-                inheritedRoles={effectiveRoles}
-              />
-            ))}
-          </SidebarMenuSub>
-        </CollapsibleContent>
-      </Collapsible>
-    </SidebarMenuItem>
+        {active && (
+          <span
+            aria-hidden
+            className="bg-primary absolute inset-y-1.5 start-0 w-1 rounded-full"
+          />
+        )}
+        <span
+          aria-hidden
+          className={`flex size-8 shrink-0 items-center justify-center rounded-lg transition-colors ${
+            active
+              ? 'bg-primary text-primary-foreground'
+              : 'bg-muted/70 text-muted-foreground group-hover:bg-background group-hover:text-foreground'
+          }`}
+        >
+          {item.icon}
+        </span>
+        <span className="min-w-0 truncate">{item.name}</span>
+      </Link>
+    </li>
   )
 }

@@ -184,7 +184,11 @@ const draftsFromSlots = (slots: PlanExerciseDetail[]): ExerciseDraft[] => {
 }
 
 /** Validation mirrors the server validators; the server stays the source of truth. */
-export const validateDetails = (draft: PlanDraft): string | null => {
+export const validateDetails = (
+  draft: PlanDraft,
+  /** Creating a private plan names its member; an existing plan already has its assignment. */
+  requireAssignee = true,
+): string | null => {
   if (!draft.title.trim()) return 'عنوان برنامه الزامی است.'
 
   const duration =
@@ -192,7 +196,7 @@ export const validateDetails = (draft: PlanDraft): string | null => {
   if (!Number(duration) || Number(duration) < 1) return 'مدت برنامه را وارد کنید.'
 
   // Privacy rule, mirrored by the domain and the server validator.
-  if (draft.visibility === PlanVisibility.Private && !draft.assignedMemberUserId)
+  if (requireAssignee && draft.visibility === PlanVisibility.Private && !draft.assignedMemberUserId)
     return 'برای برنامه خصوصی انتخاب شاگرد الزامی است.'
 
   if (draft.days.length > MAX_DAYS_UI || draft.days.length > MAX_DAYS)

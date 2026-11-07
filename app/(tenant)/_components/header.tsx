@@ -5,8 +5,8 @@ import { Fragment, useEffect } from 'react'
 
 import { NavUser } from '@/app/(tenant)/_components/nav-user'
 import { SidebarIcon } from '@/components/icons'
-import { OfflineIndicator } from '@/components/offline/offline-indicator'
 import { ModeToggle } from '@/components/mode-toggle'
+import { OfflineIndicator } from '@/components/offline/offline-indicator'
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -16,7 +16,6 @@ import {
   BreadcrumbSeparator,
 } from '@/components/ui/breadcrumb'
 import { Button } from '@/components/ui/button'
-import { Separator } from '@/components/ui/separator'
 import { useSidebar } from '@/components/ui/sidebar'
 import { itemsPageSegments } from '@/constants/routes-translation'
 import { toast } from '@/lib/toast'
@@ -59,15 +58,14 @@ export default function Header({ data: user, error }: HeaderProps) {
     : 'داشبورد'
 
   return (
-    <header className="bg-card/95 supports-[backdrop-filter]:bg-card/85 sticky top-0 z-50 w-full min-w-0 border-b backdrop-blur">
-      {' '}
+    <header className="bg-card/95 supports-[backdrop-filter]:bg-card/85 sticky top-0 z-50 w-full min-w-0 border-b shadow-[0_1px_0_rgb(27_26_27_/_4%)] backdrop-blur">
       {/*
         One row on tablet and up. On phones the search drops to a second row instead of
         squeezing the title and the account menu out of the viewport.
       */}
-      <div className="grid w-full min-w-0 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-2 gap-y-2 px-2 py-2 sm:flex sm:h-[var(--header-height)] sm:flex-nowrap sm:px-4 sm:py-0">
+      <div className="grid w-full min-w-0 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-2 gap-y-2 px-2 py-2 sm:flex sm:h-[var(--header-height)] sm:flex-nowrap sm:gap-3 sm:px-4 sm:py-0">
         <Button
-          className="size-9 shrink-0"
+          className="bg-muted/60 hover:bg-muted size-9 shrink-0 rounded-lg"
           variant="ghost"
           size="icon"
           onClick={toggleSidebar}
@@ -76,10 +74,7 @@ export default function Header({ data: user, error }: HeaderProps) {
           <SidebarIcon />
         </Button>
 
-        <Separator
-          orientation="vertical"
-          className="mx-1 hidden h-4 sm:block"
-        />
+        <span aria-hidden className="bg-border hidden h-6 w-px sm:block" />
 
         <Breadcrumb className="hidden min-w-0 md:block">
           <BreadcrumbList>
@@ -105,14 +100,10 @@ export default function Header({ data: user, error }: HeaderProps) {
           {currentTitle}
         </span>
 
-        <div className="col-span-3 row-start-2 min-w-0 sm:order-none sm:col-span-1 sm:row-auto sm:ms-auto">
-          <SearchForm className="w-full min-w-0 sm:w-auto" />
-        </div>
-
         <div className="col-start-3 row-start-1 flex min-w-0 shrink-0 items-center justify-end gap-1 sm:order-none sm:ms-0 sm:gap-2">
           <OfflineIndicator />
           <NavUser isHeader data={user} error={error} />
-          <Separator orientation="vertical" className="hidden h-6 sm:block" />
+          <span aria-hidden className="bg-border hidden h-6 w-px sm:block" />
           <ModeToggle />
         </div>
       </div>

@@ -13,6 +13,7 @@ export function useOfflineStatus() {
   const [online, setOnline] = useState(true)
   const [pending, setPending] = useState(0)
   const [syncing, setSyncing] = useState(false)
+  const [lastSyncedAt, setLastSyncedAt] = useState<number | null>(null)
 
   const refresh = useCallback(async () => {
     const count = await queuedMutationCount()
@@ -35,7 +36,10 @@ export function useOfflineStatus() {
     const onSync = (event: Event) => {
       const detail = (event as CustomEvent<{ state: string }>).detail
       setSyncing(detail?.state === 'started')
-      if (detail?.state === 'finished') void refresh()
+      if (detail?.state === 'finished') {
+        setLastSyncedAt(Date.now())
+        void refresh()
+      }
     }
 
     window.addEventListener('online', onOnline)
@@ -58,9 +62,10 @@ export function useOfflineStatus() {
       await flushOfflineQueue()
     } finally {
       setSyncing(false)
+      setLastSyncedAt(Date.now())
       await refresh()
     }
   }, [refresh])
 
-  return { online, pending, syncing, syncNow, refresh }
+  return { online, pending, syncing, syncNow, refresh, lastSyncedAt }
 }

@@ -368,6 +368,57 @@
     --shadow-elevated: 0 18px 48px rgb(0 0 0 / 32%);
 }
 
+/* Small screens: phones are the primary device on the gym floor.
+   - iOS zooms any focused control below 16px, which shifts the whole sheet; touch
+     phones therefore get 16px form controls.
+   - Editors scroll inside their own containers, never the page.
+   - Coarse pointers get momentum scrolling, no double-tap delay and contained
+     overscroll so a table swipe does not pull the page. */
+@layer base {
+    html,
+    body {
+        overflow-x: clip;
+    }
+
+    @media (max-width: 640px) {
+        input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="file"]):not([type="color"]),
+        select,
+        textarea {
+            font-size: 16px;
+        }
+    }
+}
+
+@media (pointer: coarse) {
+    button, a, [role="button"], [role="tab"] {
+        touch-action: manipulation;
+    }
+
+    /* Finger-sized targets: 36px desktop controls grow to 40px on touch screens
+       without changing the desktop density. */
+    [data-slot="button"],
+    [data-slot="select-trigger"],
+    input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="file"]),
+    select,
+    textarea {
+        min-height: 2.5rem;
+    }
+
+    [data-slot="table-container"],
+    .overflow-x-auto,
+    .overflow-y-auto,
+    .overflow-auto {
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior: contain;
+    }
+}
+
+@layer utilities {
+    .safe-bottom {
+        padding-bottom: env(safe-area-inset-bottom);
+    }
+}
+
 @layer base {
     button, a, input, textarea, select {
         -webkit-tap-highlight-color: transparent;

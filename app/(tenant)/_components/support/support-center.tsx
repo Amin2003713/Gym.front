@@ -1,20 +1,7 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
-import {
-  AlertCircle,
-  ChevronLeft,
-  Inbox,
-  LifeBuoy,
-  MessageCircle,
-  Plus,
-  Radio,
-  RefreshCw,
-  Search,
-  Send,
-  Ticket,
-} from '@/components/icons'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import {
   createSupportTicket,
@@ -29,6 +16,19 @@ import {
   type SupportTicket,
   type SupportTicketListItem,
 } from '@/app/(tenant)/_model/support.types'
+import {
+  AlertCircle,
+  ChevronLeft,
+  Inbox,
+  LifeBuoy,
+  MessageCircle,
+  Plus,
+  Radio,
+  RefreshCw,
+  Search,
+  Send,
+  Ticket,
+} from '@/components/icons'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -123,7 +123,9 @@ export function SupportCenter({ staff = false }: { staff?: boolean }) {
   }, [])
 
   useEffect(() => {
-    void load()
+    // Loaded on the next tick so the first paint is not blocked by the ticket read.
+    const timer = window.setTimeout(() => void load(), 0)
+    return () => window.clearTimeout(timer)
   }, [load])
 
   const openTicket = useCallback(async (id: string) => {
@@ -534,7 +536,7 @@ export function SupportCenter({ staff = false }: { staff?: boolean }) {
                       }
                     }}
                   />
-                  <div className="flex items-center justify-between gap-2">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
                     <span className="text-muted-foreground text-[11px]">
                       {locked
                         ? 'برای ادامه، وضعیت را از حالت حل‌شده/بسته خارج کنید.'

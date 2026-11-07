@@ -1,14 +1,14 @@
 'use client'
 
-import { ChevronLeft, Flame, Gauge, Timer } from '@/components/icons'
 import Link from 'next/link'
 import { useEffect, useMemo, useState } from 'react'
 
 import { getMeasurementSummary } from '@/app/(tenant)/_api/training-api'
 import { InsightEmpty, InsightSection } from '@/app/(tenant)/_components/insight/insight-shell'
-import { MUSCLE_LABEL } from '@/app/(tenant)/_model/muscle-labels'
 import type { WorkoutMuscleStats } from '@/app/(tenant)/_model/muscle-balance'
+import { MUSCLE_LABEL } from '@/app/(tenant)/_model/muscle-labels'
 import type { SessionResponse } from '@/app/(tenant)/_model/workout.types'
+import { ChevronLeft, Flame, Gauge, Timer } from '@/components/icons'
 import { useFigureGender } from '@/hooks/use-figure-gender'
 
 const fa = (value: number) => (value ?? 0).toLocaleString('fa-IR')
@@ -338,7 +338,7 @@ export function StatsExtras({
           <InsightEmpty message="هنوز ست کاری با RIR یا RPE ثبت نشده است؛ می‌توانی از انتخابگر شدت در فرم ست استفاده کنی." />
         ) : (
           <>
-            <div className="mb-3 grid grid-cols-3 gap-2">
+            <div className="mb-3 grid grid-cols-1 gap-2 min-[360px]:grid-cols-3">
               {[
                 { label: 'میانگین شدت', value: `${fa(Math.round(effort.average))}٪` },
                 { label: 'ست نزدیک ناتوانی', value: `${fa(Math.round(effort.hardShare))}٪` },

@@ -154,6 +154,8 @@ export function LiveRoom({ staff = false }: { staff?: boolean }) {
   const [exerciseResults, setExerciseResults] = useState<ExerciseSearchItem[]>([])
   const [searchingExercises, setSearchingExercises] = useState(false)
   const [selfId, setSelfId] = useState<string | null>(null)
+  // Camera and microphone are optional: a member on a broken device must still reach the room.
+  const [mediaNotice, setMediaNotice] = useState<string | null>(null)
 
   const hubRef = useRef<HubConnection | null>(null)
   const roomRef = useRef<Snapshot | null>(null)
@@ -221,6 +223,7 @@ export function LiveRoom({ staff = false }: { staff?: boolean }) {
     setExerciseQuery('')
     setExerciseResults([])
     setSearchingExercises(false)
+    setMediaNotice(null)
     loggedExerciseRef.current.clear()
     noSessionNotifiedRef.current = false
     setRoom(null)
@@ -535,21 +538,110 @@ export function LiveRoom({ staff = false }: { staff?: boolean }) {
     return connection
   }, [attachHandlers])
 
-  const acquireMedia = useCallback(async () => {
-    if (!window.isSecureContext)
-      throw new Error('برای پخش زنده، صفحه باید روی HTTPS یا localhost باز شود.')
-    if (!navigator.mediaDevices?.getUserMedia)
-      throw new Error('مرورگر شما از پخش زنده پشتیبانی نمی‌کند.')
-    const stream = await navigator.mediaDevices.getUserMedia({
-      audio: true,
-      video: { width: { ideal: 1280 }, height: { ideal: 720 } },
-    })
-    localStreamRef.current = stream
-    setLocalStream(stream)
-    setMicOn(true)
-    setCamOn(true)
-    return stream
+  /**
+   * Best-effort device setup. It never throws: a missing, busy or denied camera must not stop a
+   * member from joining a class or a trainer from opening a support room. The room simply starts
+   * with chat/hand-raising and the user can switch devices on from the call bar afterwards.
+   */
+  const acquireMedia = useCallback(async (): Promise<MediaStream | null> => {
+    setMediaNotice(null)
+
+    if (typeof navigator === 'undefined' || !navigator.mediaDevices?.getUserMedia) {
+      setMediaNotice('این مرورگر دوربین یا میکروفون را در اختیار برنامه نمی‌گذارد؛ بدون تصویر وارد شدید.')
+      return null
+    }
+
+    if (!window.isSecureContext) {
+      setMediaNotice('برای روشن کردن دوربین، صفحه باید روی HTTPS باز شود؛ اکنون بدون تصویر وارد شده‌اید.')
+      return null
+    }
+
+    // Ask for both first, then degrade to audio-only / video-only so a single missing device
+    // does not cost the user the other one.
+    const attempts: MediaStreamConstraints[] = [
+      { audio: true, video: { width: { ideal: 1280 }, height: { ideal: 720 } } },
+      { audio: true, video: false },
+      { audio: false, video: { width: { ideal: 1280 }, height: { ideal: 720 } } },
+    ]
+
+    let lastError: unknown = null
+
+    for (const constraints of attempts) {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia(constraints)
+        localStreamRef.current = stream
+        setLocalStream(stream)
+        setMicOn(stream.getAudioTracks().length > 0)
+        setCamOn(stream.getVideoTracks().length > 0)
+
+        if (stream.getVideoTracks().length === 0)
+          setMediaNotice('دوربین در دسترس نبود؛ با میکروفون وارد شدید. می‌توانید بعداً دوربین را روشن کنید.')
+        else if (stream.getAudioTracks().length === 0)
+          setMediaNotice('میکروفون در دسترس نبود؛ با دوربین وارد شدید. می‌توانید بعداً میکروفون را روشن کنید.')
+
+        return stream
+      } catch (cause) {
+        lastError = cause
+      }
+    }
+
+    setMediaNotice(
+      `${mediaError(lastError)} بدون دوربین و میکروفون هم می‌توانید در کلاس بمانید و از گفتگو استفاده کنید.`,
+    )
+    return null
   }, [])
+
+  /** Turns one device on after joining (or retries a permission the user just allowed). */
+  const enableMedia = useCallback(
+    async (kind: 'audio' | 'video') => {
+      if (typeof navigator === 'undefined' || !navigator.mediaDevices?.getUserMedia) {
+        setMediaNotice('این مرورگر دسترسی به دستگاه را پشتیبانی نمی‌کند.')
+        return
+      }
+
+      try {
+        const added = await navigator.mediaDevices.getUserMedia(
+          kind === 'audio'
+            ? { audio: true }
+            : { video: { width: { ideal: 1280 }, height: { ideal: 720 } } },
+        )
+        const track = kind === 'audio' ? added.getAudioTracks()[0] : added.getVideoTracks()[0]
+        if (!track) return
+
+        let current = localStreamRef.current
+        if (!current) {
+          current = new MediaStream()
+          localStreamRef.current = current
+        }
+        current.addTrack(track)
+        setLocalStream(current)
+        setMicOn(current.getAudioTracks().some((candidate) => candidate.enabled))
+        setCamOn(current.getVideoTracks().some((candidate) => candidate.enabled))
+        setMediaNotice(null)
+
+        if (shouldPublish()) {
+          for (const [target, pc] of pcsRef.current) {
+            const sender = pc.getSenders().find((candidate) => candidate.track?.kind === track.kind)
+            if (sender) await sender.replaceTrack(track).catch(() => {})
+            else pc.addTrack(track, current)
+            void negotiate(target)
+          }
+        }
+
+        void hubRef.current
+          ?.send(
+            'SetMediaState',
+            current.getAudioTracks().some((candidate) => candidate.enabled),
+            current.getVideoTracks().some((candidate) => candidate.enabled),
+            screenOn,
+          )
+          .catch(() => {})
+      } catch (cause) {
+        setMediaNotice(`${mediaError(cause)} می‌توانید بدون این دستگاه ادامه دهید.`)
+      }
+    },
+    [negotiate, screenOn, shouldPublish],
+  )
 
   const persistName = useCallback((name: string) => {
     localStorage.setItem('live-name', name)
@@ -562,7 +654,7 @@ export function LiveRoom({ staff = false }: { staff?: boolean }) {
 
     setBusy(true)
     try {
-      await acquireMedia()
+      const stream = await acquireMedia()
       const connection = await connect()
       const snapshot = await connection.invoke<Snapshot>(
         'CreateRoom',
@@ -575,18 +667,16 @@ export function LiveRoom({ staff = false }: { staff?: boolean }) {
       setCurrentExercise(null)
       setPhase('room')
       persistName(name)
-      void connection.send('SetMediaState', true, true, false).catch(() => {})
+      void connection
+        .send(
+          'SetMediaState',
+          !!stream?.getAudioTracks().length,
+          !!stream?.getVideoTracks().length,
+          false,
+        )
+        .catch(() => {})
     } catch (cause) {
-      if (!roomRef.current) {
-        localStreamRef.current?.getTracks().forEach((track) => track.stop())
-        localStreamRef.current = null
-        setLocalStream(null)
-        setMicOn(false)
-        setCamOn(false)
-      }
-      setError(cause instanceof Error && /دوربین|میکروفون|HTTPS|مرورگر/.test(cause.message)
-        ? cause.message
-        : mediaError(cause))
+      setError(errorText(cause))
     } finally {
       setBusy(false)
     }
@@ -612,8 +702,15 @@ export function LiveRoom({ staff = false }: { staff?: boolean }) {
 
       const joiningAsHost = snapshot.hostConnectionId === connection.connectionId
       if (snapshot.mode === 'support' || joiningAsHost) {
-        await acquireMedia()
-        void connection.send('SetMediaState', true, true, false).catch(() => {})
+        const stream = await acquireMedia()
+        void connection
+          .send(
+            'SetMediaState',
+            !!stream?.getAudioTracks().length,
+            !!stream?.getVideoTracks().length,
+            false,
+          )
+          .catch(() => {})
       }
 
       const targets =
@@ -662,7 +759,10 @@ export function LiveRoom({ staff = false }: { staff?: boolean }) {
 
   const toggleMic = () => {
     const track = localStreamRef.current?.getAudioTracks()[0]
-    if (!track) return
+    if (!track) {
+      void enableMedia('audio')
+      return
+    }
     track.enabled = !track.enabled
     setMicOn(track.enabled)
     const camera = localStreamRef.current?.getVideoTracks()[0]?.enabled ?? false
@@ -673,7 +773,10 @@ export function LiveRoom({ staff = false }: { staff?: boolean }) {
 
   const toggleCam = () => {
     const track = localStreamRef.current?.getVideoTracks()[0]
-    if (!track) return
+    if (!track) {
+      void enableMedia('video')
+      return
+    }
     track.enabled = !track.enabled
     setCamOn(track.enabled)
     const mic = localStreamRef.current?.getAudioTracks()[0]?.enabled ?? false
@@ -896,7 +999,8 @@ export function LiveRoom({ staff = false }: { staff?: boolean }) {
                   {busy ? 'در حال آماده‌سازی...' : 'ساخت و شروع جلسه'}
                 </Button>
                 <p className="text-muted-foreground text-[11px] leading-5">
-                  دوربین و میکروفون فقط پس از اجازهٔ شما فعال می‌شوند.
+                  دوربین و میکروفون فقط پس از اجازهٔ شما فعال می‌شوند. بدون این دو دستگاه هم
+                  می‌توانید جلسه بسازید یا وارد شوید.
                 </p>
               </section>
 
@@ -1001,6 +1105,22 @@ export function LiveRoom({ staff = false }: { staff?: boolean }) {
           )}
         </div>
       </div>
+
+      {mediaNotice && (
+        <div
+          role="status"
+          className="border-warning/40 bg-warning/10 text-foreground flex flex-wrap items-center gap-2 rounded-xl border p-3 text-xs leading-6"
+        >
+          <Info className="text-warning size-4 shrink-0" />
+          <p className="min-w-0 flex-1">{mediaNotice}</p>
+          <Button size="sm" variant="outline" onClick={() => void enableMedia('audio')}>
+            روشن کردن میکروفون
+          </Button>
+          <Button size="sm" variant="outline" onClick={() => void enableMedia('video')}>
+            روشن کردن دوربین
+          </Button>
+        </div>
+      )}
 
       {currentExercise && (
         <div
@@ -1144,7 +1264,6 @@ export function LiveRoom({ staff = false }: { staff?: boolean }) {
               label={micOn ? 'بی‌صدا' : 'روشن کردن میکروفون'}
               active={micOn}
               onClick={toggleMic}
-              disabled={!localStream}
             >
               {micOn ? <Mic className="size-5" /> : <MicOff className="size-5" />}
             </ControlButton>
@@ -1152,7 +1271,6 @@ export function LiveRoom({ staff = false }: { staff?: boolean }) {
               label={camOn ? 'خاموش کردن دوربین' : 'روشن کردن دوربین'}
               active={camOn}
               onClick={toggleCam}
-              disabled={!localStream}
             >
               {camOn ? <Video className="size-5" /> : <VideoOff className="size-5" />}
             </ControlButton>

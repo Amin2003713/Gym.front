@@ -1,6 +1,5 @@
 'use client'
 
-import { ChartAreaIcon } from '@/components/icons'
 import * as React from 'react'
 import {
   Area,
@@ -10,6 +9,7 @@ import {
   YAxis,
 } from 'recharts'
 
+import { ChartAreaIcon } from '@/components/icons'
 import { Card, CardContent } from '@/components/ui/card'
 import {
   ChartConfig,
@@ -112,7 +112,8 @@ export function AreaChart<
       {...rest}
       config={config}
       className={cn('w-full', className)}
-      style={{ height }}
+      /* A 280px plot plus axes is most of a phone screen; phones get a shorter chart. */
+      style={{ height: isMobile ? Math.min(height, 220) : height }}
     >
       {data?.length > 0 ? (
         <RechartsAreaChart

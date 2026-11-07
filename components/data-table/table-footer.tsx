@@ -19,7 +19,7 @@ export default function TableFooter<TData>({
   enableColumnVisibility,
 }: TableFooterProps<TData>) {
   return (
-    <div className="flex w-full items-center gap-2 border-t py-2">
+    <div className="flex w-full flex-wrap items-center gap-2 border-t py-2">
       {enableColumnVisibility && <ColumnVisibilityToggle table={table} />}
       {hasPagination && (
         <>

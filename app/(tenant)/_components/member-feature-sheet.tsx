@@ -1,9 +1,9 @@
 'use client'
 
-import { LayoutGrid } from '@/components/icons'
 import Link from 'next/link'
 import { useState } from 'react'
 
+import { LayoutGrid } from '@/components/icons'
 import {
   Sheet,
   SheetContent,
@@ -39,7 +39,7 @@ export function MemberFeatureSheet({ active }: { active?: string }) {
 
       <SheetContent
         side="bottom"
-        className="max-h-[85svh] overflow-y-auto rounded-t-2xl sm:max-w-none"
+        className="safe-bottom max-h-[85svh] overflow-y-auto rounded-t-2xl sm:max-w-none"
       >
         <SheetHeader className="text-start">
           <SheetTitle>همه امکانات</SheetTitle>
@@ -52,7 +52,7 @@ export function MemberFeatureSheet({ active }: { active?: string }) {
               <h3 className="text-muted-foreground text-[11px] font-bold tracking-wide">
                 {group.label}
               </h3>
-              <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+              <div className="grid grid-cols-2 gap-2 min-[360px]:grid-cols-3 sm:grid-cols-4">
                 {group.items.map(({ href, label, icon: Icon }) => (
                   <Link
                     key={href}

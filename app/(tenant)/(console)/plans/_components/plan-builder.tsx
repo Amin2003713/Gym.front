@@ -1,11 +1,11 @@
 'use client'
 
-import { ChevronLeft, ChevronRight, Loader2, Plus, Trash2 } from '@/components/icons'
 import { useRouter } from 'next/navigation'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import MemberPicker from '@/app/(tenant)/(console)/assignments/_components/member-picker'
 import { MUSCLE_LABEL } from '@/app/(tenant)/_model/muscle-labels'
+import { ChevronLeft, ChevronRight, Loader2, Plus, Trash2 } from '@/components/icons'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { toast } from '@/lib/toast'
@@ -39,7 +39,7 @@ import ExerciseEditor from './exercise-editor'
 import { MemberRecoveryMap } from './member-recovery-map'
 import PlanCoverageMap from './plan-coverage-map'
 
-const STEPS = ['اطلاعات برنامه', 'روزها و عضلات هدف', 'حرکات', 'بازبینی و ذخیره'] as const
+const STEPS = ['اطلاعات برنامه', 'روزها و حرکات', 'بازبینی و ذخیره'] as const
 const MAX_DAYS = 14
 const LAST_STEP = STEPS.length - 1
 
@@ -137,9 +137,8 @@ export function PlanBuilder({ planId }: { planId?: string }) {
   )
 
   const stepProblem = (index: number): string | null => {
-    if (index === 0) return validateDetails(draft)
-    if (index === 1) return validateDays(draft)
-    if (index === 2) return validateExercises(draft)
+    if (index === 0) return validateDetails(draft, !planId)
+    if (index === 1) return validateDays(draft) ?? validateExercises(draft)
     return null
   }
 
@@ -152,7 +151,8 @@ export function PlanBuilder({ planId }: { planId?: string }) {
   const goBack = () => setStep((current) => Math.max(0, current - 1))
 
   const save = async () => {
-    const problem = validateDetails(draft) ?? validateDays(draft) ?? validateExercises(draft)
+    const problem =
+      validateDetails(draft, !planId) ?? validateDays(draft) ?? validateExercises(draft)
     if (problem) return void toast.error(problem)
 
     setSaving(true)
@@ -199,7 +199,7 @@ export function PlanBuilder({ planId }: { planId?: string }) {
         <div>
           <h1 className="text-2xl font-bold">{planId ? 'ویرایش برنامه تمرینی' : 'برنامه تمرینی جدید'}</h1>
           <p className="text-muted-foreground mt-1 text-sm">
-            یک جریان پیوسته: اطلاعات، روزها و عضلات هدف، حرکات، سپس بازبینی و ذخیره.
+            سه مرحلهٔ کوتاه: اطلاعات، روزها و حرکات، سپس بازبینی و ذخیره.
           </p>
         </div>
         <Button variant="ghost" onClick={() => router.push('/plans')}>
@@ -212,16 +212,7 @@ export function PlanBuilder({ planId }: { planId?: string }) {
       <section className="bg-card rounded-lg border p-4 shadow-sm sm:p-6">
         {step === 0 && <DetailsStep draft={draft} onChange={patchDraft} />}
 
-        {step === 1 && (
-          <DaysStep
-            draft={draft}
-            onChange={patchDraft}
-            onDayChange={patchDay}
-            onSelectDay={setActiveDay}
-          />
-        )}
-
-        {step === 2 && currentDay && (
+        {step === 1 && currentDay && (
           <ExercisesStep
             days={draft.days}
             activeDay={activeDay}
@@ -229,6 +220,7 @@ export function PlanBuilder({ planId }: { planId?: string }) {
             currentExercise={currentExercise}
             onChangeDay={setActiveDay}
             onChangeExercise={setActiveExercise}
+            onDaysChange={(days) => patchDraft({ days })}
             onDayChange={patchDay}
             onExerciseChange={patchExercise}
             coverageRows={coverageRows}
@@ -423,99 +415,6 @@ function DetailsStep({
   )
 }
 
-function DaysStep({
-  draft,
-  onChange,
-  onDayChange,
-  onSelectDay,
-}: {
-  draft: PlanDraft
-  onChange: (patch: Partial<PlanDraft>) => void
-  onDayChange: (index: number, patch: Partial<DayDraft>) => void
-  onSelectDay: (index: number) => void
-}) {
-  const addDay = () => {
-    if (draft.days.length >= MAX_DAYS) return
-    onChange({ days: [...draft.days, blankDay(draft.days.length)] })
-  }
-
-  const removeDay = (index: number) => {
-    if (draft.days.length === 1) return
-    onChange({ days: draft.days.filter((_, position) => position !== index) })
-  }
-
-  const toggleMuscle = (index: number, slug: (typeof TARGET_MUSCLES)[number]) => {
-    const day = draft.days[index]
-    const muscles = day.muscles.includes(slug)
-      ? day.muscles.filter((code) => code !== slug)
-      : [...day.muscles, slug]
-    onDayChange(index, { muscles })
-  }
-
-  return (
-    <div className="space-y-4">
-      {draft.days.map((day, index) => (
-        <div key={day.key} className="rounded-lg border p-3">
-          <div className="flex flex-wrap items-end gap-2">
-            <label className="min-w-52 flex-1 space-y-1 text-sm">
-              <span>نام روز *</span>
-              <Input
-                value={day.name}
-                onChange={(event) => {
-                  onDayChange(index, { name: event.target.value })
-                  onSelectDay(index)
-                }}
-              />
-            </label>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              disabled={draft.days.length === 1}
-              onClick={() => removeDay(index)}
-            >
-              <Trash2 className="ml-1 size-4 text-destructive" />
-              حذف روز
-            </Button>
-          </div>
-
-          <fieldset className="mt-3 space-y-2">
-            <legend className="text-sm font-semibold">عضلات هدف *</legend>
-            <p className="text-muted-foreground text-xs">
-              فهرست حرکات قدم بعد بر اساس همین عضلات فیلتر می‌شود.
-            </p>
-            <div className="flex flex-wrap gap-1.5">
-              {TARGET_MUSCLES.map((slug) => {
-                const selected = day.muscles.includes(slug)
-                return (
-                  <button
-                    key={slug}
-                    type="button"
-                    aria-pressed={selected}
-                    onClick={() => toggleMuscle(index, slug)}
-                    className={`rounded-full border px-3 py-1.5 text-xs font-medium transition ${
-                      selected
-                        ? 'border-primary bg-primary/10 text-foreground'
-                        : 'hover:bg-muted text-muted-foreground'
-                    }`}
-                  >
-                    {MUSCLE_LABEL[slug] ?? slug}
-                  </button>
-                )
-              })}
-            </div>
-          </fieldset>
-        </div>
-      ))}
-
-      <Button type="button" variant="outline" onClick={addDay} disabled={draft.days.length >= MAX_DAYS}>
-        <Plus className="ml-1 size-4" />
-        روز جدید
-      </Button>
-    </div>
-  )
-}
-
 function ExercisesStep({
   days,
   activeDay,
@@ -523,6 +422,7 @@ function ExercisesStep({
   currentExercise,
   onChangeDay,
   onChangeExercise,
+  onDaysChange,
   onDayChange,
   onExerciseChange,
   coverageRows,
@@ -536,6 +436,7 @@ function ExercisesStep({
   currentExercise?: ExerciseDraft
   onChangeDay: (index: number) => void
   onChangeExercise: (index: number) => void
+  onDaysChange: (days: DayDraft[]) => void
   onDayChange: (index: number, patch: Partial<DayDraft>) => void
   onExerciseChange: (dayIndex: number, exerciseIndex: number, patch: Partial<ExerciseDraft>) => void
   coverageRows: Array<{ exerciseId: string; targetSets?: number }>
@@ -545,6 +446,26 @@ function ExercisesStep({
 }) {
   const day = days[activeDay]
   if (!day) return null
+
+  const addDay = () => {
+    if (days.length >= MAX_DAYS) return
+    onDaysChange([...days, blankDay(days.length)])
+    onChangeDay(days.length)
+    onChangeExercise(0)
+  }
+
+  const removeDay = (index: number) => {
+    if (days.length === 1) return
+    onDaysChange(days.filter((_, position) => position !== index))
+    if (activeDay >= index) onChangeDay(Math.max(0, activeDay - 1))
+  }
+
+  const toggleMuscle = (slug: (typeof TARGET_MUSCLES)[number]) => {
+    const muscles = day.muscles.includes(slug)
+      ? day.muscles.filter((code) => code !== slug)
+      : [...day.muscles, slug]
+    onDayChange(activeDay, { muscles })
+  }
 
   const addExercise = () => {
     onDayChange(activeDay, { exercises: [...day.exercises, blankExercise()] })
@@ -579,6 +500,61 @@ function ExercisesStep({
             {item.name || `روز ${index + 1}`}
           </button>
         ))}
+      </div>
+
+      {/* Day name and target muscles sit on the same screen as the movements, so a coach
+          does not have to bounce between two steps to get one day configured. */}
+      <div className="bg-muted/30 space-y-3 rounded-lg border p-3">
+        <div className="flex flex-wrap items-end gap-2">
+          <label className="min-w-44 flex-1 space-y-1 text-sm">
+            <span>نام روز</span>
+            <Input
+              value={day.name}
+              onChange={(event) => onDayChange(activeDay, { name: event.target.value })}
+            />
+          </label>
+          <Button type="button" size="sm" variant="outline" onClick={addDay} disabled={days.length >= MAX_DAYS}>
+            <Plus className="ml-1 size-3.5" />
+            روز جدید
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant="ghost"
+            disabled={days.length === 1}
+            onClick={() => removeDay(activeDay)}
+          >
+            <Trash2 className="ml-1 size-3.5 text-destructive" />
+            حذف روز
+          </Button>
+        </div>
+
+        <div className="space-y-1.5">
+          <p className="text-xs font-semibold">عضلات هدف روز</p>
+          <div className="flex flex-wrap gap-1.5">
+            {TARGET_MUSCLES.map((slug) => {
+              const selected = day.muscles.includes(slug)
+              return (
+                <button
+                  key={slug}
+                  type="button"
+                  aria-pressed={selected}
+                  onClick={() => toggleMuscle(slug)}
+                  className={`rounded-full border px-2.5 py-1 text-[11px] font-medium transition ${
+                    selected
+                      ? 'border-primary bg-primary/10 text-foreground'
+                      : 'text-muted-foreground hover:bg-muted'
+                  }`}
+                >
+                  {MUSCLE_LABEL[slug] ?? slug}
+                </button>
+              )
+            })}
+          </div>
+          <p className="text-muted-foreground text-[11px]">
+            برای فیلتر حرکات پیشنهادی و نقشهٔ پوشش روز استفاده می‌شود.
+          </p>
+        </div>
       </div>
 
       <div className="flex flex-wrap items-center gap-1.5">

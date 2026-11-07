@@ -1,6 +1,5 @@
 'use client'
 
-import { Award, Flame, Sparkles, Trophy } from '@/components/icons'
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 
@@ -12,6 +11,7 @@ import {
   type GamificationBadge,
   type GamificationData,
 } from '@/app/(tenant)/_model/gamification'
+import { Award, Flame, Sparkles, Trophy } from '@/components/icons'
 import { toast } from '@/lib/toast'
 
 const fa = (value: number) => (value ?? 0).toLocaleString('fa-IR')
@@ -143,7 +143,7 @@ export function GamificationSection({ variant = 'card' }: { variant?: 'card' | '
         </p>
       </section>
 
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-1 gap-2 min-[360px]:grid-cols-3">
         {[
           { label: 'زنجیره فعلی', value: `${fa(data.currentStreakDays)} روز` },
           { label: 'بهترین زنجیره', value: `${fa(data.longestStreakDays)} روز` },

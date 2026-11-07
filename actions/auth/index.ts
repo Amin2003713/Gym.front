@@ -77,7 +77,6 @@ export async function signinAction(
     // 2) Establish the NextAuth session using the token we already have.
     //    No second HTTP call — `authorize` trusts this token.
     await signIn('credentials', { accessToken: user.token, redirect: false })
-    console.log(' no faid')
 
     return { isSuccess: true }
   } catch (error) {

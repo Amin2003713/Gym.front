@@ -18,6 +18,7 @@ import { FormWrapper } from '@/components/forms/form-wrapper'
 import { ModeToggle } from '@/components/mode-toggle'
 import { Button } from '@/components/ui/button'
 import { CustomFormField } from '@/components/ui/custom-form-field'
+import { BASE_DOMAIN } from '@/configs/global'
 import { toast } from '@/lib/toast'
 
 import { signinSchema } from '../_types/signin-schema'
@@ -43,10 +44,19 @@ export function SigninForm() {
           description: 'برای فعال‌سازی، کد تأیید به ایمیل حساب شما ارسال می‌شود.',
         })
 
+        // The activation endpoint is tenant-scoped; on a gym subdomain the tenant must be sent,
+        // otherwise the code is generated against the wrong gym and never verifies.
+        const base = BASE_DOMAIN?.replace(/^https?:\/\//, '').split(':')[0]
+        const host = window.location.hostname
+        const tenantDomain =
+          base && host.endsWith(`.${base}`)
+            ? host.slice(0, -(base.length + 1))
+            : ''
+
         startTransition(async () => {
           await sendActivationCodeAction(undefined, {
             phoneNumber: userName,
-            domain: '',
+            domain: tenantDomain,
           })
 
           router.push(`/verify-account?u=${encodeURIComponent(userName)}`)

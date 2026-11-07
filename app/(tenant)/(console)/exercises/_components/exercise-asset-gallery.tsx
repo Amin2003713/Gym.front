@@ -78,7 +78,7 @@ export default function ExerciseAssetGallery({
       </div>
 
       {assets.length > 1 && (
-        <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-5">
+        <div className="grid grid-cols-2 gap-2 min-[420px]:grid-cols-3 sm:grid-cols-4 lg:grid-cols-5">
           {assets.map((asset, index) => (
             <button
               key={`${asset.id ?? 'asset'}-${index}`}

@@ -121,8 +121,19 @@ function VerifyForm({ domain, email, phoneNumber }: VerifyFormType) {
   }, [newCodeStateAction])
 
   useEffect(() => {
+    // Same suffix the first step previewed, so the new gym opens on the host it was created for.
+    const suffix = (
+      process.env.NEXT_PUBLIC_TENANT_DOMAIN_SUFFIX ||
+      BASE_DOMAIN ||
+      ''
+    )
+      .replace(/^https?:\/\//, '')
+      .replace(/^\.+|\.+$/g, '')
+
     const protocol = typeof window !== 'undefined' ? window.location.protocol : 'https:'
-    const newUrl = `${protocol}//${validationForm.getValues('domain')}.${BASE_DOMAIN}`
+    const domain = validationForm.getValues('domain')
+    const newUrl = suffix ? `${protocol}//${domain}.${suffix}` : '/signin'
+
     if (actionState && actionState.isSuccess && !actionState.error) {
       router.push(newUrl)
     } else if (actionState && !actionState.isSuccess && actionState.error) {
