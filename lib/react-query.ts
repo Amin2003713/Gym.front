@@ -28,17 +28,14 @@ export const queryClient = new QueryClient({
 
   defaultOptions: {
     queries: {
-      // Five minutes of freshness matches the offline cache: moving between screens on a
-      // weak link should reuse data instead of firing a request per mount.
+      // Five minutes of freshness: moving between screens on a weak link should reuse data
+      // instead of firing a request per mount.
       staleTime: 5 * 60 * 1000,
-      // Keep screens instant when navigating back, including an offline reload.
+      // Keep screens instant when navigating back within the session.
       gcTime: 24 * 60 * 60 * 1000,
       refetchOnWindowFocus: false,
       // A reconnect is a real state change (e.g. phone regained signal) — refresh then.
       refetchOnReconnect: true,
-      // Do not pause queries just because navigator.onLine is false: the IndexedDB cache
-      // answers them immediately and the queue handles workout writes.
-      networkMode: 'offlineFirst',
       throwOnError: false,
       // Two retries with a short backoff; more on a flaky mobile link just multiplies load.
       retry: 2,
@@ -48,7 +45,6 @@ export const queryClient = new QueryClient({
     },
     mutations: {
       retry: 0,
-      networkMode: 'offlineFirst',
     },
   },
 })

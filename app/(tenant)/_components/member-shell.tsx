@@ -10,7 +10,6 @@ import { AppTheme } from '@/app/(tenant)/_model/preferences'
 import { HamOwjBrand } from '@/components/branding/hamowj-mark'
 import { LayoutDashboard, LogOut, UserIcon } from '@/components/icons'
 import { ModeToggle } from '@/components/mode-toggle'
-import { OfflineIndicator } from '@/components/offline/offline-indicator'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import {
@@ -88,7 +87,6 @@ export function MemberShell({ user, error, children }: MemberShellProps) {
                     </Link>
                   </Button>
                 )}
-                <OfflineIndicator />
                 <ModeToggle onThemeChange={persistTheme} />
                 <MemberUserMenu user={user} error={error} />
               </div>

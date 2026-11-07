@@ -1,10 +1,10 @@
 'use client'
 
-import { Dumbbell, Flame, Sparkles } from '@/components/icons'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
 import { HamOwjBrand } from '@/components/branding/hamowj-mark'
+import { Flame } from '@/components/icons'
 import {
   Sidebar,
   SidebarContent,
@@ -82,22 +82,6 @@ export function MemberSidebar() {
       </SidebarContent>
 
       <SidebarFooter className="mt-auto">
-        <div className="bg-primary/8 border-primary/20 relative overflow-hidden rounded-xl border p-3">
-          <span className="text-primary flex items-center gap-1 text-[11px] font-bold">
-            <Sparkles className="size-3.5" aria-hidden />
-            امروز یک قدم جلوتر
-          </span>
-          <p className="text-muted-foreground mt-1 text-[11px] leading-5">
-            جلسه بعدی را از همین‌جا شروع کن؛ ست‌ها و استراحت‌ها خودکار ثبت می‌شوند.
-          </p>
-          <Link
-            href="/workout"
-            className="bg-primary text-primary-foreground focus-visible:ring-ring mt-2 flex h-9 items-center justify-center gap-1.5 rounded-lg text-xs font-bold transition-opacity hover:opacity-90 focus-visible:ring-[3px] focus-visible:ring-offset-2"
-          >
-            <Dumbbell className="size-3.5" aria-hidden />
-            شروع تمرین
-          </Link>
-        </div>
         <p className="text-muted-foreground/80 flex items-center justify-center gap-1 pb-1 text-[10px]">
           <Flame className="size-3" aria-hidden />
           نسخه ۱.۰

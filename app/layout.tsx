@@ -4,7 +4,6 @@ import './globals.css'
 import NextTopLoader from 'nextjs-toploader'
 
 import { NetworkQualityProvider } from '@/components/network-quality'
-import { OfflineProvider } from '@/components/offline/offline-provider'
 import { ThemeProvider } from '@/components/theme-provider'
 import { Toaster } from '@/components/ui/sonner'
 import ShadCnDirProvider from '@/providers/direction-provider'
@@ -65,7 +64,6 @@ export default function RootLayout({
         <NetworkQualityProvider />
         <NextTopLoader showSpinner={false} />
         <ReactQueryProvider>
-          <OfflineProvider />
           <ShadCnDirProvider>
             <ThemeProvider
               attribute="class"

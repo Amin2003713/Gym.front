@@ -6,7 +6,6 @@ import { Fragment, useEffect } from 'react'
 import { NavUser } from '@/app/(tenant)/_components/nav-user'
 import { SidebarIcon } from '@/components/icons'
 import { ModeToggle } from '@/components/mode-toggle'
-import { OfflineIndicator } from '@/components/offline/offline-indicator'
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -105,7 +104,6 @@ export default function Header({ data: user, error }: HeaderProps) {
         </div>
 
         <div className="col-start-3 row-start-1 flex min-w-0 shrink-0 items-center justify-end gap-1 sm:order-none sm:ms-0 sm:gap-2">
-          <OfflineIndicator />
           <NavUser isHeader data={user} error={error} />
           <span aria-hidden className="bg-border hidden h-6 w-px sm:block" />
           <ModeToggle />

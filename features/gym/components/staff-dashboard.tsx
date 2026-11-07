@@ -1,7 +1,6 @@
 'use client'
 
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 import { useEffect, useMemo, useState } from 'react'
 
 import { listCoachAssignments } from '@/app/(tenant)/_api/assignment-api'
@@ -18,7 +17,6 @@ import {
 import {
   ArrowUpLeft,
   CheckCircle2,
-  Download,
   Dumbbell,
   Inbox,
   LayoutDashboard,
@@ -31,7 +29,6 @@ import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { DashboardModeCard, DashboardPanel, DashboardStat } from '@/features/gym/components/dashboard-kit'
 import { useUserRoles } from '@/hooks/use-user-roles'
-import { toast } from '@/lib/toast'
 
 const fa = (value: number) => (value ?? 0).toLocaleString('fa-IR')
 
@@ -49,11 +46,9 @@ const activityFmt = new Intl.DateTimeFormat('fa-IR', {
  */
 export function StaffDashboard() {
   const { isAdmin, isTrainer } = useUserRoles()
-  const router = useRouter()
   const [assignments, setAssignments] = useState<CoachAssignmentItem[]>([])
   const [requests, setRequests] = useState<CoachConversationSummary[]>([])
   const [loading, setLoading] = useState(true)
-  const [warming, setWarming] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -82,32 +77,6 @@ export function StaffDashboard() {
       cancelled = true
     }
   }, [])
-
-  const warmOffline = async () => {
-    setWarming(true)
-    try {
-      const results = await Promise.allSettled([
-        listCoachAssignments({ pageSize: 60 }),
-        listCoachConversations(),
-      ])
-
-      if (results.every((result) => result.status === 'rejected')) {
-        toast.error('ذخیره‌سازی آفلاین ناموفق بود', {
-          description: 'اتصال را بررسی کنید و دوباره تلاش کنید.',
-        })
-        return
-      }
-
-      router.prefetch('/console/coach')
-      router.prefetch('/trainers')
-      router.prefetch('/workout')
-      toast.success('میز کار مربی برای آفلاین آماده شد', {
-        description: 'شاگردان، درخواست‌ها و صفحه‌های اصلی در همین دستگاه ذخیره شدند.',
-      })
-    } finally {
-      setWarming(false)
-    }
-  }
 
   const openRequests = useMemo(
     () =>
@@ -179,15 +148,6 @@ export function StaffDashboard() {
           </div>
 
           <div className="flex flex-wrap gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => void warmOffline()}
-              disabled={warming}
-            >
-              <Download className={`size-4 ${warming ? 'animate-pulse' : ''}`} />
-              {warming ? 'در حال ذخیره...' : 'ذخیره برای آفلاین'}
-            </Button>
             <Button asChild>
               <Link href="/home">
                 <Play className="size-4" />

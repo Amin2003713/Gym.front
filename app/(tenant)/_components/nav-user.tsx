@@ -53,10 +53,6 @@ export function NavUser({ isHeader, data: user, error }: NavUserProp) {
     startTransition(async () => {
       const response = await signOutAction()
       if (response.isSuccess) {
-        // Cached API pages and queued sets are user-specific; never leave them for the
-        // next account on a shared device.
-        const { clearOfflineData } = await import('@/lib/offline/clear')
-        await clearOfflineData()
         removeUserFromStore()
         router.push('/')
       }
