@@ -6,6 +6,7 @@ import { Loader2 } from '@/components/icons'
 import { useAppLocale } from '@/hooks/use-app-locale'
 import { useFigureGender } from '@/hooks/use-figure-gender'
 import { useUserRoles } from '@/hooks/use-user-roles'
+import { exerciseMediaSources, isAnimatedSource } from '@/lib/exercise-media'
 import { muscleLoad } from '@/lib/muscle-mapping'
 import { MUSCLE_MATCH_ALIASES } from '@/lib/muscles'
 import { toast } from '@/lib/toast'
@@ -290,9 +291,10 @@ export default function ExerciseLibrary() {
         id: item.id,
         name: item.name,
         description: item.description,
-        // Cards use the thumbnail variant; the gallery inside the detail
-        // dialog upgrades to preview/original.
+        // Cards use the thumbnail variant; the gallery inside the detail dialog upgrades to
+        // preview/original. The card preloads the GIF only when a mouse hovers it.
         imageUrl: exerciseThumbUrl(item.cover) ?? exerciseCoverUrl(item.cover),
+        hoverUrl: exerciseMediaSources(item.cover).find(isAnimatedSource) ?? null,
         muscleLevels: muscleLoad([{ bodyPart: item.bodyPart, target: item.target }]),
         equipment: item.equipmentGroup
           ? equipmentLabel(item.equipmentGroup, item.equipment)
@@ -302,8 +304,7 @@ export default function ExerciseLibrary() {
     [figureGender, items],
   )
 
-  return (
-    <div className="space-y-5" dir="rtl">
+  return (      <div className="space-y-4 sm:space-y-5" dir="rtl">
       <ExerciseLibraryHeader
         onCreate={canManage ? openCreate : undefined}
         onRefresh={() => void fetchPage(1)}

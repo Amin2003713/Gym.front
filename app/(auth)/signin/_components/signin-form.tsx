@@ -1,20 +1,14 @@
 'use client'
 
-import { ArrowLeft } from '@/components/icons'
-import { useRouter, useSearchParams } from 'next/navigation'
-import {
-  useActionState,
-  useEffect,
-  useRef,
-  useTransition,
-  useState,
-} from 'react'
+import { useRouter } from 'next/navigation'
+import { useActionState, useEffect, useRef, useTransition } from 'react'
 import * as React from 'react'
 
 import { sendActivationCodeAction, signinAction } from '@/actions/auth'
 import { PasskeySigninButton } from '@/app/(auth)/signin/_components/passkey-signin-button'
 import { HamOwjBrand } from '@/components/branding/hamowj-mark'
 import { FormWrapper } from '@/components/forms/form-wrapper'
+import { ArrowLeft } from '@/components/icons'
 import { ModeToggle } from '@/components/mode-toggle'
 import { Button } from '@/components/ui/button'
 import { CustomFormField } from '@/components/ui/custom-form-field'
@@ -30,6 +24,12 @@ export function SigninForm() {
   const [loginState, action] = useActionState(signinAction, undefined)
   const [isPending, startTransition] = useTransition()
   const lastAttemptedUserName = useRef('')
+
+  // Warm the dashboard route while the visitor types, so the post-login transition does not
+  // have to wait for the first chunks of `/` as well as the session cookie.
+  useEffect(() => {
+    router.prefetch('/')
+  }, [router])
 
   useEffect(() => {
     if (loginState && !loginState.isSuccess && loginState.error) {
@@ -84,7 +84,7 @@ export function SigninForm() {
     <FormWrapper
       schema={signinSchema}
       onSubmit={onSubmit}
-      className="p-6 md:p-8"
+      className="p-5 sm:p-6 md:p-8"
       defaultValues={{
         userName: '',
         password: '',
@@ -92,13 +92,13 @@ export function SigninForm() {
     >
       {(form) => (
         <div className="flex flex-col gap-6">
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center gap-3 text-start">
-              <span className="bg-foreground text-background flex size-12 items-center justify-center rounded-lg">
-                <HamOwjBrand className="size-8" />
+          <div className="flex flex-wrap items-center justify-between gap-3 sm:gap-4">
+            <div className="flex min-w-0 items-center gap-3 text-start">
+              <span className="bg-foreground text-background flex size-11 shrink-0 items-center justify-center rounded-lg sm:size-12">
+                <HamOwjBrand className="size-7 sm:size-8" />
               </span>
-              <div className="flex flex-col gap-1">
-                <h1 className="text-2xl leading-9 font-extrabold sm:text-[2rem] sm:leading-11">
+              <div className="flex min-w-0 flex-col gap-1">
+                <h1 className="text-xl leading-8 font-extrabold sm:text-[2rem] sm:leading-11">
                   ورود به هم‌اوج
                 </h1>
 
@@ -117,6 +117,10 @@ export function SigninForm() {
               name="userName"
               label="شماره همراه (نام کاربری)"
               type="tel"
+              inputMode="tel"
+              autoComplete="username"
+              dir="ltr"
+              className="[&_input]:text-start"
             />
           </div>
           <div className="grid gap-2">
@@ -124,6 +128,8 @@ export function SigninForm() {
               control={form.control}
               name="password"
               label="رمزعبور"
+              type="password"
+              autoComplete="current-password"
             />
           </div>
           <div className="text-center text-xs sm:text-sm md:text-start">

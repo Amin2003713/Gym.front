@@ -72,14 +72,12 @@ export const getBaseURL = async (): Promise<{ baseURL: string; tenant: string | 
 
   const tenant = getTenantFromClientHost(clientHost)
 
-  if (tenant) {
-    if (process.env.NODE_ENV === 'development') {
-      // Avoid Node.js ENOTFOUND for tenant.localhost.
-      apiUrl.hostname = 'localhost'
-    } else {
-      // Keep tenant subdomains in production if your API requires them.
-      apiUrl.hostname = `${tenant}.${apiUrl.hostname}`
-    }
+  // The tenant is always sent as `X-Tenant`; the API resolves it from that header, the JWT or
+  // the host. Rewriting the host to `<tenant>.<api-host>` in production broke deployments whose
+  // DNS/TLS only covers the configured API host (requests failed with "خطای شبکه"), so the
+  // configured origin is used as-is. In development only, tenant.localhost would not resolve.
+  if (tenant && process.env.NODE_ENV === 'development') {
+    apiUrl.hostname = 'localhost'
   }
 
   return {

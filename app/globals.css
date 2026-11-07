@@ -395,8 +395,12 @@
     }
 
     /* Finger-sized targets: 36px desktop controls grow to 40px on touch screens
-       without changing the desktop density. */
+       without changing the desktop density. Plain <button> elements are included so
+       icon actions in lists and toolbars are tappable too, not only shadcn buttons. */
     [data-slot="button"],
+    button,
+    [role="button"],
+    [role="tab"],
     [data-slot="select-trigger"],
     input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="file"]),
     select,

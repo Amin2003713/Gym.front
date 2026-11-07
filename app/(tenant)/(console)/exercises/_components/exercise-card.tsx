@@ -1,14 +1,27 @@
 'use client'
 
-import { Dumbbell, Eye, LoaderCircle, Pencil, Trash2, TriangleAlert } from '@/components/icons'
+import { useState } from 'react'
 
 import BodyMapPanel from '@/app/(tenant)/_components/progress/body-map-panel'
+import {
+  Dumbbell,
+  Eye,
+  LoaderCircle,
+  Pencil,
+  Trash2,
+  TriangleAlert,
+} from '@/components/icons'
 
 export interface ExerciseCardItem {
   id: string
   name: string
   description?: string | null
   imageUrl?: string | null
+  /**
+   * Animated GIF source. The card shows the still frame first and swaps to this on hover, so a
+   * card with motion does not download every GIF in the list up front.
+   */
+  hoverUrl?: string | null
   /** Primary/assisting muscles, shown as compact chips next to the instructions. */
   muscles?: string[]
   /** The same muscles as a body-map load, so the card can shade the figure. */
@@ -28,9 +41,10 @@ interface ExerciseCardProps {
 }
 
 /**
- * Horizontal exercise card: the animated demo (GIF) sits on the left and the
- * instruction text on the right, so the movement and how to perform it are read
- * in one glance.
+ * Exercise card: stacked media-over-text on phones, horizontal from `sm` up. Hovering with a
+ * mouse crossfades the still cover into the original GIF so the movement can be checked without
+ * opening the detail dialog; touch devices keep the tap-to-open path and never fetch the GIF
+ * just by scrolling.
  */
 export default function ExerciseCard({
   exercise,
@@ -39,26 +53,65 @@ export default function ExerciseCard({
   onDelete,
   deleting = false,
 }: ExerciseCardProps) {
+  const [showGif, setShowGif] = useState(false)
+  const [gifReady, setGifReady] = useState(false)
+
+  const gifSrc =
+    exercise.hoverUrl && exercise.hoverUrl !== exercise.imageUrl ? exercise.hoverUrl : null
+
+  const startPreview = (pointerType: string) => {
+    if (pointerType === 'mouse' && gifSrc) setShowGif(true)
+  }
+
+  const stopPreview = () => {
+    setShowGif(false)
+    setGifReady(false)
+  }
+
   return (
-    <article className="bg-card cv-auto flex overflow-hidden rounded-xl border transition hover:border-primary/40 hover:shadow-sm">
+    <article
+      onPointerEnter={(event) => startPreview(event.pointerType)}
+      onPointerLeave={stopPreview}
+      className="bg-card cv-auto flex flex-col overflow-hidden rounded-xl border transition sm:flex-row sm:hover:border-primary/40 sm:hover:shadow-sm"
+    >
       <button
         type="button"
         onClick={() => onView(exercise.id)}
-        className="bg-muted flex w-28 shrink-0 items-center justify-center overflow-hidden border-e sm:w-36"
+        className="bg-muted relative flex aspect-[16/9] w-full shrink-0 items-center justify-center overflow-hidden border-b sm:aspect-auto sm:w-36 sm:self-stretch sm:border-b-0 sm:border-e"
         aria-label={`نمایش جزئیات ${exercise.name}`}
       >
         {exercise.imageUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={exercise.imageUrl}
-            alt={exercise.name}
-            width={144}
-            height={144}
-            className="h-full w-full object-cover"
-            loading="lazy"
-            decoding="async"
-            fetchPriority="low"
-          />
+          <>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={exercise.imageUrl}
+              alt={exercise.name}
+              width={288}
+              height={162}
+              className="h-full w-full object-cover"
+              loading="lazy"
+              decoding="async"
+              fetchPriority="low"
+            />
+            {showGif && gifSrc && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                key={gifSrc}
+                src={gifSrc}
+                alt=""
+                aria-hidden
+                className={`pointer-events-none absolute inset-0 h-full w-full object-cover transition-opacity duration-200 ${
+                  gifReady ? 'opacity-100' : 'opacity-0'
+                }`}
+                onLoad={() => setGifReady(true)}
+              />
+            )}
+            {showGif && gifSrc && gifReady && (
+              <span className="bg-background/85 text-foreground pointer-events-none absolute bottom-1.5 start-1.5 rounded-full border px-1.5 py-0.5 text-[9px] font-bold">
+                GIF
+              </span>
+            )}
+          </>
         ) : (
           <span className="text-muted-foreground px-2 text-center text-xs">
             تصویر موجود نیست
@@ -121,7 +174,7 @@ export default function ExerciseCard({
           <button
             type="button"
             onClick={() => onView(exercise.id)}
-            className="inline-flex h-8 flex-1 items-center justify-center gap-1.5 rounded-lg border text-xs"
+            className="inline-flex h-10 flex-1 items-center justify-center gap-1.5 rounded-lg border text-xs sm:h-8"
           >
             <Eye className="size-4" />
             جزئیات
@@ -131,7 +184,7 @@ export default function ExerciseCard({
             <button
               type="button"
               onClick={() => onEdit(exercise.id)}
-              className="bg-primary/10 text-primary inline-flex h-8 flex-1 items-center justify-center gap-1.5 rounded-lg text-xs"
+              className="bg-primary/10 text-primary inline-flex h-10 flex-1 items-center justify-center gap-1.5 rounded-lg text-xs sm:h-8"
             >
               <Pencil className="size-4" />
               ویرایش
@@ -144,7 +197,7 @@ export default function ExerciseCard({
               onClick={() => onDelete(exercise.id)}
               disabled={deleting}
               aria-label="حذف حرکت"
-              className="text-destructive inline-flex h-8 items-center justify-center rounded-lg border px-2.5 text-xs disabled:opacity-50"
+              className="text-destructive inline-flex h-10 w-10 items-center justify-center rounded-lg border text-xs disabled:opacity-50 sm:h-8 sm:w-auto sm:px-2.5"
             >
               {deleting ? (
                 <LoaderCircle className="size-4 animate-spin" />

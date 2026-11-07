@@ -1,6 +1,8 @@
 import { jwtDecode } from 'jwt-decode'
 import NextAuth, { CredentialsSignin } from 'next-auth'
-import { JWT } from 'next-auth/jwt'
+// Imported for its module augmentation (JWT.user below); it participates in the type,
+// not at runtime.
+import 'next-auth/jwt'
 import CredentialsProvider from 'next-auth/providers/credentials'
 
 import { SigninUserModel } from '@/app/(auth)/signin/_types/signin-user-model.type'
@@ -90,11 +92,8 @@ export const {
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        console.log('decode ')
-
         token.user = jwtDecode<User>(user.accessToken)
         token.user.accessToken = user.accessToken
-        console.log('sat in calback')
       }
       return token
     },
