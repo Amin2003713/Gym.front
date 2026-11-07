@@ -704,17 +704,23 @@
 [data-brand] {
     --brand-focus: var(--ring);
 }
-/* Toast surface: the default translucent card reads as "faded" over the app,
-   so give every toast a solid surface, a visible border and a real shadow. */
-.hamowj-toaster [data-sileo-toast] {
-    background-color: var(--popover) !important;
-    border: 1px solid var(--border) !important;
-    box-shadow: 0 12px 32px -12px rgb(0 0 0 / 0.28), 0 2px 8px -4px rgb(0 0 0 / 0.18) !important;
-    backdrop-filter: none !important;
+/* Toast lifetime bar: drains from the start edge; hovering/focusing pauses it together
+   with the dismissal timer in the component. */
+@keyframes toast-progress {
+    from { transform: scaleX(1); }
+    to { transform: scaleX(0); }
 }
 
-.dark .hamowj-toaster [data-sileo-toast] {
-    box-shadow: 0 14px 36px -12px rgb(0 0 0 / 0.65), 0 2px 8px -4px rgb(0 0 0 / 0.5) !important;
+@layer utilities {
+    .toast-progress {
+        animation-name: toast-progress;
+        animation-timing-function: linear;
+        animation-fill-mode: forwards;
+    }
+
+    .toast-progress[data-paused='true'] {
+        animation-play-state: paused;
+    }
 }
 /* ==========================================================================
    Shepherd.js Theme Overrides

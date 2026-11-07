@@ -1,18 +1,6 @@
 'use client'
 
-import {
-  Activity,
-  BatteryCharging,
-  HeartPulse,
-  Loader2,
-  Moon,
-  RefreshCw,
-  Search,
-  TrendingDown,
-  TrendingUp,
-  Users,
-} from '@/components/icons'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { listCoachAssignments } from '@/app/(tenant)/_api/assignment-api'
 import {
@@ -32,6 +20,18 @@ import {
   type SessionResponse,
   type WorkoutListItem,
 } from '@/app/(tenant)/_model/workout.types'
+import {
+  Activity,
+  BatteryCharging,
+  HeartPulse,
+  Loader2,
+  Moon,
+  RefreshCw,
+  Search,
+  TrendingDown,
+  TrendingUp,
+  Users,
+} from '@/components/icons'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -75,6 +75,7 @@ export function CoachMemberReport() {
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [selectedId, setSelectedId] = useState<string | null>(null)
+  const reportRef = useRef<HTMLDivElement>(null)
 
   const [summary, setSummary] = useState<MeasurementSummary | null>(null)
   const [measurements, setMeasurements] = useState<BodyMeasurement[]>([])
@@ -137,6 +138,18 @@ export function CoachMemberReport() {
   }, [members, search])
 
   const selected = members.find((member) => member.id === selectedId) ?? null
+
+  const selectMember = (id: string) => {
+    setSelectedId(id)
+
+    // On phones the report sits below the list; jump to it instead of leaving the coach at the
+    // bottom of a long name list.
+    if (window.matchMedia('(max-width: 1023px)').matches) {
+      window.setTimeout(() => {
+        reportRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      }, 120)
+    }
+  }
 
   useEffect(() => {
     if (!selectedId) return
@@ -260,16 +273,22 @@ export function CoachMemberReport() {
     : 0
 
   return (
-    <div className="space-y-5" dir="rtl">
+    <div className="space-y-4 sm:space-y-5" dir="rtl">
       <header className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-extrabold tracking-tight">گزارش مربی</h1>
-          <p className="text-muted-foreground mt-1 text-sm leading-6">
+        <div className="min-w-0">
+          <h1 className="text-xl font-extrabold tracking-tight sm:text-2xl">گزارش مربی</h1>
+          <p className="text-muted-foreground mt-1 text-[13px] leading-6 sm:text-sm">
             یک شاگرد را انتخاب کنید تا برنامه، اندازه‌گیری‌ها، بار عضلانی و ریکاوری او را
             ببینید.
           </p>
         </div>
-        <Button variant="outline" size="sm" onClick={() => void load()} disabled={loading}>
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-10 shrink-0"
+          onClick={() => void load()}
+          disabled={loading}
+        >
           <RefreshCw className={`size-4 ${loading ? 'animate-spin' : ''}`} />
           بروزرسانی
         </Button>
@@ -301,12 +320,12 @@ export function CoachMemberReport() {
               شاگردی پیدا نشد.
             </p>
           ) : (
-            <ul className="max-h-[32rem] divide-y overflow-y-auto">
+            <ul className="max-h-64 divide-y overflow-y-auto overscroll-contain sm:max-h-[32rem]">
               {visible.map((member) => (
                 <li key={member.id}>
                   <button
                     type="button"
-                    onClick={() => setSelectedId(member.id)}
+                    onClick={() => selectMember(member.id)}
                     aria-current={selectedId === member.id}
                     className={`w-full px-3 py-3 text-right transition-colors ${
                       selectedId === member.id ? 'bg-primary/10' : 'hover:bg-muted/50'
@@ -326,7 +345,7 @@ export function CoachMemberReport() {
           )}
         </section>
 
-        <div className="space-y-4">
+        <div ref={reportRef} id="coach-report" className="scroll-mt-20 space-y-4">
           {!selected ? (
             <section className="bg-card flex min-h-64 flex-col items-center justify-center gap-2 rounded-2xl border border-dashed p-8 text-center">
               <Users className="text-muted-foreground size-7" />
@@ -343,10 +362,12 @@ export function CoachMemberReport() {
             </div>
           ) : (
             <>
-              <section className="bg-card rounded-2xl border p-4 shadow-sm sm:p-5">
+              <section className="bg-card rounded-2xl border p-3.5 shadow-sm sm:p-5">
                 <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div>
-                    <h2 className="text-lg font-extrabold tracking-tight">{selected.name}</h2>
+                  <div className="min-w-0">
+                    <h2 className="truncate text-base font-extrabold tracking-tight sm:text-lg">
+                      {selected.name}
+                    </h2>
                     <p className="text-muted-foreground mt-1 text-xs">
                       {fa(selected.active)} برنامه فعال ·{' '}
                       {summary?.lastMeasuredOn
@@ -354,13 +375,13 @@ export function CoachMemberReport() {
                         : 'اندازه‌گیری ثبت نشده'}
                     </p>
                   </div>
-                  <div className="flex items-center gap-2 rounded-xl border px-3 py-2">
+                  <div className="flex min-h-11 items-center gap-2 rounded-xl border px-3 py-2">
                     <BatteryCharging
                       className={`size-5 ${
                         report.readiness >= 70
-                          ? 'text-emerald-600'
+                          ? 'text-success'
                           : report.readiness >= 45
-                            ? 'text-orange-500'
+                            ? 'text-warning'
                             : 'text-destructive'
                       }`}
                     />
@@ -371,7 +392,7 @@ export function CoachMemberReport() {
                   </div>
                 </div>
 
-                <div className="mt-4 grid gap-2 sm:grid-cols-3">
+                <div className="mt-3 grid grid-cols-2 gap-2 sm:mt-4 sm:grid-cols-3">
                   <MiniStat
                     label="پیشرفت برنامه"
                     value={`${fa(adherence)}٪`}
@@ -396,6 +417,7 @@ export function CoachMemberReport() {
                     }
                   />
                   <MiniStat
+                    className="col-span-2 sm:col-span-1"
                     label="خواب / ضربان"
                     value={`${summary?.latestSleepHours != null ? fa(Number(summary.latestSleepHours)) : '—'} h`}
                     detail={
@@ -434,7 +456,7 @@ export function CoachMemberReport() {
                     <div className="mt-3">
                       {/* `recuperation` already holds 0–4 levels; the recovery palette maps them absolutely. */}
                       <BodyMapPanel palette="recovery" load={report.recuperation} />
-                      <p className="text-muted-foreground mt-3 text-[11px] leading-5">
+                      <p className="text-muted-foreground mt-3 text-xs leading-5">
                         {report.recoveringMuscles.length > 0
                           ? `${fa(report.recoveringMuscles.length)} گروه عضلانی هنوز در حال ریکاوری است؛ امروز روی آن‌ها فشار نگذارید.`
                           : 'همه گروه‌های تمرین‌شده ریکاوری شده‌اند.'}
@@ -461,38 +483,38 @@ export function CoachMemberReport() {
                   </p>
                 ) : (
                   <div className="overflow-x-auto">
-                    <table className="w-full min-w-[520px] text-right text-sm">
+                    <table className="w-full min-w-[480px] text-right text-xs sm:text-sm">
                       <thead>
                         <tr className="text-muted-foreground border-b text-xs">
-                          <th className="px-4 py-2 font-medium">تاریخ</th>
-                          <th className="px-4 py-2 font-medium">وزن</th>
-                          <th className="px-4 py-2 font-medium">چربی</th>
-                          <th className="px-4 py-2 font-medium">دور کمر</th>
-                          <th className="px-4 py-2 font-medium">خواب</th>
-                          <th className="px-4 py-2 font-medium">انرژی</th>
+                          <th className="px-3 py-2 font-medium sm:px-4">تاریخ</th>
+                          <th className="px-3 py-2 font-medium sm:px-4">وزن</th>
+                          <th className="px-3 py-2 font-medium sm:px-4">چربی</th>
+                          <th className="px-3 py-2 font-medium sm:px-4">دور کمر</th>
+                          <th className="px-3 py-2 font-medium sm:px-4">خواب</th>
+                          <th className="px-3 py-2 font-medium sm:px-4">انرژی</th>
                         </tr>
                       </thead>
                       <tbody>
                         {measurements.slice(0, 8).map((row) => (
                           <tr key={row.id} className="border-b last:border-0">
-                            <td className="px-4 py-2.5">
+                            <td className="px-3 py-2.5 sm:px-4">
                               {dateFmt.format(new Date(row.date))}
                             </td>
-                            <td className="px-4 py-2.5 tabular-nums">
+                            <td className="px-3 py-2.5 tabular-nums sm:px-4">
                               {row.weightKg != null ? `${fa(row.weightKg)} kg` : '—'}
                             </td>
-                            <td className="px-4 py-2.5 tabular-nums">
+                            <td className="px-3 py-2.5 tabular-nums sm:px-4">
                               {row.bodyFatPercent != null
                                 ? `${fa(row.bodyFatPercent)}٪`
                                 : '—'}
                             </td>
-                            <td className="px-4 py-2.5 tabular-nums">
+                            <td className="px-3 py-2.5 tabular-nums sm:px-4">
                               {row.waistCm != null ? `${fa(row.waistCm)} cm` : '—'}
                             </td>
-                            <td className="px-4 py-2.5 tabular-nums">
+                            <td className="px-3 py-2.5 tabular-nums sm:px-4">
                               {row.sleepHours != null ? `${fa(row.sleepHours)} h` : '—'}
                             </td>
-                            <td className="px-4 py-2.5 tabular-nums">
+                            <td className="px-3 py-2.5 tabular-nums sm:px-4">
                               {row.energyLevel != null ? fa(row.energyLevel) : '—'}
                             </td>
                           </tr>
@@ -517,14 +539,16 @@ function MiniStat({
   value,
   detail,
   icon: Icon = Activity,
+  className,
 }: {
   label: string
   value: string
   detail: string
   icon?: typeof Activity
+  className?: string
 }) {
   return (
-    <div className="rounded-xl border p-3">
+    <div className={`rounded-xl border p-3 ${className ?? ''}`}>
       <div className="flex items-center justify-between gap-2">
         <p className="text-muted-foreground text-xs">{label}</p>
         <Icon className="text-muted-foreground size-4" />

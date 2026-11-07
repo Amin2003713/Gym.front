@@ -1,8 +1,6 @@
 'use client'
 
-import { sileo } from 'sileo'
-
-type ToastPosition =
+export type ToastPosition =
   | 'top-left'
   | 'top-center'
   | 'top-right'
@@ -10,44 +8,91 @@ type ToastPosition =
   | 'bottom-center'
   | 'bottom-right'
 
-type ToastOptions = {
+export type ToastKind = 'success' | 'error' | 'warning' | 'info'
+
+export type ToastOptions = {
   description?: string
+  /** Milliseconds before auto-dismiss; null keeps the toast until it is closed. */
   duration?: number | null
   position?: ToastPosition
 }
 
-function notify(
-  type: 'success' | 'error' | 'warning' | 'info',
-  title: string,
-  options?: ToastOptions,
-) {
-  const payload = {
-    title: title || (type === 'error' ? 'خطا' : 'اطلاع'),
-    ...(options?.description ? { description: options.description } : {}),
-    ...(options?.duration !== undefined ? { duration: options.duration } : {}),
-    ...(options?.position ? { position: options.position } : {}),
-  }
+export type ToastItem = {
+  id: number
+  kind: ToastKind
+  title: string
+  description?: string
+  duration: number | null
+  position: ToastPosition
+}
 
-  switch (type) {
-    case 'success':
-      return sileo.success(payload)
-    case 'error':
-      return sileo.error(payload)
-    case 'warning':
-      return sileo.warning(payload)
-    case 'info':
-      return sileo.info(payload)
+const MAX_VISIBLE = 4
+const DEFAULT_DURATION = 4500
+const ERROR_DURATION = 6500
+
+let items: ToastItem[] = []
+let nextId = 1
+const listeners = new Set<(value: ToastItem[]) => void>()
+const EMPTY: ToastItem[] = []
+
+const commit = (next: ToastItem[]) => {
+  items = next
+  listeners.forEach((listener) => listener(items))
+}
+
+export const subscribeToasts = (listener: (value: ToastItem[]) => void) => {
+  listeners.add(listener)
+  return () => {
+    listeners.delete(listener)
   }
 }
 
+export const getToasts = () => items
+
+/** Server render never has toasts; the snapshot must be stable between renders. */
+export const getServerToasts = () => EMPTY
+
+export const dismissToast = (id: number) => {
+  if (!items.some((item) => item.id === id)) return
+  commit(items.filter((item) => item.id !== id))
+}
+
+export const dismissAllToasts = () => {
+  if (items.length) commit([])
+}
+
+function notify(kind: ToastKind, title: string, options?: ToastOptions) {
+  const duration =
+    options?.duration === undefined
+      ? kind === 'error'
+        ? ERROR_DURATION
+        : DEFAULT_DURATION
+      : options.duration
+
+  const item: ToastItem = {
+    id: nextId++,
+    kind,
+    // An empty title is a caller bug, not a reason to render an empty card.
+    title: title.trim() || (kind === 'error' ? 'خطا' : 'اطلاع'),
+    ...(options?.description?.trim() ? { description: options.description.trim() } : {}),
+    duration,
+    position: options?.position ?? 'top-center',
+  }
+
+  // Oldest first, newest at the bottom of the stack; beyond four, the oldest is dropped.
+  commit([...items, item].slice(-MAX_VISIBLE))
+  return item.id
+}
+
 /**
- * Small compatibility facade for the existing Sonner call sites.
- * This keeps their current success/error messages while rendering everything
- * through Sileo, so feature code does not need to know the toast provider.
+ * One facade for every screen. Feature code calls `toast.success('…')` and does not know how
+ * notifications are rendered, so the presentation can change without touching 200 call sites.
  */
 export const toast = {
   success: (title: string, options?: ToastOptions) => notify('success', title, options),
   error: (title: string, options?: ToastOptions) => notify('error', title, options),
   warning: (title: string, options?: ToastOptions) => notify('warning', title, options),
   info: (title: string, options?: ToastOptions) => notify('info', title, options),
+  dismiss: dismissToast,
+  dismissAll: dismissAllToasts,
 }

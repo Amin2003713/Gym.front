@@ -1,6 +1,5 @@
 'use client'
 
-import { Download, Loader2 } from '@/components/icons'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   Area,
@@ -20,8 +19,9 @@ import {
 } from '@/app/(tenant)/_api/member-progress-api'
 import BodyMapPanel from '@/app/(tenant)/_components/progress/body-map-panel'
 import { MUSCLE_LABEL } from '@/app/(tenant)/_model/muscle-labels'
-import { useFigureGender } from '@/hooks/use-figure-gender'
+import { Download, Loader2 } from '@/components/icons'
 import { Button } from '@/components/ui/button'
+import { useFigureGender } from '@/hooks/use-figure-gender'
 import { toast } from '@/lib/toast'
 
 const fa = (value: number) => value.toLocaleString('fa-IR')
@@ -145,15 +145,18 @@ export function MemberProgressPanel({
   return (
     <div className="space-y-4">
       <section className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h3 className="text-lg font-extrabold tracking-tight">پیشرفت {data.memberName || memberName}</h3>
-          <p className="text-muted-foreground mt-0.5 text-xs">
+        <div className="min-w-0">
+          <h3 className="text-base font-extrabold tracking-tight sm:text-lg">
+            پیشرفت {data.memberName || memberName}
+          </h3>
+          <p className="text-muted-foreground mt-0.5 text-xs leading-5">
             آمار از ست‌های ثبت‌شده، اندازه‌گیری‌ها و تاریخچه واقعی باشگاه ساخته می‌شود.
           </p>
         </div>
         <Button
           variant="outline"
           size="sm"
+          className="h-10 w-full sm:w-auto"
           onClick={() =>
             void downloadMemberProgressReport(data.memberId, data.memberName).catch((error: unknown) =>
               toast.error('دریافت گزارش PDF ناموفق بود', {
@@ -167,13 +170,13 @@ export function MemberProgressPanel({
         </Button>
       </section>
 
-      <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
         <Stat label="کل جلسات" value={fa(data.summary.totalSessions)} />
         <Stat label="جلسات این ماه" value={fa(data.summary.sessionsThisMonth)} />
         <Stat label="جلسات این هفته" value={fa(data.summary.sessionsThisWeek)} />
         <Stat label="کل تکرارها" value={fa(data.summary.totalReps)} />
         <Stat label="کل رکوردها (PR)" value={fa(data.summary.totalRecords)} />
-        <div className="rounded-xl border p-3">
+        <div className="col-span-2 rounded-xl border p-3 sm:col-span-1">
           <div className="flex items-center justify-between gap-2">
             <p className="text-muted-foreground text-xs">اندازه‌گیری</p>
             <select
@@ -199,7 +202,7 @@ export function MemberProgressPanel({
         </div>
       </div>
 
-      <section className="bg-card rounded-lg border p-4 shadow-sm">
+      <section className="bg-card rounded-lg border p-3.5 shadow-sm sm:p-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h4 className="text-sm font-bold">فعالیت ۱۲ ماه گذشته</h4>
           <div className="flex gap-1">
@@ -209,7 +212,7 @@ export function MemberProgressPanel({
                 type="button"
                 aria-pressed={activityMode === mode}
                 onClick={() => setActivityMode(mode)}
-                className={`rounded-lg border px-3 py-1.5 text-xs font-semibold ${
+                className={`min-h-9 rounded-lg border px-3 py-1.5 text-xs font-semibold ${
                   activityMode === mode ? 'border-primary bg-primary/10' : 'hover:bg-muted'
                 }`}
               >
@@ -218,7 +221,7 @@ export function MemberProgressPanel({
             ))}
           </div>
         </div>
-        <div className="mt-3 h-56">
+        <div className="mt-3 h-48 sm:h-56">
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={activityPoints}>
               <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
@@ -237,7 +240,7 @@ export function MemberProgressPanel({
         </div>
       </section>
 
-      <section className="bg-card rounded-lg border p-4 shadow-sm">
+      <section className="bg-card rounded-lg border p-3.5 shadow-sm sm:p-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h4 className="text-sm font-bold">نقشه عضلات</h4>
           <div className="flex flex-wrap gap-1">
@@ -247,7 +250,7 @@ export function MemberProgressPanel({
                 type="button"
                 aria-pressed={mapMode === mode.value}
                 onClick={() => setMapMode(mode.value)}
-                className={`rounded-lg border px-2.5 py-1.5 text-xs font-semibold ${
+                className={`min-h-9 rounded-lg border px-2.5 py-1.5 text-xs font-semibold ${
                   mapMode === mode.value ? 'border-primary bg-primary/10' : 'hover:bg-muted'
                 }`}
               >
@@ -307,7 +310,7 @@ export function MemberProgressPanel({
                   type="button"
                   onClick={() => setSelectedMuscle(item.muscleCode)}
                   aria-pressed={selectedMuscle === item.muscleCode}
-                  className={`flex w-full flex-wrap items-center justify-between gap-2 px-4 py-2.5 text-right text-sm transition ${
+                  className={`flex min-h-11 w-full flex-wrap items-center justify-between gap-2 px-3 py-3 text-right text-sm transition sm:px-4 sm:py-2.5 ${
                     selectedMuscle === item.muscleCode ? 'bg-primary/10' : 'hover:bg-muted/50'
                   }`}
                 >
@@ -330,22 +333,22 @@ export function MemberProgressPanel({
             <h4 className="text-sm font-bold">اندازه‌گیری‌ها</h4>
           </div>
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[520px] text-right text-sm">
+            <table className="w-full min-w-[460px] text-right text-xs sm:text-sm">
               <thead>
                 <tr className="text-muted-foreground border-b text-xs">
-                  <th className="px-4 py-2 font-medium">تاریخ</th>
-                  <th className="px-4 py-2 font-medium">وزن (kg)</th>
-                  <th className="px-4 py-2 font-medium">چربی (٪)</th>
-                  <th className="px-4 py-2 font-medium">دور کمر (cm)</th>
+                  <th className="px-3 py-2 font-medium sm:px-4">تاریخ</th>
+                  <th className="px-3 py-2 font-medium sm:px-4">وزن (kg)</th>
+                  <th className="px-3 py-2 font-medium sm:px-4">چربی (٪)</th>
+                  <th className="px-3 py-2 font-medium sm:px-4">دور کمر (cm)</th>
                 </tr>
               </thead>
               <tbody>
                 {data.summary.measurements.slice(0, 8).map((row) => (
                   <tr key={row.date} className="border-b last:border-0">
-                    <td className="px-4 py-2">{formatDate(row.date)}</td>
-                    <td className="px-4 py-2 tabular-nums">{num(row.weightKg)}</td>
-                    <td className="px-4 py-2 tabular-nums">{num(row.bodyFatPercent)}</td>
-                    <td className="px-4 py-2 tabular-nums">{num(row.waistCm)}</td>
+                    <td className="px-3 py-2 sm:px-4">{formatDate(row.date)}</td>
+                    <td className="px-3 py-2 tabular-nums sm:px-4">{num(row.weightKg)}</td>
+                    <td className="px-3 py-2 tabular-nums sm:px-4">{num(row.bodyFatPercent)}</td>
+                    <td className="px-3 py-2 tabular-nums sm:px-4">{num(row.waistCm)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -361,7 +364,9 @@ function Stat({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-xl border p-3">
       <p className="text-muted-foreground text-xs">{label}</p>
-      <p className="mt-1 text-lg font-extrabold tracking-tight tabular-nums">{value}</p>
+      <p className="mt-1 text-base font-extrabold tracking-tight tabular-nums sm:text-lg">
+        {value}
+      </p>
     </div>
   )
 }

@@ -125,8 +125,8 @@ export function StaffDashboard() {
   }, [assignments])
 
   return (
-    <main dir="rtl" className="mx-auto w-full min-w-0 max-w-[1440px] space-y-5">
-      <section className="bg-card relative overflow-hidden rounded-2xl border p-4 shadow-sm sm:p-7">
+    <main dir="rtl" className="mx-auto w-full min-w-0 max-w-[1440px] space-y-4 sm:space-y-5">
+      <section className="bg-card relative overflow-hidden rounded-2xl border p-4 shadow-sm sm:p-6 lg:p-7">
         <div className="bg-primary/10 pointer-events-none absolute -top-16 -left-10 size-48 rounded-full blur-3xl" />
         <div className="relative flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
@@ -138,23 +138,23 @@ export function StaffDashboard() {
               )}
               {isAdmin ? 'پنل مدیریت باشگاه' : 'پنل مربی'}
             </span>
-            <h1 className="mt-3 text-2xl font-extrabold tracking-tight sm:text-3xl">
+            <h1 className="mt-2.5 text-[22px] leading-8 font-extrabold tracking-tight sm:mt-3 sm:text-3xl">
               {isAdmin ? 'باشگاه امروز' : 'میز کار مربی'}
             </h1>
-            <p className="text-muted-foreground mt-2 max-w-2xl text-sm leading-7">
+            <p className="text-muted-foreground mt-1.5 max-w-2xl text-[13px] leading-6 sm:mt-2 sm:text-sm sm:leading-7">
               درخواست‌های اعضا، شاگردان و وضعیت برنامه‌ها در یک نگاه. هر وقت خواستید با
               «حالت تمرین» وارد تجربه‌ی تمرین شوید و مثل یک عضو باشگاه تمرین کنید.
             </p>
           </div>
 
-          <div className="flex flex-wrap gap-2">
-            <Button asChild>
+          <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
+            <Button asChild className="h-11 justify-center sm:h-9">
               <Link href="/home">
                 <Play className="size-4" />
                 حالت تمرین
               </Link>
             </Button>
-            <Button asChild variant="outline">
+            <Button asChild variant="outline" className="h-11 justify-center sm:h-9">
               <Link href="/console/coach">
                 <Inbox className="size-4" />
                 صف مربی
@@ -170,13 +170,13 @@ export function StaffDashboard() {
       </section>
 
       {loading ? (
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="grid grid-cols-2 gap-2.5 sm:gap-3 xl:grid-cols-4">
           {[0, 1, 2, 3].map((key) => (
-            <Skeleton key={key} className="h-28 rounded-2xl" />
+            <Skeleton key={key} className="h-24 rounded-2xl sm:h-28" />
           ))}
         </div>
       ) : (
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="grid grid-cols-2 gap-2.5 sm:gap-3 xl:grid-cols-4">
           <DashboardStat
             label="درخواست‌های باز"
             value={fa(openRequests.length)}
@@ -207,7 +207,7 @@ export function StaffDashboard() {
         </div>
       )}
 
-      <div className="grid gap-5 xl:grid-cols-[minmax(0,1.15fr)_minmax(300px,.85fr)]">
+      <div className="grid gap-4 sm:gap-5 xl:grid-cols-[minmax(0,1.15fr)_minmax(300px,.85fr)]">
         <DashboardPanel
           title="درخواست‌های اعضا از مربی"
           description="بازترین درخواست‌ها؛ پاسخ در همان صفحه بدون ترک پنل"
@@ -246,8 +246,13 @@ export function StaffDashboard() {
                       <span className="text-muted-foreground mt-1 block truncate text-xs">
                         {request.title}
                       </span>
+                      {request.lastMessageAt && (
+                        <span className="text-muted-foreground mt-0.5 block text-[10px] tabular-nums sm:hidden">
+                          {activityFmt.format(new Date(request.lastMessageAt))}
+                        </span>
+                      )}
                     </span>
-                    <span className="text-muted-foreground shrink-0 text-[10px]">
+                    <span className="text-muted-foreground hidden shrink-0 text-[10px] tabular-nums sm:inline">
                       {request.lastMessageAt
                         ? activityFmt.format(new Date(request.lastMessageAt))
                         : ''}

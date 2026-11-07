@@ -4,6 +4,7 @@ import './globals.css'
 import NextTopLoader from 'nextjs-toploader'
 
 import { NetworkQualityProvider } from '@/components/network-quality'
+import { ServiceWorkerCleanup } from '@/components/service-worker-cleanup'
 import { ThemeProvider } from '@/components/theme-provider'
 import { Toaster } from '@/components/ui/sonner'
 import ShadCnDirProvider from '@/providers/direction-provider'
@@ -60,6 +61,8 @@ export default function RootLayout({
       <head>
       </head>
       <body className="min-h-svh bg-background text-foreground antialiased transition-colors">
+        {/* Retires the worker left behind by the removed offline mode. */}
+        <ServiceWorkerCleanup />
         {/* Sets data-network on <html> so CSS can drop expensive effects on slow links. */}
         <NetworkQualityProvider />
         <NextTopLoader showSpinner={false} />
