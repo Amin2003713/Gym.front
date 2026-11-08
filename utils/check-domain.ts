@@ -49,6 +49,8 @@ const requestDomain = async (
       },
     })
 
+    console.log({ url }, { res })
+
     if (!res.ok) {
       // A rejected slug is a real answer; a gateway/proxy failure is not.
       if (res.status === 400 || res.status === 404) return false
