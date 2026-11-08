@@ -48,11 +48,9 @@ export const getBaseURL = async (): Promise<string> => {
   if (typeof window !== 'undefined') {
     host = window.location.host
   } else {
-    const { headers } = await import('next/headers')
-    const serverHeaders = await headers()
-    host = serverHeaders.get('host') || BASE_DOMAIN
+    host =  BASE_DOMAIN
   }
-
+  host = BASE_DOMAIN
   const subdomain = extractSubdomain(host)
   const hasValidSubdomain = !!subdomain && isValidSubdomain(subdomain)
 
