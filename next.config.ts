@@ -11,6 +11,9 @@ const cdnBase = process.env.NEXT_PUBLIC_CDN_URL?.trim().replace(/\/$/, '')
 const PUBLIC_ASSET = 'public, max-age=2592000, stale-while-revalidate=86400'
 
 const nextConfig: NextConfig = {
+  // The container runs the traced server (`node server.js`) instead of shipping node_modules
+  // and the whole source tree into the runtime image.
+  output: 'standalone',
   poweredByHeader: false,
   compress: true,
   reactStrictMode: true,

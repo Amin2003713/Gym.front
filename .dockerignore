@@ -23,6 +23,8 @@
 
 # editor
 .idea
+.git
+.github
 
 # misc
 .DS_Store

@@ -92,17 +92,17 @@ jobs:
           set -e
           cd "${REMOTE_DIR%/}"
           
-          docker stop $CONTAINER || true
-          docker rm $CONTAINER || true
-          
-          docker build -t $IMAGE .
-          
+          # -f removes a running container in one step and stays quiet on the first deploy.
+          docker rm -f "$CONTAINER" >/dev/null 2>&1 || true
+
+          docker build -t "$IMAGE" .
+
           docker run -d \
-            --name $CONTAINER \
+            --name "$CONTAINER" \
             --env-file .env.production \
             -p "127.0.0.1:${PORT}:${PORT}" \
             --restart unless-stopped \
-            $IMAGE
+            "$IMAGE"
           EOF
 
 
