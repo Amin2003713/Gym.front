@@ -83,7 +83,7 @@ type Signal = { from: string; kind: 'offer' | 'answer' | 'ice'; payload: string 
  */
 async function resolveHubUrl() {
   try {
-    const { baseURL } = await getBaseURL()
+    const  baseURL  = await getBaseURL()
     return secureHubUrl(`${baseURL}/hubs/live`)
   } catch {
     // No API URL configured: stay on the page origin instead of guessing a host.
