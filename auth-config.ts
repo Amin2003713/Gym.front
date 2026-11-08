@@ -28,6 +28,23 @@ export const authConfig = {
         '/signup',
       ]
 
+      // Public marketing site, checkout and the tenant-less platform console. These live on the
+      // bare base domain and must never need a gym (or a session) to render.
+      const sitePaths = [
+        '/',
+        '/pricing',
+        '/start',
+        '/features',
+        '/contact',
+        '/sitemap.xml',
+        '/robots.txt',
+      ]
+
+      const isSitePath =
+        sitePaths.includes(url.pathname) ||
+        url.pathname.startsWith('/p/') ||
+        url.pathname.startsWith('/admin')
+
       const redirectToRootSignup = () => {
         const signupUrl = new URL(request.url)
 
@@ -51,22 +68,39 @@ export const authConfig = {
 
       // 1. Root domain or www without a tenant
       if (isBaseDomain) {
-        if (url.pathname === '/') {
-          return NextResponse.redirect(new URL('/signup', request.url))
-        }
-
-        // Allow public pages on the main domain
-        if (publicPages.includes(url.pathname)) {
+        // Static files (icons, images, fonts) keep their own URLs on the base domain.
+        if (/\.[a-z0-9]+$/i.test(url.pathname)) {
           return NextResponse.next()
         }
 
-        // Main domain cannot access tenant dashboard
-        return NextResponse.redirect(new URL('/signup', request.url))
+        // The public site and /admin have no tenant; the sign-in/sign-up pages stay public too.
+        if (isSitePath || publicPages.includes(url.pathname)) {
+          return NextResponse.next()
+        }
+
+        // Main domain cannot access a tenant dashboard.
+        return NextResponse.redirect(new URL('/', request.url))
       }
 
       // 2. No valid tenant subdomain
       if (!isSubdomain || !subdomain) {
         return redirectToRootSignup()
+      }
+
+      // The platform console is tenant-less: a gym host never serves it, even for its owner.
+      if (url.pathname.startsWith('/admin')) {
+        const consoleUrl = new URL(request.url)
+        consoleUrl.hostname = baseDomain
+        consoleUrl.port = ''
+        consoleUrl.pathname = url.pathname
+
+        return NextResponse.redirect(consoleUrl)
+      }
+
+      // `/` on a gym host is the staff dashboard. The page itself lives at an internal path so
+      // the platform marketing site can own `/` on the bare domain; keep that path unaddressable.
+      if (url.pathname === '/console-home') {
+        return NextResponse.redirect(new URL('/', request.url))
       }
 
       // 3. Check whether the tenant exists.
@@ -95,6 +129,10 @@ export const authConfig = {
       // 5. Require authentication for tenant dashboard
       if (!isAuthenticated) {
         return NextResponse.redirect(new URL('/signin', request.url))
+      }
+
+      if (url.pathname === '/') {
+        return NextResponse.rewrite(new URL('/console-home', request.url))
       }
 
       return NextResponse.next()

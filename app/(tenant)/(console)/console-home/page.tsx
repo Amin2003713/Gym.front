@@ -2,9 +2,14 @@ import { redirect } from 'next/navigation'
 
 import { StaffDashboard } from '@/features/gym/components/staff-dashboard'
 
-import { getUserInfo } from '../layout'
+import { getUserInfo } from '../../layout'
 
-/** Roles enum of the API: trainees own the member app, staff keep the gym console. */
+/**
+ * Staff dashboard for a gym host. The public marketing site owns `/` on the base domain, so this
+ * page lives at an internal path and the proxy rewrites a tenant's `/` onto it.
+ *
+ * Roles enum of the API: trainees own the member app, staff keep the gym console.
+ */
 const TRAINEE = 2
 
 export default async function GymConsoleHomePage() {
