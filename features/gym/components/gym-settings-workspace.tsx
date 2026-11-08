@@ -1,16 +1,5 @@
 'use client'
 
-import {
-  Loader2,
-  MapPin,
-  Plus,
-  Ruler,
-  Save,
-  Settings2,
-  ShieldCheck,
-  Weight,
-  X,
-} from '@/components/icons'
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
 
 import {
@@ -25,6 +14,17 @@ import {
   type UpdateGymSettingsInput,
 } from '@/app/(tenant)/_api/gym-settings-api'
 import { BarbellLoad } from '@/components/barbell-load'
+import {
+  Loader2,
+  MapPin,
+  Plus,
+  Ruler,
+  Save,
+  Settings2,
+  ShieldCheck,
+  Weight,
+  X,
+} from '@/components/icons'
 import { Skeleton } from '@/components/ui/skeleton'
 import { toast } from '@/lib/toast'
 

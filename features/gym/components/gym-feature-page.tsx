@@ -1,5 +1,7 @@
 'use client'
 
+import Link from 'next/link'
+
 import {
   Activity,
   ArrowUpLeft,
@@ -14,7 +16,6 @@ import {
   Users,
   type LucideIcon,
 } from '@/components/icons'
-import Link from 'next/link'
 
 import { GymSettingsWorkspace } from './gym-settings-workspace'
 import { OpenGymWorkspace } from './open-gym-workspace'
@@ -92,7 +93,6 @@ function WorkspacePreview({ feature }: { feature: GymFeatureKey }) {
 
 export function GymFeaturePage({ feature }: { feature: GymFeatureKey }) {
   const item = features[feature]
-  const Icon = item.icon
 
   return (
     <main dir="rtl" className="mx-auto w-full max-w-[1440px] space-y-5 p-3 sm:p-5 lg:p-7">
