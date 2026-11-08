@@ -42,7 +42,7 @@ const parseApiUrl = (raw: string): { host: string; basePath: string } => {
   }
 }
 
-const getBaseURL = async (): Promise<string> => {
+export const getBaseURL = async (): Promise<string> => {
   let host: string
 
   if (typeof window !== 'undefined') {
@@ -72,6 +72,18 @@ const httpService = axios.create({
   },
 })
 
+const readBlob = async (
+  url: string,
+  otherConfigs?: Omit<AxiosRequestConfig, 'method' | 'responseType'>,
+): Promise<Blob> => {
+  const options: AxiosRequestConfig = {
+    ...otherConfigs,
+    method: 'GET',
+    responseType: 'blob',
+  }
+
+  return apiBase<Blob>(url, options)
+}
 const redirectToSigninOnUnauthorized = () => {
   if (!isClient || isRedirectingToSignin) return
   if (window.location.pathname.startsWith('/signin')) return
@@ -201,4 +213,4 @@ const deleteData = async <TModel>(
   return await apiBase(url, options)
 }
 
-export { createData, readData, updateData, deleteData }
+export { createData, readData, updateData, deleteData  , readBlob}
