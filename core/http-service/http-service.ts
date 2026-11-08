@@ -47,10 +47,22 @@ export const getBaseURL = async (): Promise<string> => {
 
   if (typeof window !== 'undefined') {
     host = window.location.host
+    console.log(
+      'Host Is     ',
+      host,
+      window.location.hostname,
+      window.location.href,
+    )
+
   } else {
-    host =  BASE_DOMAIN
+    // Server-side: Dynamically import 'next/headers' to avoid client-side import errors.
+    const { headers } = await import('next/headers')
+    const serverHeaders = await headers()
+    host = serverHeaders.get('host') || API_URL!
+
+    console.log('Host Is:', host)
   }
-  host = BASE_DOMAIN
+
   const subdomain = extractSubdomain(host)
   const hasValidSubdomain = !!subdomain && isValidSubdomain(subdomain)
 
@@ -59,6 +71,7 @@ export const getBaseURL = async (): Promise<string> => {
   // If API_URL includes a path (/lite), keep it AFTER the host.
   const domain = hasValidSubdomain ? `${subdomain}.${apiHost}` : apiHost
 
+  console.log(host, basePath, basePath, `https://${domain}${basePath}`)
   // Keep https because your backend is https
   return `https://${domain}${basePath}`
 }
@@ -211,4 +224,4 @@ const deleteData = async <TModel>(
   return await apiBase(url, options)
 }
 
-export { createData, readData, updateData, deleteData  , readBlob}
+export { createData, readData, updateData, deleteData, readBlob }
