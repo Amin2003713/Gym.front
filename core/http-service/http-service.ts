@@ -7,6 +7,84 @@ import { ApiError } from '@/types/http-errors.interface'
 
 import { errorHandler, networkErrorStrategy } from './http-error-strategies'
 
+type HttpFailureStage =
+  | 'SESSION_RESOLUTION'
+  | 'BASE_URL_RESOLUTION'
+  | 'HTTP_REQUEST'
+  | 'HTTP_RESPONSE'
+
+const logHttpDiagnostic = (event: string, details: Record<string, unknown>) => {
+  console.error(
+    '[HTTP][DIAGNOSTIC]',
+    JSON.stringify({
+      timestamp: new Date().toISOString(),
+      event,
+      ...details,
+    }),
+  )
+}
+
+const getSafeRequestUrl = (config?: AxiosRequestConfig) => {
+  if (!config) return undefined
+
+  try {
+    const url = new URL(config.url ?? '', config.baseURL)
+
+    // Do not log query strings; they may contain sensitive values.
+    return `${url.origin}${url.pathname}`
+  } catch {
+    return config.url
+  }
+}
+
+const describeHttpError = (error: unknown) => {
+  if (axios.isAxiosError(error)) {
+    return {
+      type: 'AXIOS',
+      name: error.name,
+      message: error.message,
+      code: error.code ?? null,
+      method: error.config?.method?.toUpperCase() ?? null,
+      url: getSafeRequestUrl(error.config),
+      timeout: error.config?.timeout ?? null,
+      status: error.response?.status ?? null,
+      statusText: error.response?.statusText ?? null,
+      contentType: error.response?.headers?.['content-type'] ?? null,
+      requestId: error.response?.headers?.['x-request-id'] ?? null,
+      hasResponse: Boolean(error.response),
+      cause:
+        error.cause instanceof Error
+          ? {
+              name: error.cause.name,
+              message: error.cause.message,
+            }
+          : undefined,
+    }
+  }
+
+  return {
+    type: typeof error,
+    constructor:
+      error !== null && typeof error === 'object'
+        ? error.constructor?.name
+        : undefined,
+    message: error instanceof Error ? error.message : undefined,
+    value:
+      error !== null && typeof error === 'object'
+        ? Object.fromEntries(
+            Object.entries(error).map(([key, value]) => [
+              key,
+              /password|token|authorization|cookie|secret|credential/i.test(key)
+                ? '[REDACTED]'
+                : value instanceof Error
+                  ? value.message
+                  : value,
+            ]),
+          )
+        : String(error),
+  }
+}
+
 const normalizeHost = (value: string): string =>
   value
     .split(',')[0]
@@ -186,41 +264,84 @@ const handleExpiredSession = async () => {
 }
 
 httpService.interceptors.response.use(
-  (response) => response,
-  async (error) => {
-    const statusCode = error?.response?.status as number | undefined
-    const config = error?.config as
-      | (AxiosRequestConfig & { __sessionResynced?: boolean })
-      | undefined
+  (response) => {
+    return response
+  },
+
+  async (error: unknown) => {
+    const statusCode = axios.isAxiosError(error)
+      ? error.response?.status
+      : undefined
+
+    const config = axios.isAxiosError(error)
+      ? (error.config as
+          | (AxiosRequestConfig & {
+              __sessionResynced?: boolean
+            })
+          | undefined)
+      : undefined
+
+    const requestDetails = {
+      status: statusCode ?? null,
+      error: describeHttpError(error),
+    }
+
+    logHttpDiagnostic('RESPONSE_INTERCEPTOR_FAILURE', requestDetails)
 
     if (statusCode === 401) {
-      // The token was rejected (expired, or the tenant no longer matches this host). Re-read the
-      // session once and replay the request; only a second failure signs the user out.
-      if (config && !config.__sessionResynced) {
-        config.__sessionResynced = true
+      try {
+        if (config && !config.__sessionResynced) {
+          config.__sessionResynced = true
 
-        const token = await resyncSession()
+          const token = await resyncSession()
 
-        if (token) {
-          config.headers = {
-            ...config.headers,
-            Authorization: `Bearer ${token}`,
+          if (token) {
+            config.headers = {
+              ...config.headers,
+              Authorization: `Bearer ${token}`,
+            }
+
+            return httpService(config)
           }
-
-          return httpService(config)
         }
+
+        await handleExpiredSession()
+      } catch (handlerError) {
+        logHttpDiagnostic('SESSION_RECOVERY_FAILURE', {
+          error: describeHttpError(handlerError),
+        })
       }
-
-      await handleExpiredSession()
     }
 
-    if (error?.response) {
-      const errorData: ApiError = error.response.data
-      errorHandler[statusCode as number]?.(errorData)
+    if (statusCode !== undefined) {
+      try {
+        const errorData = axios.isAxiosError(error)
+          ? (error.response?.data as ApiError)
+          : undefined
+
+        if (errorData) {
+          errorHandler[statusCode]?.(errorData)
+        }
+      } catch (handlerError) {
+        logHttpDiagnostic('HTTP_ERROR_HANDLER_FAILURE', {
+          status: statusCode,
+          error: describeHttpError(handlerError),
+        })
+      }
     } else {
-      networkErrorStrategy()
+      try {
+        networkErrorStrategy()
+      } catch (handlerError) {
+        // Important: never allow the UI error strategy to replace
+        // the original network exception.
+        logHttpDiagnostic('NETWORK_ERROR_STRATEGY_FAILURE', {
+          originalError: describeHttpError(error),
+          strategyError: describeHttpError(handlerError),
+        })
+      }
     }
 
+    // Always preserve the original Axios rejection.
     return Promise.reject(error)
   },
 )
@@ -229,27 +350,62 @@ const apiBase = async <T>(
   url: string,
   options?: AxiosRequestConfig,
 ): Promise<T> => {
-  const session = await readSession()
+  let stage: HttpFailureStage = 'SESSION_RESOLUTION'
+  const startedAt = Date.now()
 
-  const baseURL = await getBaseURL()
-  const fullURL = `${baseURL.baseURL}/api/${url}`
+  try {
+    const session = await readSession()
 
-  const headers = {
-    ...options?.headers,
-    ...(baseURL.tenant && {
-      'X-Tenant': baseURL.tenant,
-    }),
-    ...(session?.user?.accessToken && {
-      Authorization: `Bearer ${session.user.accessToken}`,
-    }),
+    stage = 'BASE_URL_RESOLUTION'
+
+    const baseURL = await getBaseURL()
+    const fullURL = `${baseURL.baseURL}/api/${url}`
+
+    const headers = {
+      ...options?.headers,
+      ...(baseURL.tenant && {
+        'X-Tenant': baseURL.tenant,
+      }),
+      ...(session?.user?.accessToken && {
+        Authorization: `Bearer ${session.user.accessToken}`,
+      }),
+    }
+
+    stage = 'HTTP_REQUEST'
+
+    logHttpDiagnostic('REQUEST_STARTED', {
+      method: options?.method?.toUpperCase() ?? 'GET',
+      url: fullURL,
+      tenant: baseURL.tenant,
+      hasSession: Boolean(session),
+      hasAccessToken: Boolean(session?.user?.accessToken),
+      timeout: options?.timeout ?? httpService.defaults.timeout,
+    })
+
+    const response = await httpService(fullURL, {
+      ...options,
+      headers,
+    })
+
+    logHttpDiagnostic('REQUEST_COMPLETED', {
+      method: options?.method?.toUpperCase() ?? 'GET',
+      url: fullURL,
+      status: response.status,
+      durationMs: Date.now() - startedAt,
+    })
+
+    return response.data as T
+  } catch (error: unknown) {
+    logHttpDiagnostic('REQUEST_FAILED', {
+      stage,
+      endpoint: url,
+      durationMs: Date.now() - startedAt,
+      error: describeHttpError(error),
+    })
+
+    // Never convert the original exception into a generic object.
+    throw error
   }
-
-  const response = await httpService(fullURL, {
-    ...options,
-    headers,
-  })
-
-  return response.data as T
 }
 
 const readData = async <T>(

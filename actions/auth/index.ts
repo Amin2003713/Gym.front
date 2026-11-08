@@ -1,6 +1,7 @@
 'use server'
 
-import { AxiosRequestHeaders } from 'axios'
+import axios from 'axios'
+import type { AxiosRequestHeaders } from 'axios'
 import { isRedirectError } from 'next/dist/client/components/redirect-error'
 import { AuthError, CredentialsSignin } from 'next-auth'
 
@@ -52,47 +53,200 @@ export const verifyPhoneNumber = async (
   )
 }
 
+
+type SigninDiagnosticStage = 'API_LOGIN' | 'NEXTAUTH_SESSION'
+
+function sanitizeDiagnosticValue(
+  value: unknown,
+  depth = 0,
+  seen = new WeakSet<object>(),
+): unknown {
+  if (depth > 5) return '[MAX_DEPTH]'
+
+  if (value === null || value === undefined) return value
+
+  if (typeof value !== 'object') return value
+
+  if (seen.has(value)) return '[CIRCULAR]'
+  seen.add(value)
+
+  if (value instanceof Error) {
+    return {
+      name: value.name,
+      message: value.message,
+      stack: value.stack,
+      cause: sanitizeDiagnosticValue(value.cause, depth + 1, seen),
+      ...Object.fromEntries(
+        Object.entries(value).map(([key, item]) => [
+          key,
+          sanitizeDiagnosticValue(item, depth + 1, seen),
+        ]),
+      ),
+    }
+  }
+
+  if (Array.isArray(value)) {
+    return value.map((item) => sanitizeDiagnosticValue(item, depth + 1, seen))
+  }
+
+  const sensitiveKeys =
+    /password|token|authorization|cookie|secret|credential|accesskey|privatekey/i
+
+  return Object.fromEntries(
+    Object.entries(value).map(([key, item]) => {
+      if (
+        sensitiveKeys.test(key) ||
+        ['headers', 'request', 'config', 'data'].includes(key.toLowerCase())
+      ) {
+        return [key, '[REDACTED]']
+      }
+
+      return [key, sanitizeDiagnosticValue(item, depth + 1, seen)]
+    }),
+  )
+}
+
+function logSigninError(
+  stage: SigninDiagnosticStage,
+  error: unknown,
+  durationMs?: number,
+) {
+  console.error(
+    '[AUTH][SIGNIN][FAILURE]',
+    JSON.stringify(
+      {
+        timestamp: new Date().toISOString(),
+        stage,
+        durationMs,
+        isAxiosError: axios.isAxiosError(error),
+        errorType: typeof error,
+        errorConstructor:
+          error !== null && typeof error === 'object'
+            ? error.constructor?.name
+            : typeof error,
+        error: sanitizeDiagnosticValue(error),
+      },
+      null,
+      2,
+    ),
+  )
+}
+
+function logSigninEvent(
+  event: string,
+  details: Record<string, unknown> = {},
+) {
+  console.info(
+    '[AUTH][SIGNIN]',
+    JSON.stringify({
+      timestamp: new Date().toISOString(),
+      event,
+      ...details,
+    }),
+  )
+}
+
 export async function signinAction(
   prvState: OperationResult<void> | undefined,
   data: SigninUserModel,
 ): Promise<OperationResult<void>> {
+  let stage: SigninDiagnosticStage = 'API_LOGIN'
+  let startedAt = Date.now()
+
   try {
-    // 1) Perform the real login here so we keep the full `Problem` shape.
+    logSigninEvent('LOGIN_STARTED', {
+      stage,
+    })
+
+    // Stage 1: Authenticate against the .NET API.
+    logSigninEvent('API_REQUEST_STARTED', {
+      endpoint: 'user/login',
+      method: 'POST',
+    })
+
     const user = await createData<SigninUserModel, SignedInUser>(
       'user/login',
       data,
     )
 
+    const apiDurationMs = Date.now() - startedAt
+
+    logSigninEvent('API_REQUEST_COMPLETED', {
+      durationMs: apiDurationMs,
+      hasUser: Boolean(user),
+      hasToken: Boolean(user?.token),
+    })
+
     if (!user?.token) {
+      logSigninEvent('API_INVALID_RESPONSE', {
+        reason: 'Missing authentication token',
+        durationMs: apiDurationMs,
+      })
+
       return {
         isSuccess: false,
         error: {
           detail: 'نام کاربری یا رمز عبور اشتباه است',
-          title: '',
-          status: 0,
+          title: 'خطا در ورود',
+          status: 401,
         },
       }
     }
 
-    // 2) Establish the NextAuth session using the token we already have.
-    //    No second HTTP call — `authorize` trusts this token.
-    await signIn('credentials', { accessToken: user.token, redirect: false })
+    // Stage 2: Establish NextAuth session.
+    stage = 'NEXTAUTH_SESSION'
+    startedAt = Date.now()
 
-    return { isSuccess: true }
-  } catch (error) {
-    if (isRedirectError(error)) throw error
+    logSigninEvent('NEXTAUTH_SESSION_STARTED', {
+      provider: 'credentials',
+    })
 
-    // Auth.js may still throw if authorize returns null or the fallback path fires.
-    if (error instanceof CredentialsSignin) {
-      if (error instanceof AuthorizeError) {
-        return { isSuccess: false, error: error.problem }
+    await signIn('credentials', {
+      accessToken: user.token,
+      redirect: false,
+    })
+
+    logSigninEvent('NEXTAUTH_SESSION_COMPLETED', {
+      durationMs: Date.now() - startedAt,
+    })
+
+    logSigninEvent('LOGIN_COMPLETED')
+
+    return {
+      isSuccess: true,
+    }
+  } catch (error: unknown) {
+    const durationMs = Date.now() - startedAt
+
+    if (isRedirectError(error)) {
+      throw error
+    }
+
+    // Log the original exception before converting it.
+    logSigninError(stage, error, durationMs)
+
+    if (error instanceof AuthorizeError) {
+      logSigninEvent('AUTHORIZATION_REJECTED', {
+        stage,
+        status: error.problem?.status,
+      })
+
+      return {
+        isSuccess: false,
+        error: error.problem,
       }
+    }
+
+    if (error instanceof CredentialsSignin) {
       return {
         isSuccess: false,
         error: {
-          detail: 'نام کاربری یا رمز عبور اشتباه است',
-          title: '',
-          status: 0,
+          detail:
+            stage === 'NEXTAUTH_SESSION'
+              ? 'ایجاد نشست کاربری ناموفق بود'
+              : 'نام کاربری یا رمز عبور اشتباه است',
+          title: 'خطا در ورود',
+          status: 401,
         },
       }
     }
@@ -102,16 +256,20 @@ export async function signinAction(
         isSuccess: false,
         error: {
           detail: 'خطا در احراز هویت',
-          title: '',
+          title: 'خطا در ورود',
           status: 0,
         },
       }
     }
 
-    // Real API failures land here — return the actual Problem.
     return {
       isSuccess: false,
-      error: normalizeProblem(error, 'خطا در ورود. لطفاً دوباره تلاش کنید.'),
+      error: normalizeProblem(
+        error,
+        stage === 'API_LOGIN'
+          ? 'خطا در ارتباط با سرور ورود'
+          : 'خطا در ایجاد نشست کاربری',
+      ),
     }
   }
 }
