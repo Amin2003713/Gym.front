@@ -69,11 +69,18 @@ export const authConfig = {
         return redirectToRootSignup()
       }
 
-      // 3. Check whether the tenant exists
-      const isTenantExist = await checkDomain(subdomain)
+      // 3. Check whether the tenant exists.
+      //    A signed-in session was issued for this host, and the backend answers a tenant change
+      //    with 401 — so after login there is nothing to re-check on every navigation. This also
+      //    stops a flaky VPN/proxy connection from bouncing a real gym to the signup page.
+      //    Unauthenticated visitors are checked once (cached); an unreachable API (`null`) is not
+      //    treated as "tenant missing".
+      if (!isAuthenticated) {
+        const isTenantExist = await checkDomain(subdomain)
 
-      if (!isTenantExist) {
-        return redirectToRootSignup()
+        if (isTenantExist === false) {
+          return redirectToRootSignup()
+        }
       }
 
       // 4. Allow public pages on valid tenant domains

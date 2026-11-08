@@ -14,7 +14,7 @@ const normalizeHost = (value: string): string =>
     .toLowerCase()
     .replace(/^https?:\/\//, '')
     .split('/')[0]
-    .replace(/:\d+$/, '')
+    .replace(/:\\d+$/, '')
 
 const getTenantFromClientHost = (clientHost: string): string | null => {
   const host = normalizeHost(clientHost)
@@ -41,26 +41,23 @@ const getTenantFromClientHost = (clientHost: string): string | null => {
   return null
 }
 
+type BaseUrl = { baseURL: string; tenant: string | null }
+
+// The host cannot change inside one page, so resolving it once per host removes a headers()
+// lookup and URL parsing from every request. Only the host is cached, never the token.
+const baseUrlCache = new Map<string, BaseUrl>()
+
 /**
  * Resolves the API origin for the current host, including the tenant subdomain in production.
  * Exported so other transports that must hit the same backend (the SignalR live hub) do not
  * reinvent the tenant rules and accidentally talk to the bare base domain.
  */
-export const getBaseURL = async (): Promise<{
-  baseURL: string
-  tenant: string | null
-}> => {
+export const getBaseURL = async (): Promise<BaseUrl> => {
   const configuredApiUrl = API_URL?.trim()
 
   if (!configuredApiUrl) {
     throw new Error('NEXT_PUBLIC_API_URL is not configured.')
   }
-
-  const apiUrl = new URL(
-    /^[a-z][a-z0-9+.-]*:\/\//i.test(configuredApiUrl)
-      ? configuredApiUrl
-      : `https://${configuredApiUrl}`,
-  )
 
   let clientHost = ''
 
@@ -74,6 +71,15 @@ export const getBaseURL = async (): Promise<{
       requestHeaders.get('x-forwarded-host') || requestHeaders.get('host') || ''
   }
 
+  const cached = baseUrlCache.get(clientHost)
+  if (cached) return cached
+
+  const apiUrl = new URL(
+    /^[a-z][a-z0-9+.-]*:\/\//i.test(configuredApiUrl)
+      ? configuredApiUrl
+      : `https://${configuredApiUrl}`,
+  )
+
   const tenant = getTenantFromClientHost(clientHost)
 
   if (tenant) {
@@ -86,10 +92,13 @@ export const getBaseURL = async (): Promise<{
     }
   }
 
-  return {
+  const resolved: BaseUrl = {
     baseURL: apiUrl.toString().replace(/\/$/, ''),
     tenant,
   }
+
+  baseUrlCache.set(clientHost, resolved)
+  return resolved
 }
 
 const httpService = axios.create({
@@ -103,9 +112,17 @@ const httpService = axios.create({
 
 type ClientSession = Awaited<ReturnType<typeof getSession>>
 
+/**
+ * The session (user + token) does not change after login: the backend rejects a host/tenant change
+ * with 401 instead of silently serving another gym. So the client is allowed to keep it in memory
+ * for five minutes and only re-reads it after a 401 (`resyncSession`).
+ */
+const SESSION_TTL_MS = 5 * 60 * 1000
+const RESYNC_GUARD_MS = 15 * 1000
+
 let clientSession: Promise<ClientSession> | null = null
 let clientSessionAt = 0
-const CLIENT_SESSION_TTL_MS = 15_000
+let lastSessionResetAt = 0
 
 const resetClientSession = () => {
   clientSession = null
@@ -114,15 +131,15 @@ const resetClientSession = () => {
 
 /**
  * `getSession()` reads /api/auth/session over the network. Calling it before every API request
- * doubled the traffic on mobile; a 15s memo collapses a screen's burst of calls into one read.
- * Server renders keep using `auth()` per request — never shared between users.
+ * doubled the traffic on mobile; the in-memory copy collapses a screen's burst of calls into one
+ * read. Server renders keep using `auth()` per request — never shared between users.
  */
-const readSession = () => {
+const readSession = (): Promise<ClientSession> => {
   if (typeof window === 'undefined') return auth()
 
   const now = Date.now()
 
-  if (!clientSession || now - clientSessionAt > CLIENT_SESSION_TTL_MS) {
+  if (!clientSession || now - clientSessionAt > SESSION_TTL_MS) {
     clientSessionAt = now
     clientSession = getSession().catch((error) => {
       resetClientSession()
@@ -133,17 +150,73 @@ const readSession = () => {
   return clientSession
 }
 
+/** After a 401 the cached copy is worthless: read the session once more, then retry the request. */
+const resyncSession = async (): Promise<string | null> => {
+  resetClientSession()
+
+  try {
+    const session = await readSession()
+    return session?.user?.accessToken ?? null
+  } catch {
+    return null
+  }
+}
+
+let redirectingToSignin = false
+
+const handleExpiredSession = async () => {
+  if (typeof window === 'undefined' || redirectingToSignin) return
+
+  const now = Date.now()
+  if (now - lastSessionResetAt < RESYNC_GUARD_MS) return
+
+  lastSessionResetAt = now
+  redirectingToSignin = true
+
+  try {
+    const { signOut } = await import('next-auth/react')
+    await signOut({ redirect: false })
+  } catch {
+    // Sign-out is best effort; the redirect below still clears the broken state.
+  }
+
+  if (!window.location.pathname.startsWith('/signin')) {
+    window.location.replace('/signin')
+  }
+}
+
 httpService.interceptors.response.use(
   (response) => response,
-  (error) => {
+  async (error) => {
+    const statusCode = error?.response?.status as number | undefined
+    const config = error?.config as
+      | (AxiosRequestConfig & { __sessionResynced?: boolean })
+      | undefined
+
+    if (statusCode === 401) {
+      // The token was rejected (expired, or the tenant no longer matches this host). Re-read the
+      // session once and replay the request; only a second failure signs the user out.
+      if (config && !config.__sessionResynced) {
+        config.__sessionResynced = true
+
+        const token = await resyncSession()
+
+        if (token) {
+          config.headers = {
+            ...config.headers,
+            Authorization: `Bearer ${token}`,
+          }
+
+          return httpService(config)
+        }
+      }
+
+      await handleExpiredSession()
+    }
+
     if (error?.response) {
-      const statusCode = error.response.status
       const errorData: ApiError = error.response.data
-
-      // The cached token no longer works (sign-out, expiry): force a fresh session next call.
-      if (statusCode === 401) resetClientSession()
-
-      errorHandler[statusCode]?.(errorData)
+      errorHandler[statusCode as number]?.(errorData)
     } else {
       networkErrorStrategy()
     }
