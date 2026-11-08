@@ -16,6 +16,7 @@ import {
 } from '@/components/icons'
 import Link from 'next/link'
 
+import { GymSettingsWorkspace } from './gym-settings-workspace'
 import { OpenGymWorkspace } from './open-gym-workspace'
 
 export type GymFeatureKey =
@@ -80,8 +81,8 @@ const features: Record<GymFeatureKey, {
     bullets: ['انتساب مربی به شاگرد', 'نمایش شاگردان اختصاص‌یافته', 'دسترسی به سابقه تمرین طبق مجوز'], apiMethods: ['listTrainerAssignments', 'listWorkoutHistory', 'listBodyMeasurements'],
   },
   settings: {
-    title: 'تنظیمات', eyebrow: 'حساب و تجربه', description: 'تنظیمات زبان، واحدها، شروع هفته و رفتار تایمر تمرین.', icon: Settings2,
-    bullets: ['زبان و چینش راست‌چین', 'واحد وزن و مسافت', 'تایمر استراحت و نمایش RPE/RIR'], apiMethods: ['getPreferences', 'updatePreferences'],
+    title: 'تنظیمات باشگاه', eyebrow: 'مدیریت گروه', description: 'اطلاعات باشگاه، راه‌های تماس، نشانی، پیش‌فرض‌های زبان و واحد، رنگ برند و تجهیزات مشترک.', icon: Settings2,
+    bullets: ['نام، مجوز و اطلاعات تماس', 'نشانی دفتر مرکزی و منطقه زمانی', 'وزن هالتر و صفحه‌های باشگاه'], apiMethods: ['getGymSettings', 'updateGymSettings', 'getGymEquipment', 'updateGymEquipment'],
   },
 }
 
@@ -107,13 +108,19 @@ export function GymFeaturePage({ feature }: { feature: GymFeatureKey }) {
             <p className="max-w-2xl text-sm leading-7 text-muted-foreground">{item.description}</p>
           </div>
           <div className="flex items-center gap-2 self-start rounded-lg border bg-card px-3 py-2 text-xs text-muted-foreground sm:self-auto">
-            <span className={`size-2 rounded-full ${feature === 'exercises' ? 'bg-success' : 'bg-warning'}`} />
-            {feature === 'exercises' ? 'اتصال API حرکات پیاده‌سازی شده' : 'رابط تعاملی · اتصال داده در انتظار API'}
+            <span className={`size-2 rounded-full ${feature === 'exercises' || feature === 'settings' ? 'bg-success' : 'bg-warning'}`} />
+            {feature === 'exercises'
+              ? 'اتصال API حرکات پیاده‌سازی شده'
+              : feature === 'settings'
+                ? 'اتصال API تنظیمات باشگاه پیاده‌سازی شده'
+                : 'رابط تعاملی · اتصال داده در انتظار API'}
           </div>
         </div>
       </header>
 
-      {feature === 'exercises' ? (
+      {feature === 'settings' ? (
+        <GymSettingsWorkspace />
+      ) : feature === 'exercises' ? (
         <div className="rounded-2xl border border-dashed p-6 text-sm text-muted-foreground">
           کتابخانه حرکات صفحه اختصاصی خودش را دارد.
         </div>
