@@ -144,7 +144,7 @@ function MemberUserMenu({ user, error }: Pick<MemberShellProps, 'user' | 'error'
   const signOut = () =>
     startTransition(async () => {
       const response = await signOutAction()
-      if (response.isSuccess) router.push('/')
+      if (response.isSuccess) router.push('/signin')
     })
 
   if (!user) {

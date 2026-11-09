@@ -28,7 +28,6 @@ export const authConfig = {
         '/signup',
         '/llms.txt',
         '/.well-known/ard.json',
-        '/',
         '/pricing',
         '/start',
         '/features',
