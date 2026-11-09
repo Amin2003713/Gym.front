@@ -26,6 +26,15 @@ export const authConfig = {
         '/not-found',
         '/verify-account',
         '/signup',
+        '/llms.txt',
+        '/.well-known/ard.json',
+        '/',
+        '/pricing',
+        '/start',
+        '/features',
+        '/contact',
+        '/sitemap.xml',
+        '/robots.txt',
       ]
 
       // Public marketing site, checkout and the tenant-less platform console. These live on the

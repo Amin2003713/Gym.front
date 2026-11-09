@@ -173,6 +173,10 @@ export default function RootLayout({
   return (
     <html lang="fa" dir="rtl" suppressHydrationWarning>
       <head>
+        <link rel="ard" href="/.well-known/ard.json" type="application/json" />
+
+        <link rel="describedby" href="/llms.txt" type="text/markdown" />
+
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{

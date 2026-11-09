@@ -1,0 +1,33 @@
+{
+  "entries": [
+    {
+      "@context": "https://agenticresourcediscovery.org/context/v1",
+      "identifier": "urn:air:gymgroup.cv:website:hamowj",
+      "displayName": "هم‌اوج | HamOwj",
+      "type": "text/html",
+      "url": "https://gymgroup.cv/",
+      "version": "1.0.0",
+      "description": "وب‌سایت رسمی هم‌اوج، پلتفرم هوشمند مدیریت باشگاه ورزشی، مربیان، اعضا، برنامه‌های تمرینی، تحلیل عملکرد عضلات، مدیریت اشتراک‌ها و فروش آنلاین محصولات ورزشی.",
+      "tags": [
+        "hamowj",
+        "gym-management",
+        "fitness",
+        "sports",
+        "coaching",
+        "workout-planning",
+        "muscle-analysis",
+        "subscriptions",
+        "ecommerce",
+        "persian",
+        "iran"
+      ],
+      "representativeQueries": [
+        "هم‌اوج چیست و چه امکاناتی برای مدیریت باشگاه ورزشی دارد؟",
+        "چه نرم‌افزاری برای مدیریت اعضا و مربیان باشگاه وجود دارد؟",
+        "چطور می‌توان برنامه تمرینی و پیشرفت عضلات ورزشکاران را مدیریت کرد؟",
+        "چطور باشگاه می‌تواند چندین طرح اشتراک و محصولات ورزشی را آنلاین بفروشد؟",
+        "بهترین راهکار برای دیجیتالی کردن مدیریت باشگاه ورزشی چیست؟"
+      ]
+    }
+  ]
+}
