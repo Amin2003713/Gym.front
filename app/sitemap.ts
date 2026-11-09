@@ -7,7 +7,13 @@ export const revalidate = 3600
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const site = (await fetchSite()) ?? fallbackSite
-  const base = site.settings.canonicalBaseUrl?.replace(/\/$/, '') ||
+
+  if (!site.settings.allowIndexing) {
+    return []
+  }
+
+  const base =
+    site.settings.canonicalBaseUrl?.replace(/\/$/, '') ||
     (site.baseDomain ? `https://${site.baseDomain}` : 'http://localhost:3000')
 
   const now = new Date()
@@ -20,8 +26,18 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }))
 
   return [
-    { url: base, lastModified: now, changeFrequency: 'weekly', priority: 1 },
-    { url: `${base}/pricing`, lastModified: now, changeFrequency: 'monthly', priority: 0.9 },
+    {
+      url: base,
+      lastModified: now,
+      changeFrequency: 'weekly',
+      priority: 1,
+    },
+    {
+      url: `${base}/pricing`,
+      lastModified: now,
+      changeFrequency: 'weekly',
+      priority: 0.9,
+    },
     ...pages,
   ]
 }
