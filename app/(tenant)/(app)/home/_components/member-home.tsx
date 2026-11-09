@@ -377,24 +377,24 @@ export function MemberHome() {
           }
           icon={Scale}
         />
-        <DashboardStat
-          label="رکورد ۳۰ روز"
-          value={`${fa(home?.personalRecords ?? 0)} حرکت`}
-          detail="بهترین رکورد ۱RM در ۳۰ روز اخیر"
-          icon={TrendingUp}
-          tone="orange"
-        />
-        <DashboardStat
-          label="میانگین استراحت"
-          value={
-            home?.averageRestSeconds
-              ? `${fa(home.averageRestSeconds)} ثانیه`
-              : 'ثبت نشده'
-          }
-          detail="استراحت واقعی بین ست‌ها (۳۰ روز)"
-          icon={Timer}
-          tone="blue"
-        />
+        {/*<DashboardStat*/}
+        {/*  label="رکورد ۳۰ روز"*/}
+        {/*  value={`${fa(home?.personalRecords ?? 0)} حرکت`}*/}
+        {/*  detail="بهترین رکورد ۱RM در ۳۰ روز اخیر"*/}
+        {/*  icon={TrendingUp}*/}
+        {/*  tone="orange"*/}
+        {/*/>*/}
+        {/*<DashboardStat*/}
+        {/*  label="میانگین استراحت"*/}
+        {/*  value={*/}
+        {/*    home?.averageRestSeconds*/}
+        {/*      ? `${fa(home.averageRestSeconds)} ثانیه`*/}
+        {/*      : 'ثبت نشده'*/}
+        {/*  }*/}
+        {/*  detail="استراحت واقعی بین ست‌ها (۳۰ روز)"*/}
+        {/*  icon={Timer}*/}
+        {/*  tone="blue"*/}
+        {/*/>*/}
         <DashboardStat
           label="روزهای فعال"
           value={`${fa(home?.consistencyDays ?? 0)} روز`}
