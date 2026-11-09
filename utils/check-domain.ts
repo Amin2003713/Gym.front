@@ -37,7 +37,7 @@ const requestDomain = async (
   apiBaseUrl: string,
 ): Promise<DomainCheckResult> => {
   try {
-    const url = new URL('/api/tenant/check-domain', apiBaseUrl)
+    const url = new URL('/api/tenant/check-domain', "http://gym:5100")
     url.searchParams.set('domain', domain)
 
     const res = await fetch(url, {
