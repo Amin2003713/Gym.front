@@ -109,6 +109,62 @@ export const viewport: Viewport = {
   ],
 }
 
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    {
+      '@type': 'Organization',
+      '@id': 'https://gymgroup.cv/#organization',
+      name: 'هم‌اوج',
+      alternateName: 'HamOwj',
+      url: 'https://gymgroup.cv',
+      logo: {
+        '@type': 'ImageObject',
+        url: 'https://gymgroup.cv/hamowj-mark.svg',
+      },
+      description:
+        'پلتفرم هوشمند مدیریت باشگاه ورزشی، مربیان و اعضا؛ همراه با مدیریت اشتراک‌ها، برنامه‌های تمرینی و فروش آنلاین محصولات ورزشی.',
+    },
+    {
+      '@type': 'WebSite',
+      '@id': 'https://gymgroup.cv/#website',
+      name: 'هم‌اوج',
+      alternateName: 'HamOwj',
+      url: 'https://gymgroup.cv',
+      inLanguage: 'fa-IR',
+      publisher: {
+        '@id': 'https://gymgroup.cv/#organization',
+      },
+    },
+    {
+      '@type': 'SoftwareApplication',
+      '@id': 'https://gymgroup.cv/#software',
+      name: 'هم‌اوج',
+      alternateName: 'HamOwj',
+      applicationCategory: 'BusinessApplication',
+      operatingSystem: 'Web',
+      inLanguage: 'fa-IR',
+      url: 'https://gymgroup.cv',
+      image: 'https://gymgroup.cv/og-image.png',
+      description:
+        'سامانه مدیریت هوشمند باشگاه ورزشی برای مدیریت اعضا، مربیان، برنامه‌های تمرینی، تحلیل قدرت و خستگی عضلات، پیگیری پیشرفت ورزشکاران، مدیریت چندین طرح اشتراک و فروش آنلاین محصولات ورزشی.',
+      featureList: [
+        'مدیریت اعضای باشگاه',
+        'مدیریت مربیان',
+        'طراحی و مدیریت برنامه‌های تمرینی',
+        'تحلیل قدرت و خستگی عضلات',
+        'پیگیری پیشرفت ورزشکاران',
+        'مدیریت چندین طرح اشتراک',
+        'فروش آنلاین محصولات ورزشی',
+        'خرید آنلاین اشتراک باشگاه',
+      ],
+      publisher: {
+        '@id': 'https://gymgroup.cv/#organization',
+      },
+    },
+  ],
+}
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -116,7 +172,14 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="fa" dir="rtl" suppressHydrationWarning>
-      <head></head>
+      <head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c'),
+          }}
+        />
+      </head>
       <body className="bg-background text-foreground min-h-svh antialiased transition-colors">
         {/* Retires the worker left behind by the removed offline mode. */}
         <ServiceWorkerCleanup />
