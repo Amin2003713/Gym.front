@@ -109,12 +109,12 @@ function Metric({title, value, detail, icon: Icon, positive = false}: {
 }) {
     return (
         <div className="rounded-2xl border bg-card p-4 shadow-sm">
-            <div className="flex items-start justify-between gap-3">
-                <div>
+            <div className="flex flex-wrap items-start justify-between gap-3">
+                <div className="min-w-0">
                     <p className="text-sm text-muted-foreground">{title}</p>
-                    <p className="mt-2 text-2xl font-extrabold tracking-tight">{value}</p>
+                    <p className="mt-2 text-xl font-extrabold tracking-tight sm:text-2xl">{value}</p>
                 </div>
-                <span className="flex size-10 items-center justify-center rounded-lg bg-primary/10 text-primary-foreground"><Icon
+                <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary-foreground"><Icon
                     className="size-5"/></span>
             </div>
             <p className={`mt-3 text-xs ${positive ? 'text-success' : 'text-muted-foreground'}`}>{detail}</p>
@@ -159,9 +159,9 @@ function Overview() {
     return (
         <div className="space-y-5">
             <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                <Metric title="جلسه‌های تمرین" value={fa(18)} detail="۴ جلسه بیشتر از دوره قبل" icon={Dumbbell}
+                <Metric title="جلسات تمرین" value={fa(18)} detail="۴ جلسه بیشتر از دوره قبل" icon={Dumbbell}
                         positive/>
-                <Metric title="زمان تمرین" value="۱۴ ساعت" detail="میانگین ۴۷ دقیقه برای هر جلسه" icon={CalendarDays}/>
+                <Metric title="مجموع مدت" value="۱۴ ساعت" detail="میانگین ۴۷ دقیقه برای هر جلسه" icon={CalendarDays}/>
                 <Metric title="ست‌های انجام‌شده" value={fa(286)} detail="میانگین ۱۵٫۹ ست در جلسه" icon={Target}/>
                 <Metric title="رکوردهای شخصی" value={fa(8)} detail="۳ رکورد جدید در این ماه" icon={Award} positive/>
             </div>
@@ -432,14 +432,15 @@ export function StatsPage() {
                 </div>
             </header>
 
-            <div className="flex gap-2 overflow-x-auto rounded-lg border bg-card p-2">
+            {/* Tabs stack on phones and stay inline from the sm breakpoint up. */}
+            <div className="flex flex-col gap-2 rounded-lg border bg-card p-2 sm:flex-row sm:overflow-x-auto">
                 {tabs.map(tab => {
                     const Icon = tab.icon
                     return (
                         <button
                             key={tab.id}
                             onClick={() => setActive(tab.id)}
-                            className={`inline-flex shrink-0 items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-semibold transition ${active === tab.id ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}
+                            className={`inline-flex shrink-0 items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-sm font-semibold transition ${active === tab.id ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}
                         >
                             <Icon className="size-4"/>{tab.label}
                         </button>

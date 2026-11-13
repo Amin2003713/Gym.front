@@ -1054,6 +1054,8 @@ export function LiveRoom({ staff = false }: { staff?: boolean }) {
           DTLS-SRTP رمزنگاری می‌شود. برای شبکه‌های محدود، یک TURN امن با آدرس
           <span dir="ltr"> turns: </span>
           تنظیم کنید.
+          <br />
+          <span className="text-xs text-warning font-bold">⚠ قوانینtyping: ضبط صدا/تصویر برای امنیتی Recording در صورتỷ during.classing ممنوع است</span>
         </p>
       </div>
     )

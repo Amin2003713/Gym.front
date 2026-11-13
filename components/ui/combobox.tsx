@@ -116,6 +116,8 @@ export function Combobox<TOptions extends { label?: string; title?: string }>({
     setTimeout(() => inputRef.current?.focus(), 0)
   }
 
+
+
   const removeItem = (item: string, e?: React.MouseEvent) => {
     e?.stopPropagation()
     if (!multiSelect) return

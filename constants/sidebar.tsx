@@ -107,12 +107,12 @@ const SIDEBAR_SECTIONS: SidebarSection[] = [
         icon: <Users className="size-[18px]" />,
         colorClass: 'text-[var(--brand-slate)]',
       },
-      {
-        name: 'مربی‌ها و شاگردها',
-        path: '/trainers',
-        icon: <ShieldCheck className="size-[18px]" />,
-        colorClass: 'text-[var(--brand-slate)]',
-      },
+      // {
+      //   name: 'مربی‌ها و شاگردها',
+      //   path: '/trainers',
+      //   icon: <ShieldCheck className="size-[18px]" />,
+      //   colorClass: 'text-[var(--brand-slate)]',
+      // },
       {
         name: 'صف مربی',
         path: '/console/coach',
