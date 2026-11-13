@@ -10,6 +10,8 @@ import type {
   Order,
   Overview,
   PlatformPlan,
+  SaveSearchConsoleInput,
+  SearchConsole,
   SeoAudit,
   SitePayload,
   TenantAdmin,
@@ -231,4 +233,15 @@ export const platformAdmin = {
     adminRequest<TenantAdmin>(`/tenants/${encodeURIComponent(id)}/deactivate`, { method: 'POST' }),
 
   seoAudit: () => adminRequest<SeoAudit>('/seo/audit'),
+
+  searchConsole: () => adminRequest<SearchConsole>('/search-console'),
+
+  checkSearchConsole: () =>
+    adminRequest<SearchConsole>('/search-console/check', { method: 'POST' }),
+
+  saveSearchConsole: (body: SaveSearchConsoleInput) =>
+    adminRequest<SearchConsole>('/search-console', {
+      method: 'PUT',
+      body: JSON.stringify(body),
+    }),
 }

@@ -22,6 +22,7 @@ export interface GymSettings {
   country: string | null
 
   primaryColor: string | null
+  trainingAreas: string[]
   timeZoneId: string
   defaultCulture: string
   weightUnit: string
@@ -53,6 +54,7 @@ export interface UpdateGymSettingsInput {
   country: string | null
 
   primaryColor: string | null
+  trainingAreas: string[]
   timeZoneId: string
   defaultCulture: string
   weightUnit: string

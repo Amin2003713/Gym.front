@@ -160,6 +160,22 @@ export type SeoAudit = {
   checks: SeoCheck[]
 }
 
+export type SearchConsole = {
+  propertyUrl: string | null
+  sitemapUrl: string | null
+  notes: string | null
+  status: 'reachable' | 'partial' | 'unreachable' | 'unchecked' | string
+  detail: string | null
+  lastCheckedAtUtc: string | null
+  manageUrl: string
+}
+
+export type SaveSearchConsoleInput = {
+  propertyUrl: string | null
+  sitemapUrl: string | null
+  notes: string | null
+}
+
 export type CheckoutInput = {
   planCode: string
   gymName: string
@@ -170,6 +186,7 @@ export type CheckoutInput = {
   email: string
   password: string
   billingCycle: number
+  trainingAreas?: string[]
 }
 
 export type CheckoutResponse = {

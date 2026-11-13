@@ -27,6 +27,10 @@ export type StepperItem = {
   name: string
   doneSets: number
   totalSets: number
+  /** Optional line under the name (e.g. "3 دور × 45 ثانیه" for a timed exercise). */
+  detail?: string
+  /** Optional small tag above the name (e.g. "سوپرست"). */
+  kicker?: string
 }
 
 type Props = {
@@ -98,10 +102,14 @@ function SortableStep({
           </span>
           <span className="truncate text-xs font-bold">{item.name}</span>
         </span>
+        {item.kicker && (
+          <span className="text-primary truncate text-[9px] font-bold">{item.kicker}</span>
+        )}
         <span className="text-muted-foreground truncate text-[10px] tabular-nums">
-          {item.totalSets > 0
-            ? `${item.doneSets} از ${item.totalSets} ست`
-            : `${item.doneSets} ست ثبت‌شده`}
+          {item.detail ??
+            (item.totalSets > 0
+              ? `${item.doneSets} از ${item.totalSets} ست`
+              : `${item.doneSets} ست ثبت‌شده`)}
         </span>
       </button>
 

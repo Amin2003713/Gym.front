@@ -26,6 +26,7 @@ export const SignupForm = () => {
     defaultValues: {
       domain: '',
       name: '',
+      trainingAreas: [],
       email: '',
       firstName: '',
       lastName: '',

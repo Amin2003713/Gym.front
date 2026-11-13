@@ -26,6 +26,7 @@ import {
   X,
 } from '@/components/icons'
 import { Skeleton } from '@/components/ui/skeleton'
+import { TRAINING_AREAS } from '@/lib/training-areas'
 import { toast } from '@/lib/toast'
 
 const panel = 'rounded-2xl border bg-card shadow-sm'
@@ -63,6 +64,7 @@ type ProfileForm = {
   province: string
   country: string
   primaryColor: string
+  trainingAreas: string[]
   timeZoneId: string
   defaultCulture: string
   weightUnit: 'kg' | 'lb'
@@ -84,6 +86,7 @@ const toForm = (settings: GymSettings): ProfileForm => ({
   province: settings.province ?? '',
   country: settings.country ?? '',
   primaryColor: settings.primaryColor ?? '#FB9A3C',
+  trainingAreas: settings.trainingAreas ?? [],
   timeZoneId: settings.timeZoneId || 'UTC',
   defaultCulture: settings.defaultCulture || 'fa',
   weightUnit: settings.weightUnit === 'lb' ? 'lb' : 'kg',
@@ -105,6 +108,7 @@ const toPayload = (form: ProfileForm): UpdateGymSettingsInput => ({
   province: form.province.trim() || null,
   country: form.country.trim().toUpperCase() || null,
   primaryColor: form.primaryColor,
+  trainingAreas: form.trainingAreas,
   timeZoneId: form.timeZoneId.trim() || 'UTC',
   defaultCulture: form.defaultCulture,
   weightUnit: form.weightUnit,
@@ -550,6 +554,40 @@ export function GymSettingsWorkspace() {
                 </select>
               </label>
             </div>
+            <div className="space-y-2 rounded-lg border p-3">
+              <span className="block text-sm font-semibold">حوزه‌های تمرینی باشگاه</span>
+              <span className="text-muted-foreground block text-xs leading-6">
+                کتابخانه حرکات فقط تمرین‌های حوزه‌های انتخاب‌شده را نشان می‌دهد. بدون انتخاب، همه
+                حرکات در دسترس می‌مانند.
+              </span>
+              <div className="flex flex-wrap gap-1.5">
+                {TRAINING_AREAS.map((area) => {
+                  const selected = form.trainingAreas.includes(area.code)
+                  return (
+                    <button
+                      key={area.code}
+                      type="button"
+                      aria-pressed={selected}
+                      onClick={() =>
+                        update({
+                          trainingAreas: selected
+                            ? form.trainingAreas.filter((code) => code !== area.code)
+                            : [...form.trainingAreas, area.code],
+                        })
+                      }
+                      className={`rounded-full border px-3 py-1.5 text-xs font-medium transition ${
+                        selected
+                          ? 'border-primary bg-primary/10 text-foreground'
+                          : 'text-muted-foreground hover:bg-muted'
+                      }`}
+                    >
+                      {area.label}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+
             <div className="flex flex-wrap items-center gap-3 rounded-lg border p-3">
               <span className="min-w-0 flex-1">
                 <span className="block text-sm font-semibold">رنگ برند</span>

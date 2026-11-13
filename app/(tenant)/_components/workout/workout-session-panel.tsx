@@ -70,7 +70,12 @@ const DEFAULT_REST_SECONDS = 90
 type Draft = { reps: string; weightKg: string; rir: string; isWarmup: boolean }
 
 const draftFor = (exercise: SessionExerciseItem): Draft => ({
-  reps: String(exercise.targetRepsMin ?? 10),
+  // A timed slot logs its hold/round length in the reps field, so the default is the duration.
+  reps: String(
+    exercise.exerciseType === 1
+      ? (exercise.targetDurationSeconds ?? 30)
+      : (exercise.targetRepsMin ?? 10),
+  ),
   weightKg: '0',
   // RIR 0 (no reps in reserve) is the honest default; the plan's target still wins.
   rir: exercise.targetRir != null ? String(exercise.targetRir) : '0',
@@ -211,6 +216,38 @@ export function WorkoutSessionPanel({
 
     return [...saved, ...added]
   }, [exercises, order])
+
+  /**
+   * Steps are groups: a superset's two movements share one step in the rail, so the member reads
+   * them as one back-to-back unit instead of two unrelated cards. A normal exercise is a group of
+   * one. Membership keeps the first exercise's position.
+   */
+  const stepGroups = useMemo(() => {
+    const groups: Array<{ id: string; exercises: SessionExerciseItem[] }> = []
+    const bySuperset = new Map<string, (typeof groups)[number]>()
+
+    for (const exercise of ordered) {
+      const group = exercise.supersetGroup
+
+      if (group == null) {
+        groups.push({ id: exercise.exerciseId, exercises: [exercise] })
+        continue
+      }
+
+      const existing = bySuperset.get(group)
+
+      if (existing) {
+        existing.exercises.push(exercise)
+        continue
+      }
+
+      const created = { id: exercise.exerciseId, exercises: [exercise] }
+      bySuperset.set(group, created)
+      groups.push(created)
+    }
+
+    return groups
+  }, [ordered])
 
   const current: SessionExerciseItem | undefined = ordered[step]
   const currentId = current?.exerciseId
@@ -603,12 +640,41 @@ export function WorkoutSessionPanel({
   const instructions = [...(detail?.instructions ?? [])].sort(
     (a, b) => a.stepNumber - b.stepNumber,
   )
-  const stepperItems = ordered.map((exercise) => ({
-    id: exercise.exerciseId,
-    name: exercise.exerciseName ?? 'حرکت',
-    doneSets: exercise.sets?.length ?? 0,
-    totalSets: exercise.targetSets ?? 0,
-  }))
+  const stepperItems = stepGroups.map((group) => {
+    const timed = group.exercises.some((exercise) => exercise.exerciseType === 1)
+    const totalSets = group.exercises.reduce(
+      (total, exercise) => total + (exercise.targetSets ?? 0),
+      0,
+    )
+    const doneSets = group.exercises.reduce(
+      (total, exercise) => total + (exercise.sets?.length ?? 0),
+      0,
+    )
+    const rounds = group.exercises[0]?.targetSets ?? 0
+    const seconds = group.exercises[0]?.targetDurationSeconds ?? 0
+
+    return {
+      id: group.id,
+      name: group.exercises
+        .map((exercise) => exercise.exerciseName ?? 'حرکت')
+        .join(' + '),
+      doneSets,
+      totalSets,
+      detail: timed
+        ? `${fa(rounds)} دور × ${fa(seconds)} ثانیه`
+        : group.exercises.length > 1
+          ? `${fa(doneSets)} از ${fa(totalSets)} ست`
+          : undefined,
+      kicker:
+        group.exercises.length > 1 ? 'سوپرست' : timed ? 'زمانی' : undefined,
+    }
+  })
+  const activeStep = Math.max(
+    0,
+    stepGroups.findIndex((group) =>
+      group.exercises.some((exercise) => exercise.exerciseId === currentId),
+    ),
+  )
   const sessionLoad = muscleLoad(ordered)
 
   return (
@@ -672,9 +738,25 @@ export function WorkoutSessionPanel({
         <div className="mt-4">
           <WorkoutStepper
             items={stepperItems}
-            activeIndex={step}
-            onSelect={setStep}
-            onReorder={reorder}
+            activeIndex={activeStep}
+            onSelect={(groupIndex) => {
+              const first = stepGroups[groupIndex]?.exercises[0]
+              if (!first) return
+
+              const exerciseIndex = ordered.findIndex(
+                (exercise) => exercise.exerciseId === first.exerciseId,
+              )
+              if (exerciseIndex >= 0) setStep(exerciseIndex)
+            }}
+            onReorder={(ids) => {
+              // The rail orders groups; flatten each group back to its exercises so the existing
+              // per-exercise order store keeps working.
+              const byId = new Map(stepGroups.map((group) => [group.id, group]))
+              const flattened = ids.flatMap(
+                (id) => byId.get(id)?.exercises.map((exercise) => exercise.exerciseId) ?? [],
+              )
+              reorder(flattened)
+            }}
           />
         </div>
       </section>
@@ -722,11 +804,19 @@ export function WorkoutSessionPanel({
                       </h2>
                       <p className="text-muted-foreground mt-1 text-xs">
                         {current.isPlanned ? 'حرکت برنامه' : 'حرکت اضافه'}
-                        {current.targetSets ? ` · ${fa(current.targetSets)} ست` : ''}
-                        {current.targetRepsMin
+                        {current.exerciseType === 1
+                          ? ` · ${fa(current.targetSets ?? 0)} دور × ${fa(
+                              current.targetDurationSeconds ?? 0,
+                            )} ثانیه`
+                          : current.targetSets
+                            ? ` · ${fa(current.targetSets)} ست`
+                            : ''}
+                        {current.exerciseType !== 1 && current.targetRepsMin
                           ? ` · ${fa(current.targetRepsMin)}–${fa(current.targetRepsMax ?? current.targetRepsMin)} تکرار`
                           : ''}
-                        {current.targetRir != null ? ` · RIR ${fa(current.targetRir)}` : ''}
+                        {current.exerciseType !== 1 && current.targetRir != null
+                          ? ` · RIR ${fa(current.targetRir)}`
+                          : ''}
                       </p>
                       {lastPerformance && lastSets.length > 0 && (
                         <p className="text-muted-foreground mt-1 text-[11px]">
@@ -873,7 +963,9 @@ export function WorkoutSessionPanel({
                       })()}
                       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
                         <label className="space-y-1 text-xs">
-                          <span className="text-muted-foreground">تکرار</span>
+                          <span className="text-muted-foreground">
+                            {current.exerciseType === 1 ? 'ثانیه' : 'تکرار'}
+                          </span>
                           <Input
                             type="number"
                             min="0"

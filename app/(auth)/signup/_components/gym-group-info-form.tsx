@@ -5,12 +5,21 @@ import { SignupValues, StepFormProps } from '@/app/(auth)/signup/_types/signup.i
 import { CustomFormField } from '@/components/ui/custom-form-field'
 import { Form } from '@/components/ui/form'
 import { useStepper } from '@/components/ui/stepper'
+import { TRAINING_AREAS } from '@/lib/training-areas'
 import { readData } from '@/core/http-service'
 import { Problem } from '@/types/http-errors.interface'
 import { BASE_DOMAIN } from '@/configs/global'
 
 function GymGroupInfoForm({ form }: StepFormProps) {
   const domainValue = form.watch('domain')
+  const selectedAreas = form.watch('trainingAreas') ?? []
+
+  const toggleArea = (code: string) => {
+    const next = selectedAreas.includes(code)
+      ? selectedAreas.filter((area) => area !== code)
+      : [...selectedAreas, code]
+    form.setValue('trainingAreas', next, { shouldDirty: true, shouldValidate: true })
+  }
   const tenantDomainSuffix = process.env.NEXT_PUBLIC_TENANT_DOMAIN_SUFFIX || BASE_DOMAIN || 'gym.example.com'
   const normalizedSuffix = tenantDomainSuffix.replace(/^https?:\/\//, '').replace(/^\.+|\/+$/g, '')
 
@@ -95,6 +104,37 @@ function GymGroupInfoForm({ form }: StepFormProps) {
           />
         </div>
         <CustomFormField<SignupValues> control={form.control} name="name" label="نام گروه ورزشی" placeholder="مثلاً باشگاه آیرون" />
+
+        <div className="space-y-2 rounded-xl border p-3">
+          <div>
+            <p className="text-sm font-semibold">حوزه‌های تمرینی گروه</p>
+            <p className="text-muted-foreground mt-1 text-xs leading-6">
+              بر اساس انتخاب شما، کتابخانه حرکات فقط تمرین‌های همان حوزه‌ها را نشان می‌دهد. اگر
+              چیزی انتخاب نکنید، همه حرکات در دسترس خواهد بود.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {TRAINING_AREAS.map((area) => {
+              const selected = selectedAreas.includes(area.code)
+              return (
+                <button
+                  key={area.code}
+                  type="button"
+                  aria-pressed={selected}
+                  onClick={() => toggleArea(area.code)}
+                  className={`rounded-full border px-3 py-1.5 text-xs font-medium transition ${
+                    selected
+                      ? 'border-primary bg-primary/10 text-foreground'
+                      : 'text-muted-foreground hover:bg-muted'
+                  }`}
+                >
+                  {area.label}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+
         <StepperFormActions onNext={onNextStep} />
       </form>
     </Form>

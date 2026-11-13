@@ -38,10 +38,11 @@ import { ORDER_STATUS, TENANT_PLAN, TENANT_STATUS } from '@/features/platform/ty
 import { cn } from '@/lib/utils'
 
 import { AdminContent } from './admin-content'
+import { AdminSearchConsole } from './admin-search-console'
 import { AdminSeo } from './admin-seo'
 import { EmptyState, Notice, Panel, ToneBadge } from './admin-ui'
 
-type Tab = 'overview' | 'orders' | 'tenants' | 'plans' | 'pages' | 'site' | 'seo'
+type Tab = 'overview' | 'orders' | 'tenants' | 'plans' | 'pages' | 'site' | 'seo' | 'search-console'
 
 const tabs: { id: Tab; label: string; hint: string }[] = [
   { id: 'overview', label: 'نمای کلی', hint: 'شاخص‌های پلتفرم' },
@@ -51,6 +52,7 @@ const tabs: { id: Tab; label: string; hint: string }[] = [
   { id: 'pages', label: 'صفحه‌ها', hint: 'محتوای سایت' },
   { id: 'site', label: 'محتوای سایت', hint: 'متن و برند' },
   { id: 'seo', label: 'سئو', hint: 'بررسی و بهبود' },
+  { id: 'search-console', label: 'کنسول جستجو', hint: 'وضعیت و مدیریت' },
 ]
 
 // The console session lives in localStorage, which is an external store: subscribe is a no-op
@@ -286,6 +288,8 @@ export function AdminConsole() {
           )}
 
           {tab === 'seo' && <AdminSeo onAuthError={handleAuthError} />}
+
+          {tab === 'search-console' && <AdminSearchConsole onAuthError={handleAuthError} />}
         </div>
       </div>
     </div>

@@ -14,6 +14,8 @@ export const FirstFormSchema = z.object({
   name: z.string().min(5, {
     message: 'نام گروه ورزشی باید حداقل ۵ حرف داشته باشد.',
   }),
+  /** Disciplines the gym offers; empty keeps the whole exercise library available. */
+  trainingAreas: z.array(z.string()),
 })
 
 export const SecondFormSchema = z.object({

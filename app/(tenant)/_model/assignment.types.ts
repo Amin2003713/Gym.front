@@ -93,6 +93,10 @@ export interface AssignmentPlanExercise {
     supersetGroup: number | null
     minWeightKg?: number | null
     maxWeightKg?: number | null
+    exerciseType?: number
+    targetDurationSeconds?: number | null
+    /** 0 = main, 1 = warm-up, 2 = cool-down. */
+    phase?: number
   }
   exerciseName?: string | null
   bodyPart?: string | null

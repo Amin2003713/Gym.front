@@ -72,6 +72,12 @@ export interface SessionExerciseItem {
   maxWeightKg?: number | null
   notes?: string | null
   supersetGroup?: string | null
+  /** Mirrors PlanExerciseType: 0 standard, 1 timed, 2 superset. */
+  exerciseType?: number
+  /** Hold/round length for a timed exercise. */
+  targetDurationSeconds?: number | null
+  /** Mirrors PlanDayPhase: 0 main, 1 warm-up, 2 cool-down. */
+  phase?: number
   sets: LoggedSetItem[]
   lastPerformance?: LastPerformance | null
   suggestion?: { suggestedWeightKg?: number; suggestedReps?: number; reason?: string; confidence?: string; source?: string } | null

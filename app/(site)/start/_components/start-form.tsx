@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { checkout } from '@/features/platform/api'
 import { formatNumber, formatToman, slugify } from '@/features/platform/format'
+import { TRAINING_AREAS } from '@/lib/training-areas'
 import type { CheckoutResponse, PlatformPlan } from '@/features/platform/types'
 
 type Props = {
@@ -28,6 +29,7 @@ type FormState = {
   phoneNumber: string
   email: string
   password: string
+  trainingAreas: string[]
   accepted: boolean
 }
 
@@ -42,6 +44,7 @@ export function StartForm({ plans, baseDomain, initialPlanCode, initialCycle = 0
     phoneNumber: '',
     email: '',
     password: '',
+    trainingAreas: [],
     accepted: false,
   })
 
@@ -102,6 +105,7 @@ export function StartForm({ plans, baseDomain, initialPlanCode, initialCycle = 0
         email: form.email.trim(),
         password: form.password,
         billingCycle: form.cycle,
+        trainingAreas: form.trainingAreas,
       })
 
       setResult(response)
@@ -238,6 +242,41 @@ export function StartForm({ plans, baseDomain, initialPlanCode, initialCycle = 0
             autoComplete="organization"
             required
           />
+        </div>
+
+        <div className="grid gap-2">
+          <Label>حوزه‌های تمرینی</Label>
+          <p className="text-muted-foreground text-xs leading-6">
+            کتابخانه حرکات فقط تمرین‌های این حوزه‌ها را نشان می‌دهد. خالی بگذارید تا همه حرکات در
+            دسترس باشند.
+          </p>
+          <div className="flex flex-wrap gap-1.5">
+            {TRAINING_AREAS.map((area) => {
+              const selected = form.trainingAreas.includes(area.code)
+              return (
+                <button
+                  key={area.code}
+                  type="button"
+                  aria-pressed={selected}
+                  onClick={() =>
+                    update(
+                      'trainingAreas',
+                      selected
+                        ? form.trainingAreas.filter((code) => code !== area.code)
+                        : [...form.trainingAreas, area.code],
+                    )
+                  }
+                  className={`rounded-full border px-3 py-1.5 text-xs font-medium transition ${
+                    selected
+                      ? 'border-primary bg-primary/10 text-foreground'
+                      : 'text-muted-foreground hover:bg-muted'
+                  }`}
+                >
+                  {area.label}
+                </button>
+              )
+            })}
+          </div>
         </div>
 
         <div className="grid gap-2">

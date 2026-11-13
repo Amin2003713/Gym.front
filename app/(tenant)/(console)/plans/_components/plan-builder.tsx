@@ -16,9 +16,12 @@ import {
   blankDraft,
   blankDay,
   blankExercise,
+  DAY_PHASES,
+  dayExercises,
   draftFromDetail,
   draftToPayload,
   type DayDraft,
+  type DayPhaseKey,
   type ExerciseDraft,
   type PlanDraft,
   TARGET_MUSCLES,
@@ -26,9 +29,12 @@ import {
   validateDetails,
   validateExercises,
   withFreshKeys,
+  withPhaseExercises,
 } from '../_model/plan-draft'
+import { MUSCLE_GROUPS } from '@/lib/muscle-groups'
 import { GOAL_LABELS, LEVEL_LABELS } from '../_model/plan-labels'
 import {
+  PlanDayPhase,
   PlanDurationType,
   PlanExerciseType,
   PlanVisibility,
@@ -163,7 +169,9 @@ export function PlanBuilder({ planId }: { planId?: string }) {
 
       if (cached) {
         const dayIndex = Math.min(Math.max(cached.activeDay, 0), cached.draft.days.length - 1)
-        const exerciseCount = cached.draft.days[dayIndex]?.exercises.length ?? 0
+        const exerciseCount = cached.draft.days[dayIndex]
+          ? dayExercises(cached.draft.days[dayIndex]).length
+          : 0
 
         setDraft(withFreshKeys(cached.draft))
         setStep(Math.min(Math.max(cached.step, 0), LAST_STEP))
@@ -236,23 +244,43 @@ export function PlanBuilder({ planId }: { planId?: string }) {
       setDirty(true)
       setDraft((current) => ({
         ...current,
-        days: current.days.map((day, index) =>
-          index === dayIndex
-            ? {
-                ...day,
-                exercises: day.exercises.map((exercise, position) =>
-                  position === exerciseIndex ? { ...exercise, ...patch } : exercise,
-                ),
-              }
-            : day,
-        ),
+        days: current.days.map((day, index) => {
+          if (index !== dayIndex) return day
+
+          const target = dayExercises(day)[exerciseIndex]
+          if (!target) return day
+
+          const phase = target.phase
+          const warmupLength = day.warmup.length
+          const offset =
+            phase === PlanDayPhase.Warmup
+              ? 0
+              : phase === PlanDayPhase.Cooldown
+                ? warmupLength + day.exercises.length
+                : warmupLength
+          const position = exerciseIndex - offset
+          const list =
+            phase === PlanDayPhase.Warmup
+              ? day.warmup
+              : phase === PlanDayPhase.Cooldown
+                ? day.cooldown
+                : day.exercises
+
+          return withPhaseExercises(
+            day,
+            phase,
+            list.map((exercise, index2) =>
+              index2 === position ? { ...exercise, ...patch } : exercise,
+            ),
+          )
+        }),
       }))
     },
     [],
   )
 
   const currentDay = draft.days[activeDay] ?? draft.days[0]
-  const currentExercise = currentDay?.exercises[activeExercise] ?? currentDay?.exercises[0]
+  const currentExercise = currentDay ? dayExercises(currentDay)[activeExercise] : undefined
 
   const muscleIdByCode = useMemo(
     () => new Map(muscles.map((muscle) => [muscle.code.toLowerCase(), muscle.id])),
@@ -319,7 +347,7 @@ export function PlanBuilder({ planId }: { planId?: string }) {
   const coverageRows = useMemo(
     () =>
       draft.days.flatMap((day) =>
-        day.exercises
+        dayExercises(day)
           .filter((exercise) => exercise.exerciseId)
           .map((exercise) => ({
             exerciseId: exercise.exerciseId,
@@ -627,16 +655,48 @@ function ExercisesStep({
     onDayChange(activeDay, { muscles })
   }
 
-  const addExercise = () => {
-    onDayChange(activeDay, { exercises: [...day.exercises, blankExercise()] })
-    onChangeExercise(day.exercises.length)
+  // A category chip is a shortcut: selecting it adds every muscle it holds, selecting it again
+  // removes them. The individual chips stay available for a precise selection.
+  const toggleGroup = (group: (typeof MUSCLE_GROUPS)[number]) => {
+    const groupMuscles = group.muscles as readonly string[]
+    const allSelected = groupMuscles.every((muscle) =>
+      (day.muscles as readonly string[]).includes(muscle),
+    )
+    const muscles = allSelected
+      ? day.muscles.filter((muscle) => !groupMuscles.includes(muscle))
+      : [...new Set<string>([...day.muscles, ...groupMuscles])]
+    onDayChange(activeDay, { muscles: muscles as typeof day.muscles })
+  }
+
+  const listFor = (key: DayPhaseKey) =>
+    key === 'warmup' ? day.warmup : key === 'cooldown' ? day.cooldown : day.exercises
+
+  const overallIndex = (phase: PlanDayPhase, index: number) =>
+    phase === PlanDayPhase.Warmup
+      ? index
+      : phase === PlanDayPhase.Cooldown
+        ? day.warmup.length + day.exercises.length + index
+        : day.warmup.length + index
+
+  const addExercise = (phase: PlanDayPhase, key: DayPhaseKey) => {
+    const list = listFor(key)
+    onDayChange(activeDay, { [key]: [...list, blankExercise(phase)] } as Partial<DayDraft>)
+    onChangeExercise(overallIndex(phase, list.length))
   }
 
   const removeExercise = (index: number) => {
-    if (day.exercises.length === 1) return
+    const target = dayExercises(day)[index]
+    if (!target) return
+
+    const phase = target.phase
+    const key: DayPhaseKey =
+      phase === PlanDayPhase.Warmup ? 'warmup' : phase === PlanDayPhase.Cooldown ? 'cooldown' : 'exercises'
+    const list = listFor(key)
+    const position = index - overallIndex(phase, 0)
+
     onDayChange(activeDay, {
-      exercises: day.exercises.filter((_, position) => position !== index),
-    })
+      [key]: list.filter((_, itemIndex) => itemIndex !== position),
+    } as Partial<DayDraft>)
     onChangeExercise(Math.max(0, index - 1))
   }
 
@@ -689,57 +749,134 @@ function ExercisesStep({
           </Button>
         </div>
 
-        <div className="space-y-1.5">
-          <p className="text-xs font-semibold">عضلات هدف روز</p>
+        <div className="space-y-2">
+          <p className="text-xs font-semibold">
+            عضلات هدف روز <span className="text-muted-foreground font-normal">(اختیاری)</span>
+          </p>
+
+          {/* Grouped categories first: a coach plans a day by push/pull/legs, not by eighteen
+              anatomical chips. Picking a category selects all of its muscles at once. */}
           <div className="flex flex-wrap gap-1.5">
-            {TARGET_MUSCLES.map((slug) => {
-              const selected = day.muscles.includes(slug)
+            {MUSCLE_GROUPS.map((group) => {
+              const selectedCount = (group.muscles as readonly string[]).filter((muscle) =>
+                (day.muscles as readonly string[]).includes(muscle),
+              ).length
+              const allSelected = selectedCount === group.muscles.length
+
               return (
                 <button
-                  key={slug}
+                  key={group.code}
                   type="button"
-                  aria-pressed={selected}
-                  onClick={() => toggleMuscle(slug)}
-                  className={`rounded-full border px-2.5 py-1 text-[11px] font-medium transition ${
-                    selected
+                  aria-pressed={allSelected}
+                  onClick={() => toggleGroup(group)}
+                  className={`rounded-full border px-3 py-1.5 text-[11px] font-semibold transition ${
+                    allSelected
                       ? 'border-primary bg-primary/10 text-foreground'
-                      : 'text-muted-foreground hover:bg-muted'
+                      : selectedCount > 0
+                        ? 'border-primary/40 text-foreground'
+                        : 'text-muted-foreground hover:bg-muted'
                   }`}
                 >
-                  {MUSCLE_LABEL[slug] ?? slug}
+                  {group.label}
+                  {selectedCount > 0 && !allSelected && (
+                    <span className="text-muted-foreground"> · {selectedCount}</span>
+                  )}
                 </button>
               )
             })}
           </div>
+
+          <details className="group">
+            <summary className="text-muted-foreground hover:text-foreground cursor-pointer text-[11px] font-semibold">
+              انتخاب دقیق عضلات
+            </summary>
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {TARGET_MUSCLES.map((slug) => {
+                const selected = day.muscles.includes(slug)
+                return (
+                  <button
+                    key={slug}
+                    type="button"
+                    aria-pressed={selected}
+                    onClick={() => toggleMuscle(slug)}
+                    className={`rounded-full border px-2.5 py-1 text-[11px] font-medium transition ${
+                      selected
+                        ? 'border-primary bg-primary/10 text-foreground'
+                        : 'text-muted-foreground hover:bg-muted'
+                    }`}
+                  >
+                    {MUSCLE_LABEL[slug] ?? slug}
+                  </button>
+                )
+              })}
+            </div>
+          </details>
+
           <p className="text-muted-foreground text-[11px]">
-            برای فیلتر حرکات پیشنهادی و نقشهٔ پوشش روز استفاده می‌شود.
+            اگر عضله‌ای انتخاب نکنید، روز بدون محدودیت عضله ساخته می‌شود.
           </p>
         </div>
       </div>
 
-      <div className="flex flex-wrap items-center gap-1.5">
-        {day.exercises.map((exercise, index) => (
-          <button
-            key={exercise.key}
-            type="button"
-            aria-pressed={index === activeExercise}
-            onClick={() => onChangeExercise(index)}
-            className={`rounded-full border px-3 py-1.5 text-xs font-medium ${
-              index === activeExercise
-                ? 'border-primary bg-primary/10'
-                : 'text-muted-foreground hover:bg-muted'
-            }`}
-          >
-            {index + 1}. {exercise.name || 'حرکت جدید'}
-            {exercise.type === PlanExerciseType.Superset && exercise.name2
-              ? ` + ${exercise.name2}`
-              : ''}
-          </button>
-        ))}
-        <Button type="button" size="sm" variant="outline" onClick={addExercise}>
-          <Plus className="ml-1 size-3.5" />
-          حرکت
-        </Button>
+      {/* The day is split into the sections the member actually performs: warm-up, the main
+          work, then cool-down. Each section adds and orders its own exercises. */}
+      <div className="space-y-2">
+        {DAY_PHASES.map((section) => {
+          const list = listFor(section.key)
+
+          return (
+            <div key={section.key} className="rounded-lg border p-2.5">
+              <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <p className="text-xs font-bold">{section.label}</p>
+                  <p className="text-muted-foreground text-[10px]">{section.hint}</p>
+                </div>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => addExercise(section.phase, section.key)}
+                >
+                  <Plus className="ml-1 size-3.5" />
+                  {section.phase === PlanDayPhase.Main ? 'حرکت' : 'افزودن'}
+                </Button>
+              </div>
+
+              {list.length === 0 ? (
+                <p className="text-muted-foreground text-[11px]">
+                  {section.phase === PlanDayPhase.Main
+                    ? 'هنوز حرکتی برای بخش اصلی اضافه نشده است.'
+                    : 'این بخش خالی است و می‌توانید نادیده بگیرید.'}
+                </p>
+              ) : (
+                <div className="flex flex-wrap items-center gap-1.5">
+                  {list.map((exercise, index) => {
+                    const overall = overallIndex(section.phase, index)
+
+                    return (
+                      <button
+                        key={exercise.key}
+                        type="button"
+                        aria-pressed={overall === activeExercise}
+                        onClick={() => onChangeExercise(overall)}
+                        className={`rounded-full border px-3 py-1.5 text-xs font-medium ${
+                          overall === activeExercise
+                            ? 'border-primary bg-primary/10'
+                            : 'text-muted-foreground hover:bg-muted'
+                        }`}
+                      >
+                        {index + 1}. {exercise.name || 'حرکت جدید'}
+                        {exercise.type === PlanExerciseType.Superset && exercise.name2
+                          ? ` + ${exercise.name2}`
+                          : ''}
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+          )
+        })}
       </div>
 
       {currentExercise && (
@@ -747,13 +884,13 @@ function ExercisesStep({
           <div className="min-w-0">
             <div className="mb-3 flex items-center justify-between">
             <h3 className="text-sm font-semibold">
-              حرکت {activeExercise + 1} از {day.exercises.length}
+              حرکت {activeExercise + 1} از {dayExercises(day).length}
             </h3>
             <Button
               type="button"
               size="sm"
               variant="ghost"
-              disabled={day.exercises.length === 1}
+              disabled={dayExercises(day).length <= 1}
               onClick={() => removeExercise(activeExercise)}
             >
               <Trash2 className="ml-1 size-3.5 text-destructive" />
@@ -782,6 +919,9 @@ function ExercisesStep({
     </div>
   )
 }
+
+const listForDay = (day: DayDraft, key: DayPhaseKey) =>
+  key === 'warmup' ? day.warmup : key === 'cooldown' ? day.cooldown : day.exercises
 
 function ReviewStep({
   draft,
@@ -820,7 +960,7 @@ function ReviewStep({
           <dt className="text-muted-foreground">روزها / حرکات</dt>
           <dd>
             {draft.days.length} روز ·{' '}
-            {draft.days.reduce((total, day) => total + day.exercises.length, 0)} حرکت
+            {draft.days.reduce((total, day) => total + dayExercises(day).length, 0)} حرکت
           </dd>
         </div>
       </dl>
@@ -834,14 +974,24 @@ function ReviewStep({
             <div className="text-muted-foreground mt-1 text-xs">
               عضلات هدف: {day.muscles.map((slug) => MUSCLE_LABEL[slug] ?? slug).join('، ') || '—'}
             </div>
-            <div className="mt-1 text-xs">
-              {day.exercises
-                .map((exercise) =>
-                  exercise.type === PlanExerciseType.Superset && exercise.name2
-                    ? `${exercise.name || 'بدون حرکت'} + ${exercise.name2}`
-                    : exercise.name || 'بدون حرکت',
+            <div className="mt-1 space-y-1">
+              {DAY_PHASES.map((section) => {
+                const list = listForDay(day, section.key)
+                if (list.length === 0) return null
+
+                return (
+                  <div key={section.key} className="text-xs">
+                    <span className="text-muted-foreground font-semibold">{section.label}: </span>
+                    {list
+                      .map((exercise) =>
+                        exercise.type === PlanExerciseType.Superset && exercise.name2
+                          ? `${exercise.name || 'بدون حرکت'} + ${exercise.name2}`
+                          : exercise.name || 'بدون حرکت',
+                      )
+                      .join(' · ')}
+                  </div>
                 )
-                .join(' · ')}
+              })}
             </div>
           </li>
         ))}

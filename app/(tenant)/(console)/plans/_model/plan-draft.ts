@@ -1,6 +1,7 @@
 import { MUSCLES, type MuscleSlug } from '@/lib/muscles'
 
 import {
+  PlanDayPhase,
   PlanDurationType,
   PlanExerciseType,
   PlanGoal,
@@ -24,6 +25,8 @@ export type ExerciseDraft = {
   exerciseId2: string
   name2: string
   type: PlanExerciseType
+  /** Warm-up, main or cool-down. The member performs warm-up first and cool-down last. */
+  phase: PlanDayPhase
   sets: string
   repsMin: string
   repsMax: string
@@ -40,7 +43,10 @@ export type DayDraft = {
   key: string
   name: string
   muscles: MuscleSlug[]
+  warmup: ExerciseDraft[]
+  /** The main working exercises of the day. */
   exercises: ExerciseDraft[]
+  cooldown: ExerciseDraft[]
 }
 
 export type PlanDraft = {
@@ -69,13 +75,14 @@ const MAX_DURATION_SECONDS = 3600
 let sequence = 0
 const nextKey = () => `draft-${++sequence}`
 
-export const blankExercise = (): ExerciseDraft => ({
+export const blankExercise = (phase: PlanDayPhase = PlanDayPhase.Main): ExerciseDraft => ({
   key: nextKey(),
   exerciseId: '',
   name: '',
   exerciseId2: '',
   name2: '',
   type: PlanExerciseType.Standard,
+  phase,
   sets: '3',
   repsMin: '8',
   repsMax: '12',
@@ -91,7 +98,9 @@ export const blankDay = (index: number): DayDraft => ({
   key: nextKey(),
   name: `روز ${index + 1}`,
   muscles: [],
-  exercises: [blankExercise()],
+  warmup: [],
+  exercises: [blankExercise(PlanDayPhase.Main)],
+  cooldown: [],
 })
 
 export const blankDraft = (): PlanDraft => ({
@@ -108,6 +117,37 @@ export const blankDraft = (): PlanDraft => ({
   days: [blankDay(0)],
 })
 
+/** The three sections of a day, in the order the member performs them. */
+export const DAY_PHASES = [
+  { phase: PlanDayPhase.Warmup, key: 'warmup', label: 'گرم‌کردن', hint: 'قبل از حرکات اصلی اجرا می‌شود.' },
+  { phase: PlanDayPhase.Main, key: 'exercises', label: 'حرکات اصلی', hint: 'بخش اصلی تمرین روز.' },
+  { phase: PlanDayPhase.Cooldown, key: 'cooldown', label: 'سردکردن', hint: 'بعد از حرکات اصلی اجرا می‌شود.' },
+] as const
+
+export type DayPhaseKey = (typeof DAY_PHASES)[number]['key']
+
+/** One flat list (warm-up, main, cool-down) for the editor's active-exercise index. */
+export const dayExercises = (day: DayDraft) => [...day.warmup, ...day.exercises, ...day.cooldown]
+
+export const phaseLength = (day: DayDraft, phase: PlanDayPhase) =>
+  phase === PlanDayPhase.Warmup
+    ? day.warmup.length
+    : phase === PlanDayPhase.Cooldown
+      ? day.cooldown.length
+      : day.exercises.length
+
+/** Replaces one section's list without touching the other two. */
+export const withPhaseExercises = (
+  day: DayDraft,
+  phase: PlanDayPhase,
+  exercises: ExerciseDraft[],
+): DayDraft =>
+  phase === PlanDayPhase.Warmup
+    ? { ...day, warmup: exercises }
+    : phase === PlanDayPhase.Cooldown
+      ? { ...day, cooldown: exercises }
+      : { ...day, exercises }
+
 /**
  * Re-key a draft restored from browser storage: the key sequence restarts on reload, so cached
  * keys can collide with the next blank day/exercise and break React list identity.
@@ -117,7 +157,9 @@ export const withFreshKeys = (draft: PlanDraft): PlanDraft => ({
   days: draft.days.map((day) => ({
     ...day,
     key: nextKey(),
+    warmup: day.warmup.map((exercise) => ({ ...exercise, key: nextKey() })),
     exercises: day.exercises.map((exercise) => ({ ...exercise, key: nextKey() })),
+    cooldown: day.cooldown.map((exercise) => ({ ...exercise, key: nextKey() })),
   })),
 })
 
@@ -140,24 +182,41 @@ export const draftFromDetail = (detail: PlanDetail): PlanDraft => ({
     .map((day, index) => dayToDraft(day, index)),
 })
 
-const dayToDraft = (day: PlanDayDetail, index: number): DayDraft => ({
-  key: nextKey(),
-  name: day.name || `روز ${index + 1}`,
-  muscles: (day.targetMuscleCodes ?? []).filter((code): code is MuscleSlug =>
-    (MUSCLES as readonly string[]).includes(code),
-  ),
-  exercises: draftsFromSlots(day.exercises.length ? day.exercises : []),
-})
+const dayToDraft = (day: PlanDayDetail, index: number): DayDraft => {
+  const phases = draftsFromSlots(day.exercises)
+
+  return {
+    key: nextKey(),
+    name: day.name || `روز ${index + 1}`,
+    muscles: (day.targetMuscleCodes ?? []).filter((code): code is MuscleSlug =>
+      (MUSCLES as readonly string[]).includes(code),
+    ),
+    warmup: phases.warmup,
+    exercises: phases.main.length ? phases.main : [blankExercise(PlanDayPhase.Main)],
+    cooldown: phases.cooldown,
+  }
+}
 
 /**
  * The API stores a superset as one slot per movement sharing a group number. The builder shows a
- * superset as ONE form, so two slots of the same group fold into a single draft here.
+ * superset as ONE form, so two slots of the same group fold into a single draft here. Slots are
+ * split by phase first, so a superset never spans a section.
  */
-const draftsFromSlots = (slots: PlanExerciseDetail[]): ExerciseDraft[] => {
-  const drafts: ExerciseDraft[] = []
-  const supersets = new Map<number, ExerciseDraft>()
+const draftsFromSlots = (slots: PlanExerciseDetail[]) => {
+  const warmup: ExerciseDraft[] = []
+  const main: ExerciseDraft[] = []
+  const cooldown: ExerciseDraft[] = []
+
+  const buckets = {
+    [PlanDayPhase.Warmup]: warmup,
+    [PlanDayPhase.Main]: main,
+    [PlanDayPhase.Cooldown]: cooldown,
+  }
+
+  const supersets = new Map<string, ExerciseDraft>()
 
   for (const slot of [...slots].sort((a, b) => a.orderIndex - b.orderIndex)) {
+    const phase = slot.phase ?? PlanDayPhase.Main
     const draft: ExerciseDraft = {
       key: nextKey(),
       exerciseId: slot.exerciseId,
@@ -165,6 +224,7 @@ const draftsFromSlots = (slots: PlanExerciseDetail[]): ExerciseDraft[] => {
       exerciseId2: '',
       name2: '',
       type: slot.exerciseType ?? PlanExerciseType.Standard,
+      phase,
       sets: String(slot.targetSets ?? 3),
       repsMin: slot.targetRepsMin == null ? '' : String(slot.targetRepsMin),
       repsMax: slot.targetRepsMax == null ? '' : String(slot.targetRepsMax),
@@ -177,11 +237,12 @@ const draftsFromSlots = (slots: PlanExerciseDetail[]): ExerciseDraft[] => {
     }
 
     if (draft.type !== PlanExerciseType.Superset || slot.supersetGroup == null) {
-      drafts.push(draft)
+      buckets[phase].push(draft)
       continue
     }
 
-    const paired = supersets.get(slot.supersetGroup)
+    const groupKey = `${phase}:${slot.supersetGroup}`
+    const paired = supersets.get(groupKey)
 
     if (paired) {
       paired.exerciseId2 = draft.exerciseId
@@ -189,11 +250,11 @@ const draftsFromSlots = (slots: PlanExerciseDetail[]): ExerciseDraft[] => {
       continue
     }
 
-    supersets.set(slot.supersetGroup, draft)
-    drafts.push(draft)
+    supersets.set(groupKey, draft)
+    buckets[phase].push(draft)
   }
 
-  return drafts.length ? drafts : [blankExercise()]
+  return { warmup, main, cooldown }
 }
 
 /** Validation mirrors the server validators; the server stays the source of truth. */
@@ -221,17 +282,20 @@ export const validateDetails = (
 export const validateDays = (draft: PlanDraft): string | null => {
   for (const [index, day] of draft.days.entries()) {
     if (!day.name.trim()) return `نام روز ${index + 1} الزامی است.`
-    if (day.muscles.length === 0) return `برای روز «${day.name}» حداقل یک عضله هدف انتخاب کنید.`
   }
+
+  // Target muscles are optional: a day can be planned without pinning it to a body-map group.
 
   return null
 }
 
 export const validateExercises = (draft: PlanDraft): string | null => {
   for (const day of draft.days) {
-    if (day.exercises.length === 0) return `برای روز «${day.name}» حداقل یک حرکت اضافه کنید.`
+    const all = dayExercises(day)
 
-    for (const exercise of day.exercises) {
+    if (all.length === 0) return `برای روز «${day.name}» حداقل یک حرکت اضافه کنید.`
+
+    for (const exercise of all) {
       const problem = validateExercise(exercise)
       if (problem) return `${day.name}: ${problem}`
     }
@@ -310,27 +374,37 @@ export const draftToPayload = (draft: PlanDraft): PlanWriteRequest => ({
   days: draft.days.map((day) => ({
     name: day.name.trim(),
     targetMuscleCodes: day.muscles,
-    exercises: expandExercises(day.exercises),
+    exercises: expandDay(day),
   })),
 })
 
 /**
  * One draft out, one or two slots in: a superset keeps its single form in the builder and is
  * expanded to two slots that share a 1-based group number, which is the contract the API stores.
+ * Group numbers stay unique across the whole day, so the three phases never collide.
  */
-const expandExercises = (exercises: ExerciseDraft[]): PlanExerciseInput[] => {
+const expandDay = (day: DayDraft): PlanExerciseInput[] => {
   const rows: PlanExerciseInput[] = []
+  let nextGroup = 1
 
-  exercises.forEach((exercise, index) => {
-    if (exercise.type !== PlanExerciseType.Superset) {
-      rows.push(exerciseToInput(exercise, exercise.exerciseId, rows.length + 1, null))
-      return
+  const phases: Array<[PlanDayPhase, ExerciseDraft[]]> = [
+    [PlanDayPhase.Warmup, day.warmup],
+    [PlanDayPhase.Main, day.exercises],
+    [PlanDayPhase.Cooldown, day.cooldown],
+  ]
+
+  for (const [phase, exercises] of phases) {
+    for (const exercise of exercises) {
+      if (exercise.type !== PlanExerciseType.Superset) {
+        rows.push(exerciseToInput(exercise, exercise.exerciseId, rows.length + 1, null, phase))
+        continue
+      }
+
+      const group = nextGroup++
+      rows.push(exerciseToInput(exercise, exercise.exerciseId, rows.length + 1, group, phase))
+      rows.push(exerciseToInput(exercise, exercise.exerciseId2, rows.length + 1, group, phase))
     }
-
-    const group = index + 1
-    rows.push(exerciseToInput(exercise, exercise.exerciseId, rows.length + 1, group))
-    rows.push(exerciseToInput(exercise, exercise.exerciseId2, rows.length + 1, group))
-  })
+  }
 
   return rows
 }
@@ -340,6 +414,7 @@ const exerciseToInput = (
   exerciseId: string,
   orderIndex: number,
   supersetGroup: number | null,
+  phase: PlanDayPhase,
 ): PlanExerciseInput => {
   const timed = exercise.type === PlanExerciseType.Timed
 
@@ -358,5 +433,6 @@ const exerciseToInput = (
     targetDurationSeconds: timed ? numberOrNull(exercise.durationSeconds) : null,
     minWeightKg: timed ? null : numberOrNull(exercise.minWeightKg),
     maxWeightKg: timed ? null : numberOrNull(exercise.maxWeightKg),
+    phase,
   }
 }

@@ -25,6 +25,10 @@ export type PlanLevel = (typeof PlanLevel)[keyof typeof PlanLevel]
 export const PlanExerciseType = { Standard: 0, Timed: 1, Superset: 2 } as const
 export type PlanExerciseType = (typeof PlanExerciseType)[keyof typeof PlanExerciseType]
 
+/** Mirrors Domain.Plans.Enums.PlanDayPhase: warm-up first, cool-down last. */
+export const PlanDayPhase = { Main: 0, Warmup: 1, Cooldown: 2 } as const
+export type PlanDayPhase = (typeof PlanDayPhase)[keyof typeof PlanDayPhase]
+
 export interface PlanExerciseInput {
   exerciseId: string
   orderIndex: number
@@ -40,6 +44,8 @@ export interface PlanExerciseInput {
   /** The coach's allowed weight window for this slot; null = unbounded. */
   minWeightKg?: number | null
   maxWeightKg?: number | null
+  /** Warm-up, main or cool-down section of the day. */
+  phase?: PlanDayPhase
 }
 export interface PlanDayInput {
   name: string
@@ -89,6 +95,8 @@ export interface PlanExerciseDetail {
   targetDurationSeconds?: number | null
   minWeightKg?: number | null
   maxWeightKg?: number | null
+  /** Warm-up, main or cool-down section of the day. */
+  phase?: PlanDayPhase
   exerciseName?: string | null
   bodyPart?: string | null
   target?: string | null

@@ -19,6 +19,13 @@ import { toast } from '@/lib/toast'
 
 const fa = (value: number) => (value ?? 0).toLocaleString('fa-IR')
 
+/** The order a member performs the day: warm-up, main work, then cool-down. */
+const PHASE_SECTIONS = [
+  { phase: 1, label: 'گرم‌کردن' },
+  { phase: 0, label: 'حرکات اصلی' },
+  { phase: 2, label: 'سردکردن' },
+] as const
+
 const repsLabel = (min: number | null, max: number | null) => {
   if (min && max && min !== max) return `${fa(min)}–${fa(max)}`
   return min ? fa(min) : max ? fa(max) : '—'
@@ -225,36 +232,65 @@ export function PlanRun({ assignmentId }: { assignmentId: string }) {
                   </div>
                 ) : null
               })()}
-              <ul className="mt-3 space-y-1.5">
-                {foldSupersets(day.exercises).map((row) => (
-                  <li
-                    key={row.key}
-                    className="bg-muted/40 flex items-center justify-between gap-2 rounded-lg px-3 py-2 text-xs"
-                  >
-                    <span className="min-w-0">
-                      <span className="block truncate font-medium">{row.names.join(' + ')}</span>
-                      {row.isSuperset && (
-                        <span className="text-primary text-[10px]">
-                          سوپرست · پشت سر هم، با استراحت مشترک
-                        </span>
-                      )}
-                    </span>
-                    <span className="text-muted-foreground flex shrink-0 items-center gap-2 tabular-nums">
-                      <span>
-                        {fa(row.slot.targetSets)} ×{' '}
-                        {repsLabel(row.slot.targetRepsMin, row.slot.targetRepsMax)}
-                      </span>
-                      {row.slot.targetRir !== null && (
-                        <span className="text-[10px]">RIR {row.slot.targetRir}</span>
-                      )}
-                      <span className="inline-flex items-center gap-0.5 text-[10px]">
-                        <Timer className="size-3" />
-                        {fa(row.slot.restSeconds)}s
-                      </span>
-                    </span>
-                  </li>
-                ))}
-              </ul>
+              <div className="mt-3 space-y-3">
+                {PHASE_SECTIONS.map((section) => {
+                  const list = day.exercises.filter(
+                    (exercise) => (exercise.slot.phase ?? 0) === section.phase,
+                  )
+
+                  if (list.length === 0) return null
+
+                  return (
+                    <div key={section.phase}>
+                      <p className="text-muted-foreground mb-1.5 text-[11px] font-bold">
+                        {section.label}
+                      </p>
+                      <ul className="space-y-1.5">
+                        {foldSupersets(list).map((row) => {
+                          const timed = row.slot.exerciseType === 1
+
+                          return (
+                            <li
+                              key={row.key}
+                              className="bg-muted/40 flex items-center justify-between gap-2 rounded-lg px-3 py-2 text-xs"
+                            >
+                              <span className="min-w-0">
+                                <span className="block truncate font-medium">
+                                  {row.names.join(' + ')}
+                                </span>
+                                {row.isSuperset && (
+                                  <span className="text-primary text-[10px]">
+                                    سوپرست · پشت سر هم، با استراحت مشترک
+                                  </span>
+                                )}
+                              </span>
+                              <span className="text-muted-foreground flex shrink-0 items-center gap-2 tabular-nums">
+                                <span>
+                                  {timed
+                                    ? `${fa(row.slot.targetSets)} دور × ${fa(
+                                        row.slot.targetDurationSeconds ?? 0,
+                                      )} ثانیه`
+                                    : `${fa(row.slot.targetSets)} × ${repsLabel(
+                                        row.slot.targetRepsMin,
+                                        row.slot.targetRepsMax,
+                                      )}`}
+                                </span>
+                                {!timed && row.slot.targetRir !== null && (
+                                  <span className="text-[10px]">RIR {row.slot.targetRir}</span>
+                                )}
+                                <span className="inline-flex items-center gap-0.5 text-[10px]">
+                                  <Timer className="size-3" />
+                                  {fa(row.slot.restSeconds)}s
+                                </span>
+                              </span>
+                            </li>
+                          )
+                        })}
+                      </ul>
+                    </div>
+                  )
+                })}
+              </div>
             </li>
           ))}
         </ol>
